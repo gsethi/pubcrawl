@@ -88,6 +88,7 @@ public class PubcrawlServiceController extends AbstractController implements Ini
              HashMap<String, String> processedMap = new HashMap<String,String>();
              HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
              JSONArray geneArray = new JSONArray();
+             JSONArray summaryGeneArray = new JSONArray();
 
              ArrayList<Relationship> relList = new ArrayList<Relationship>();
 
@@ -114,12 +115,7 @@ public class PubcrawlServiceController extends AbstractController implements Ini
              if(bean.getAlias()){
                  relType = MyRelationshipTypes.NGD_ALIAS;
              }
-             org.neo4j.graphdb.traversal.Traverser ngdTraverser = Traversal.description().breadthFirst().prune(Traversal.pruneAfterDepth(1)).relationships(relType,Direction.OUTGOING).traverse(searchNode);
-             for(Node n : ngdTraverser.nodes()){
-                 nodeList.add(n);
-             }
 
-             System.out.println("nodes: " + nodeList.size());
              if(bean.getAlias()){
                 for(Relationship ngdConnection: searchNode.getRelationships(MyRelationshipTypes.NGD_ALIAS,Direction.OUTGOING)){
                      sortedNGDList.add(ngdConnection);
@@ -137,10 +133,21 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                  }
              });
 
-             for(int i=0; i< sortedNGDList.size() && i<175; i++){
-                 JSONObject geneJson = new JSONObject();
+             int count=0;
+             for(int i=0; i< sortedNGDList.size(); i++){
                  Relationship ngdRelationship = (Relationship)sortedNGDList.get(i);
                  Node gene = (ngdRelationship).getEndNode();
+
+                 JSONObject summaryGeneJson = new JSONObject();
+                 summaryGeneJson.put("aliases",(String)gene.getProperty("aliases",""));
+                 summaryGeneJson.put("name",(String)gene.getProperty("name",""));
+                 summaryGeneJson.put("ngd",(Double)ngdRelationship.getProperty("value"));
+                 summaryGeneJson.put("termcount",bean.getAlias() ? (Integer)gene.getProperty("termcount_alias",0) : (Integer)gene.getProperty("termcount",0));
+                 summaryGeneJson.put("cc",(Integer)ngdRelationship.getProperty("combocount"));
+
+                 if(count < 175){
+                     summaryGeneJson.put("graph",1);
+                 JSONObject geneJson = new JSONObject();
                  Node searchGene = ngdRelationship.getStartNode();
                  geneJson.put("aliases",(String)gene.getProperty("aliases",""));
                  geneJson.put("tf",(Integer)gene.getProperty("tf",0) == 1 );
@@ -155,6 +162,13 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                  geneJson.put("searchterm",bean.getNode());
                  geneArray.put(geneJson);
                  geneMap.put((String)gene.getProperty("name"),gene);
+                     count++;
+                 }
+                 else{
+                     summaryGeneJson.put("graph",0);
+                 }
+
+                 summaryGeneArray.put(summaryGeneJson);
              }
              json.put("nodes",geneArray);
 
@@ -241,6 +255,8 @@ public class PubcrawlServiceController extends AbstractController implements Ini
              }
 
              json.put("edges",edgeArray);
+
+             json.put("allnodes",summaryGeneArray);
              
             log.info("total edges: " + edgeArray.length());
 
