@@ -89,7 +89,7 @@ function loadModel(term1, alias,deNovo, callback) {
 
                     }
                     model_def['edges']=json.edges;
-                    populateData(json.allnodes);
+                    populateData(json.allnodes,json.alledges);
                 }
 
             },
@@ -114,7 +114,7 @@ function filterStandaloneNodes(filterOut){
              }
 
              for (var index=0; index < model_def['nodes'].length; index++){
-                 if(nodeList[model_def['nodes'][index].name] == undefined){
+                 if(nodeList[model_def['nodes'][index].id] == undefined){
                      //wasn't found in edges - and filtering out - so put into saNodes;
                      saNodes.push(model_def['nodes'][index]);
                  }
@@ -125,6 +125,7 @@ function filterStandaloneNodes(filterOut){
 
              //done going thru nodes - now clear out model_def and put new temp nodes in there
              model_def['nodes']=tempModelNodes;
+             tempModelNodes=[];
 
          }
     else{
@@ -136,9 +137,9 @@ function filterStandaloneNodes(filterOut){
          }
 }
 
-function populateData(allnodes){
+function populateData(allnodes,alledges){
     completeData={nodes:null,edges:null};
-     ngdPlotData = {data:null};
+    ngdPlotData = {data:null};
     var nodeArray=[];
     var comboCounts={};
      var ngdSummary={};
@@ -198,8 +199,6 @@ function populateData(allnodes){
      
             var pf1_count = edgeDetail.pf1_count;
             var pf2_count = edgeDetail.pf2_count;
-            edgeArray.push( {term1: edge.source, term2: edge.target,pf1: edgeDetail.pf1, pf2: edgeDetail.pf2,
-                        uni1:edgeDetail.uni1,uni2:edgeDetail.uni2,type:edgeDetail.type,pf1_count:pf1_count,pf2_count:pf2_count});
 
             if(domainCounts[pf1_count] == undefined){
                 domainCounts[pf1_count] = {start: pf1_count - .5, end: pf1_count + .5, label: 1,ngd: pf1_count, count:1};
@@ -217,6 +216,11 @@ function populateData(allnodes){
             }
 
         }
+    }
+
+    for(var i=0; i < alledges.length; i++){
+          edgeArray.push( {term1: alledges[i].source, term2: alledges[i].target,pf1: alledges[i].pf1, pf2: alledges[i].pf2,
+                        uni1:alledges[i].uni1,uni2:alledges[i].uni2,type:alledges[i].type,pf1_count:alledges[i].pf1_count,pf2_count:alledges[i].pf2_count});
     }
     completeData['edges'] = edgeArray;
     var histData=[];
