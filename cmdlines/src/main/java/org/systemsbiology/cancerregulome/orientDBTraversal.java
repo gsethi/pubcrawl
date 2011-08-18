@@ -15,11 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: aeakin
- * Date: Jul 19, 2011
- * Time: 10:44:24 AM
- * To change this template use File | Settings | File Templates.
+ * @author aeakin
  */
 public class orientDBTraversal {
 

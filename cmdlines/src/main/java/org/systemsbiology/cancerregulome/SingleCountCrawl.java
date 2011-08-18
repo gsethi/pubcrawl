@@ -18,11 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * Created by IntelliJ IDEA.
- * User: aeakin
- * Date: Jun 13, 2011
- * Time: 9:54:06 AM
- * To change this template use File | Settings | File Templates.
+ * @author aeakin
  */
 public class SingleCountCrawl {
      public static class SolrCallable implements Callable {
