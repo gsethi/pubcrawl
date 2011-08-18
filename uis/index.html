@@ -65,6 +65,32 @@ var vis_mask;
 var vis_ready=false;
 var dataTable_window,dataTable_window_mask;
 var documentTable_window,documentTable_window_mask;
+                    },{
+            fieldLabel: 'Incl. Standalone Nodes',
+              xtype: 'checkbox',
+              checked:true,
+              name: 'standaloneCheckbox',
+              id: 'standaloneCheckbox',
+                            listeners:{
+                                    check: function(cb,checked){
+                                        if(cb.checked){
+                                            //TODO: add in nodes to model_def['nodes']
+                                            filterStandaloneNodes(false);
+                                             renderModel();
+                                        }
+                                        else{
+                                            //TODO: take out nodes in model_def that are standalone and put into temp
+                                            filterStandaloneNodes(true);
+                                            renderModel();
+                                        }
+                                    }
+                                }
+              }]
+                                    { header: "Term", width: 100,  id:'term1', dataIndex:'term1',groupName:'Node'},
+                                    { header: "Aliases", width: 150, id:'alias1', dataIndex: 'alias1',groupName:'Node'},
+                                    { header: "Term Single Count", width:50 , id:'term1count', dataIndex:'term1count',groupName:'Node'},
+                                fields : ['term1','alias1','term1count','combocount','ngd']
+                                    renderEdgeTable(record.get('term1'));
 </script>
 <script type="text/javascript" src="js/viewport.js"></script>
 

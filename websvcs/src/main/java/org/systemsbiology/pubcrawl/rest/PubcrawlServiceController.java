@@ -66,9 +66,11 @@ public class PubcrawlServiceController extends AbstractController implements Ini
             ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
             ArrayList<Node> nodeList = new ArrayList<Node>();
             HashMap<String, Node> geneMap = new HashMap<String, Node>();
+             HashMap<String, Node> totalGeneMap = new HashMap<String,Node>();
             HashMap<String, String> processedMap = new HashMap<String, String>();
             HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
             JSONArray geneArray = new JSONArray();
+             JSONArray summaryGeneArray = new JSONArray();
 
             ArrayList<Relationship> relList = new ArrayList<Relationship>();
 
@@ -95,12 +97,7 @@ public class PubcrawlServiceController extends AbstractController implements Ini
             if (bean.getAlias()) {
                 relType = MyRelationshipTypes.NGD_ALIAS;
             }
-            org.neo4j.graphdb.traversal.Traverser ngdTraverser = Traversal.description().breadthFirst().prune(Traversal.pruneAfterDepth(1)).relationships(relType, Direction.OUTGOING).traverse(searchNode);
-            for (Node n : ngdTraverser.nodes()) {
-                nodeList.add(n);
-            }
 
-            log.info("nodes: " + nodeList.size());
             if (bean.getAlias()) {
                 for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD_ALIAS, Direction.OUTGOING)) {
                     sortedNGDList.add(ngdConnection);
@@ -117,10 +114,22 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                 }
             });
 
-            for (int i = 0; i < sortedNGDList.size() && i < 175; i++) {
-                JSONObject geneJson = new JSONObject();
+             int count=0;
+             for(int i=0; i< sortedNGDList.size(); i++){
                 Relationship ngdRelationship = (Relationship) sortedNGDList.get(i);
                 Node gene = (ngdRelationship).getEndNode();
+                 totalGeneMap.put((String)gene.getProperty("name"),gene);
+
+                 JSONObject summaryGeneJson = new JSONObject();
+                 summaryGeneJson.put("aliases",(String)gene.getProperty("aliases",""));
+                 summaryGeneJson.put("name",(String)gene.getProperty("name",""));
+                 summaryGeneJson.put("ngd",(Double)ngdRelationship.getProperty("value"));
+                 summaryGeneJson.put("termcount",bean.getAlias() ? (Integer)gene.getProperty("termcount_alias",0) : (Integer)gene.getProperty("termcount",0));
+                 summaryGeneJson.put("cc",(Integer)ngdRelationship.getProperty("combocount"));
+
+                 if(count < 175){
+                     summaryGeneJson.put("graph",1);
+                 JSONObject geneJson = new JSONObject();
                 Node searchGene = ngdRelationship.getStartNode();
                 geneJson.put("aliases", (String) gene.getProperty("aliases", ""));
                 geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
@@ -135,12 +144,20 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                 geneJson.put("searchterm", bean.getNode());
                 geneArray.put(geneJson);
                 geneMap.put((String) gene.getProperty("name"), gene);
+                     count++;
+                 }
+                 else{
+                     summaryGeneJson.put("graph",0);
+                 }
+
+                 summaryGeneArray.put(summaryGeneJson);
             }
             json.put("nodes", geneArray);
 
             log.info("total nodes: " + geneArray.length());
 
             JSONArray edgeArray = new JSONArray();
+             JSONArray telArray = new JSONArray(); //total edge list array
 
 
             //now get the edges between all the nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
@@ -179,9 +196,9 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                             edgeJson.put("directed", true);
                             edgeJson.put("ngd", (Double) item.getProperty("value"));
                         } else if (item.isType(MyRelationshipTypes.DOMINE)) {
-                            if (first) {
-                                String hgnc1 = ((String) item.getStartNode().getProperty("name")).toUpperCase();
+                                String hgnc1=((String)item.getStartNode().getProperty("name")).toUpperCase();
                                 String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+                               if(first){
                                 edgeJson.put("source", hgnc1);
                                 edgeJson.put("target", hgnc2);
                                 edgeJson.put("id", hgnc1 + hgnc2);
@@ -217,7 +234,37 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                 relMap.clear();
             }
 
+
+             //now get all domine edges between all nodes
+             processedMap.clear();
+              for(Node gene: totalGeneMap.values()){
+                  String geneName=(String)gene.getProperty("name");
+                 for(Relationship connection: gene.getRelationships(MyRelationshipTypes.DOMINE,Direction.OUTGOING)){
+                     Node endNode = connection.getEndNode();
+                     String nodeName = (String) endNode.getProperty("name");
+                             //do this relationship if the end node is in our list and it hasn't already been processed
+                     if(totalGeneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)){
+                               JSONObject telItem = new JSONObject();
+                               telItem.put("pf1",(String)connection.getProperty("pf1"));
+                               telItem.put("pf2",(String)connection.getProperty("pf2"));
+                               telItem.put("uni1",(String)connection.getProperty("uni1"));
+                               telItem.put("uni2", (String)connection.getProperty("uni2"));
+                               telItem.put("type", (String)connection.getProperty("domine_type"));
+                               telItem.put("pf1_count", (Integer)connection.getProperty("pf1_count"));
+                               telItem.put("pf2_count", (Integer)connection.getProperty("pf2_count"));
+                               telItem.put("source",geneName.toUpperCase());
+                               telItem.put("target",nodeName.toUpperCase());
+                               telArray.put(telItem);
+
+                     }
+                 }
+                 processedMap.put(geneName,geneName);
+              }
+
             json.put("edges", edgeArray);
+
+             json.put("allnodes",summaryGeneArray);
+             json.put("alledges",telArray);
 
             log.info("total edges: " + edgeArray.length());
 

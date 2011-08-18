@@ -24,10 +24,10 @@ public class RE_Import {
     }
 
     public static void main(String[] args) throws Exception {
-        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/re.db");
+         BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/rface_coadread.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex features = indexProvider.nodeIndex("featureIdx", MapUtil.stringMap("type", "exact"));
-        features.setCacheCapacity("label", 40000);
+         features.setCacheCapacity("name", 40000);
 
         try {
             BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
@@ -47,7 +47,7 @@ public class RE_Import {
                         gene = vertexInfo[3].substring(0, index);
                     }
                     System.out.println("mutation type: " + mutationType + " gene: " + gene);
-                    Map<String, Object> properties = MapUtil.map("featureid", vertexInfo[0], "type", vertexInfo[1], "source", vertexInfo[2], "label", vertexInfo[3], "mutationType", mutationType, "gene", gene);
+                 Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3],"mutationType",mutationType,"gene",gene);
                     if (vertexInfo.length > 4) {
                         properties.put("chr", vertexInfo[4]);
                         properties.put("start", new Integer(vertexInfo[5]));
@@ -58,7 +58,12 @@ public class RE_Import {
                     long node = inserter.createNode(properties);
                     features.add(node, properties);
                 } else {
-                    Map<String, Object> properties = MapUtil.map("featureid", vertexInfo[0], "type", vertexInfo[1], "source", vertexInfo[2], "label", vertexInfo[3]);
+                 Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
+                 if(vertexInfo[2].toLowerCase().equals("gexp")){
+                     properties.put("gene",vertexInfo[2]);
+
+                 }
+
                     if (vertexInfo.length > 4) {
                         properties.put("chr", vertexInfo[4]);
                         properties.put("start", new Integer(vertexInfo[5]));
@@ -89,9 +94,11 @@ public class RE_Import {
                 Long feature1 = features.get("featureid", assocInfo[0]).getSingle();
                 Long feature2 = features.get("featureid", assocInfo[1]).getSingle();
                 if (!feature1.equals(feature2)) {
-                    Map<String, Object> properties = MapUtil.map("pvalue", new Double(assocInfo[2]), "importance", new Double(assocInfo[3]), "coorelation", new Double(assocInfo[4]));
+                Map<String, Object> properties = MapUtil.map("pvalue",new Double(assocInfo[2]),"importance",new Double(assocInfo[3]),"correlation",new Double(assocInfo[4]));
                     long rel = inserter.createRelationship(feature1, feature2, MyRelationshipTypes.RFACE, properties);
                     featureRelationships.add(rel, properties);
+                long rel2=inserter.createRelationship(feature2,feature1,MyRelationshipTypes.RFACE,properties);
+                 featureRelationships.add(rel2,properties);
                 }
             }
 

@@ -92,7 +92,8 @@ function renderNGDHistogramData(){
             horizontal_padding:10,
             container: document.getElementById('linear-ngd'),
             data_array: ngdPlotData['data'],
-            interval: maxPosValueX
+            interval: maxPosValueX,
+            fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateNGDRange,
         callback_always: true
