@@ -10,7 +10,7 @@
 
     <artifactId>websvcs</artifactId>
     <packaging>war</packaging>
-    <name>Pubcrawl REST+JSON Web Service</name>
+    <name>Pubcrawl: REST+JSON Web Service</name>
 
     <build>
         <finalName>pubcrawl_svc</finalName>
@@ -51,21 +51,11 @@
             <artifactId>spring-webmvc</artifactId>
             <version>2.5.4</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>org.systemsbiology.addama.commons</groupId>-->
-        <!--<artifactId>commons-webutils</artifactId>-->
-        <!--<version>2.0</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>org.systemsbiology.addama.commons</groupId>-->
-        <!--<artifactId>web-registry</artifactId>-->
-        <!--<version>2.0</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>org.systemsbiology.addama.commons</groupId>-->
-        <!--<artifactId>commons-httpclient-support</artifactId>-->
-        <!--<version>2.0</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.systemsbiology.addama.commons</groupId>
+            <artifactId>commons-webutils</artifactId>
+            <version>2.1</version>
+        </dependency>
 
         <!-- Apache Commons -->
         <dependency>
