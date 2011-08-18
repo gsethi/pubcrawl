@@ -95,16 +95,6 @@
             </snapshots>
         </repository>
 
-        <!--<repository>-->
-            <!--<id>java-central</id>-->
-            <!--<name>Java Maven Repository Switchboard</name>-->
-            <!--<layout>default</layout>-->
-            <!--<url>https://maven-repository.dev.java.net/nonav/repository</url>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-
         <repository>
             <id>tinkerpop-repository</id>
             <name>TinkerPop Maven2 Repository</name>
@@ -142,14 +132,6 @@
             </snapshots>
         </repository>
 
-        <!--<repository>-->
-            <!--<snapshots>-->
-                <!--<enabled>true</enabled>-->
-            <!--</snapshots>-->
-            <!--<id>informatics-svcs.systemsbiology.net</id>-->
-            <!--<name>ISB Internal Maven Repository</name>-->
-            <!--<url>http://informatics-svcs.systemsbiology.net/maven_repository</url>-->
-        <!--</repository>-->
         <repository>
             <id>informatics.systemsbiology.net</id>
             <name>ISB External Maven Repository</name>
