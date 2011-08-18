@@ -24,7 +24,7 @@
     <modules>
         <module>cmdlines</module>
         <module>websvcs</module>
-        <module>userinterfaces</module>
+        <module>uis</module>
     </modules>
 
     <developers>
