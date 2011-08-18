@@ -26,6 +26,7 @@ vq.FlexScrollBar = function(){
     this.fixed_window_width(-1);
     this.callback_always(false);
 
+
 };
 
 vq.FlexScrollBar.prototype = pv.extend(vq.Vis);
@@ -63,6 +64,7 @@ vq.FlexScrollBar.prototype._setOptionDefaults = function(options) {
     if (options.container) { this.container(options.container); }
     if (options.notifier) { this.notifier= options.notifier; }
     if (options.dblclick_notifier) { this.dblclick_notifier = options.dblclick_notifier; }
+    if(options.fillstyle != null){ this.fillstyle = options.fillstyle};
 
 };
 
@@ -127,7 +129,7 @@ vq.FlexScrollBar.prototype.render = function() {
         var startX = pv.max( [ pv.min(x.domain()), minX] );
         var halfX = (endX - startX) / 2;
         var scaleX = 2 * halfX / scrollWidth;
-        return { x: new Number(d.x *scaleX + startX).toFixed(1)  , dx : (isWindowWidthFixed) ? Math.round(windowWidth * scaleX) : ( new Number(d.dx * scaleX).toFixed(1))   };
+        return { x: new Number(d.x *scaleX + startX).toFixed(2)  , dx : (isWindowWidthFixed) ? Math.round(windowWidth * scaleX) : ( new Number(d.dx * scaleX).toFixed(2))   };
     };
 
     var translateAndScale = function(d) {
@@ -143,7 +145,7 @@ vq.FlexScrollBar.prototype.render = function() {
     };
 
     var dragEnd = function(d) {
-//	this.parent.active(false) ;
+    //	this.parent.active(false) ;
         this.fillStyle(undefined);
         dispatchEvent(d);
         vis.render();
@@ -216,7 +218,7 @@ vq.FlexScrollBar.prototype.render = function() {
             .text(function(d) { return translateFocus(d).dx});
     panel.add(pv.Bar)
             .data(that.data.data_array)
-            .fillStyle("#0570A6")
+            .fillStyle(function (d) { return that.fillstyle(d);})
             .bottom(0)
             .width(function(c) { return that.xScale(c.end)-that.xScale(c.start);})
             .height(function(d){return yScale(d.count);})
@@ -305,7 +307,8 @@ vq.models.FlexScrollBarData.prototype.setDataModel = function () {
         {label: 'notifier', id: 'notifier', defaultValue : function(a){return null;}},
         {label :'callback_always', id:'callback_always', cast : Boolean, defaultValue : true},
         {label: 'dblclick_notifier', id: 'dblclick_notifier', defaultValue : function(a){return null;}},
-        {label : 'data_array', id: 'PLOT.data_array', defaultValue : [] }
+        {label : 'data_array', id: 'PLOT.data_array', defaultValue : [] },
+        {label: 'fillstyle', id:'PLOT.fillstyle', defaultValue: function(a){return "blue";}}
 
     ];
 };

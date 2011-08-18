@@ -23,6 +23,7 @@ var model_def;
 var ngdPlotData;
 var ccPlotData;
 var domainCountData;
+var saNodes;
 
 
 selectModel = function(set_label) {
@@ -47,45 +48,6 @@ function loadDeNovoSearches(){
   }}
 
   dn_query.send(handleDNTerms);
-}
-
-function loadNGDLinearData(term, alias, deNovo, callback) {
-    ngdset=false;
-    ngdPlotData = {data:null};
-    var timer = new vq.utils.SyncDatasources(300, 80, callback, ngdPlotData);
-    var ngdSummaryUri=base_query_url + pubcrawl_base_query_uri;
-    if(alias){
-      if(deNovo){
-        ngdSummaryUri = ngdSummaryUri + pubcrawl_ngdSummary_aliasdeNovoquery;
-      }
-      else
-        ngdSummaryUri = ngdSummaryUri + pubcrawl_ngdSummary_aliasquery;
-    }
-    else{
-      if(deNovo){
-        ngdSummaryUri = ngdSummaryUri + pubcrawl_ngdSummary_deNovoquery;
-      }
-      else
-        ngdSummaryUri = ngdSummaryUri +  pubcrawl_ngdSummary_query;
-    }
-    var ngdSummary_query = new google.visualization.Query(ngdSummaryUri);
-    ngdSummary_query.setQuery("select ngd,count where term='" + term + "'");
-    timer.start_poll();
-
-    function handleNGDSummaryHandler(response) {
-        if (!response.isError()) {
-            rows = vq.utils.GoogleDSUtils.dataTableToArray(response.getDataTable());
-            if(rows.length == 0){
-              return;
-            }
-            ngdPlotData['data'] = rows.map(function(row) {
-                return {start: row.ngd - .002, end: row.ngd + .002, value: row.count, count: row.count, ngd: row.ngd, options: "label=" + row.ngd}
-            });
-        }
-    }
-
-    ngdSummary_query.send(handleNGDSummaryHandler);
-
 }
 
 
@@ -121,8 +83,13 @@ function loadModel(term1, alias,deNovo, callback) {
                 }
                 else{
                     model_def['nodes']=json.nodes;
+                    if(!Ext.getCmp('standaloneCheckbox').getValue()){
+
+                        filterStandaloneNodes(true);
+
+                    }
                     model_def['edges']=json.edges;
-                    populateData();
+                    populateData(json.allnodes);
                 }
 
             },
@@ -134,18 +101,54 @@ function loadModel(term1, alias,deNovo, callback) {
 
 }
 
-function populateData(){
+function filterStandaloneNodes(filterOut){
+    var nodeList={};
+         if(filterOut){
+
+             var tempModelNodes=[];
+             saNodes=[];
+             //go thru edges and figure out which nodes are standalone and put into temp node area
+             for (var index=0; index < model_def['edges'].length; index++){
+                      nodeList[model_def['edges'][index].source.toUpperCase()] = 1;
+                      nodeList[model_def['edges'][index].target.toUpperCase()] = 1;
+             }
+
+             for (var index=0; index < model_def['nodes'].length; index++){
+                 if(nodeList[model_def['nodes'][index].name] == undefined){
+                     //wasn't found in edges - and filtering out - so put into saNodes;
+                     saNodes.push(model_def['nodes'][index]);
+                 }
+                 else{
+                    tempModelNodes.push(model_def['nodes'][index]);
+                 }
+             }
+
+             //done going thru nodes - now clear out model_def and put new temp nodes in there
+             model_def['nodes']=tempModelNodes;
+
+         }
+    else{
+             //we aren't filtering out - we are putting in....so take what is in sanodes and put into model_def['nodes']
+             for(var index=0; index < saNodes.length; index++){
+                 model_def['nodes'].push(saNodes[index]);
+             }
+
+         }
+}
+
+function populateData(allnodes){
     completeData={nodes:null,edges:null};
      ngdPlotData = {data:null};
     var nodeArray=[];
     var comboCounts={};
      var ngdSummary={};
-    for (var index=0; index < model_def['nodes'].length; index++){
-        var node = model_def['nodes'][index];
-        nodeArray.push({term1: node.searchterm.toUpperCase(), term2: node.label.toUpperCase(),term1count:node.searchtermcount,term2count:node.termcount,combocount:node.cc,
+    for (var index=0; index < allnodes.length; index++){
+        var node = allnodes[index];
+        nodeArray.push({term1: node.name.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
                     ngd:node.ngd});
 
-        if(node.cc != node.searchtermcount){ //don't want to include the search term count in this histogram
+        if(node.name.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
+            if(node.graph == 1){
             if(comboCounts[node.cc] == undefined){
                 comboCounts[node.cc] = {start:node.cc - .5, end: node.cc + .5, label: 1, ngd: node.cc, count: 1};
             }
@@ -153,14 +156,16 @@ function populateData(){
                 comboCounts[node.cc].count= comboCounts[node.cc].count+1;
                 comboCounts[node.cc].label=comboCounts[node.cc].count;
             }
+        }
 
             var ngdtrunc = Math.round(node.ngd * 100)/100;
             if (ngdSummary[ngdtrunc] == undefined){
-                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc};
+                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:node.graph};
             }
             else{
                 ngdSummary[ngdtrunc].count = ngdSummary[ngdtrunc].count+1;
                 ngdSummary[ngdtrunc].value = ngdSummary[ngdtrunc].value +1;
+                ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+node.graph;
             }
         }
 
