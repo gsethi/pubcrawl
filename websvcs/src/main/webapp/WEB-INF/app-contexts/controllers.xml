@@ -14,7 +14,7 @@
                 <!-- WARNING: Mappings are sensitive to order in which they are placed in this list -->
                 <entry key="/**">
                     <bean class="org.systemsbiology.pubcrawl.rest.PubcrawlServiceController" autowire="byType">
-                          <property name="graphDB"ref="graphDB"/>
+                          <property name="graphDB" ref="graphDB"/>
                     </bean>
                 </entry>
             </map>
