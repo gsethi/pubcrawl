@@ -89,7 +89,7 @@ function loadModel(term1, alias,deNovo, callback) {
 
                     }
                     model_def['edges']=json.edges;
-                    populateData(json.allnodes,json.alledges);
+                    populateData(json.allnodes);
                 }
 
             },
@@ -137,7 +137,7 @@ function filterStandaloneNodes(filterOut){
          }
 }
 
-function populateData(allnodes,alledges){
+function populateData(allnodes){
     completeData={nodes:null,edges:null};
     ngdPlotData = {data:null};
     var nodeArray=[];
@@ -218,10 +218,10 @@ function populateData(allnodes,alledges){
         }
     }
 
-    for(var i=0; i < alledges.length; i++){
-          edgeArray.push( {term1: alledges[i].source, term2: alledges[i].target,pf1: alledges[i].pf1, pf2: alledges[i].pf2,
-                        uni1:alledges[i].uni1,uni2:alledges[i].uni2,type:alledges[i].type,pf1_count:alledges[i].pf1_count,pf2_count:alledges[i].pf2_count});
-    }
+//    for(var i=0; i < alledges.length; i++){
+//          edgeArray.push( {term1: alledges[i].source, term2: alledges[i].target,pf1: alledges[i].pf1, pf2: alledges[i].pf2,
+//                        uni1:alledges[i].uni1,uni2:alledges[i].uni2,type:alledges[i].type,pf1_count:alledges[i].pf1_count,pf2_count:alledges[i].pf2_count});
+//    }
     completeData['edges'] = edgeArray;
     var histData=[];
     for(var domainItem in domainCounts){

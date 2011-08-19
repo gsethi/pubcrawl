@@ -66,7 +66,6 @@ public class PubcrawlServiceController extends AbstractController implements Ini
             ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
             ArrayList<Node> nodeList = new ArrayList<Node>();
             HashMap<String, Node> geneMap = new HashMap<String, Node>();
-             HashMap<String, Node> totalGeneMap = new HashMap<String,Node>();
             HashMap<String, String> processedMap = new HashMap<String, String>();
             HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
             JSONArray geneArray = new JSONArray();
@@ -118,7 +117,6 @@ public class PubcrawlServiceController extends AbstractController implements Ini
              for(int i=0; i< sortedNGDList.size(); i++){
                 Relationship ngdRelationship = (Relationship) sortedNGDList.get(i);
                 Node gene = (ngdRelationship).getEndNode();
-                 totalGeneMap.put((String)gene.getProperty("name"),gene);
 
                  JSONObject summaryGeneJson = new JSONObject();
                  summaryGeneJson.put("aliases",(String)gene.getProperty("aliases",""));
@@ -157,7 +155,6 @@ public class PubcrawlServiceController extends AbstractController implements Ini
             log.info("total nodes: " + geneArray.length());
 
             JSONArray edgeArray = new JSONArray();
-             JSONArray telArray = new JSONArray(); //total edge list array
 
 
             //now get the edges between all the nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
@@ -235,38 +232,14 @@ public class PubcrawlServiceController extends AbstractController implements Ini
             }
 
 
+            log.info("done getting graph edges");
              //now get all domine edges between all nodes
-             processedMap.clear();
-              for(Node gene: totalGeneMap.values()){
-                  String geneName=(String)gene.getProperty("name");
-                 for(Relationship connection: gene.getRelationships(MyRelationshipTypes.DOMINE,Direction.OUTGOING)){
-                     Node endNode = connection.getEndNode();
-                     String nodeName = (String) endNode.getProperty("name");
-                             //do this relationship if the end node is in our list and it hasn't already been processed
-                     if(totalGeneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)){
-                               JSONObject telItem = new JSONObject();
-                               telItem.put("pf1",(String)connection.getProperty("pf1"));
-                               telItem.put("pf2",(String)connection.getProperty("pf2"));
-                               telItem.put("uni1",(String)connection.getProperty("uni1"));
-                               telItem.put("uni2", (String)connection.getProperty("uni2"));
-                               telItem.put("type", (String)connection.getProperty("domine_type"));
-                               telItem.put("pf1_count", (Integer)connection.getProperty("pf1_count"));
-                               telItem.put("pf2_count", (Integer)connection.getProperty("pf2_count"));
-                               telItem.put("source",geneName.toUpperCase());
-                               telItem.put("target",nodeName.toUpperCase());
-                               telArray.put(telItem);
 
-                     }
-                 }
-                 processedMap.put(geneName,geneName);
-              }
 
             json.put("edges", edgeArray);
 
              json.put("allnodes",summaryGeneArray);
-             json.put("alledges",telArray);
 
-            log.info("total edges: " + edgeArray.length());
 
         } catch (Exception e) {
             log.info("exception occured: " + e.getMessage());
