@@ -7,6 +7,9 @@ import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.kernel.Traversal;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.systemsbiology.addama.commons.web.views.JsonItemsView;
@@ -26,7 +29,8 @@ import java.util.logging.Logger;
 /**
  * @author aeakin
  */
-public class PubcrawlServiceController extends AbstractController implements InitializingBean {
+@Controller
+public class PubcrawlServiceController implements InitializingBean {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
     private GraphDatabaseService graphDB;
 
@@ -38,19 +42,40 @@ public class PubcrawlServiceController extends AbstractController implements Ini
 
     }
 
-    protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @RequestMapping(value= "/node/**",method= RequestMethod.GET)
+    protected ModelAndView handleGraphRetrieval(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
         PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
         log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = new JSONObject();
-        if (request.getMethod().equalsIgnoreCase("POST")) {
+        JSONObject json = getGraph(bean);
+        json.put("node", bean.getNode());
+        return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
 
-            json.put("insert", insertGraphNodeData(bean));
-        } else {
-            json = getGraph(bean);
-        }
+    @RequestMapping(value= "/node_alias/**",method= RequestMethod.GET)
+    protected ModelAndView handleGraphAliasRetrieval(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        log.info("request.getMethod: " + request.getMethod());
+        JSONObject json = getGraph(bean);
+        json.put("node", bean.getNode());
+        return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
+
+    @RequestMapping(method= RequestMethod.POST)
+    protected ModelAndView handleNodeInsert(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        JSONObject json = new JSONObject();
+        log.info("request.getMethod: " + request.getMethod());
+        json.put("insert", insertGraphNodeData(bean));
+
         json.put("node", bean.getNode());
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
@@ -305,7 +330,7 @@ public class PubcrawlServiceController extends AbstractController implements Ini
 
 
                     if (alias) {
-                        log.info("adding alias?");
+
                         String gene1Name = vertexInfo[0].toLowerCase();
                         String gene2Name = vertexInfo[2].toLowerCase();
                         Node gene1 = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
@@ -323,13 +348,13 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                             }
                         }
                     } else {
-                        log.info("about to do relationship");
+
                         String gene1Name = vertexInfo[0].toLowerCase();
                         String gene2Name = vertexInfo[1].toLowerCase();
                         Node gene1 = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
                         Node gene2 = nodeIdx.get("name", vertexInfo[1].toLowerCase()).getSingle();
                         if (!gene1Name.equals(gene2Name)) {
-                            log.info("checking ngd now");
+
                             Double ngd = new Double(vertexInfo[5]);
                             if (ngd >= 0) {
                                 Relationship r = gene1.createRelationshipTo(gene2, MyRelationshipTypes.NGD);
@@ -339,7 +364,7 @@ public class PubcrawlServiceController extends AbstractController implements Ini
                                 Relationship r2 = gene2.createRelationshipTo(gene1, MyRelationshipTypes.NGD);
                                 r2.setProperty("value", ngd);
                                 r2.setProperty("combocount", new Integer(vertexInfo[4]));
-                                log.info("done with relationship");
+
 
                             }
                         }
