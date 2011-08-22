@@ -191,7 +191,6 @@ function populateData(allnodes){
 
 
     var domainCounts = {};
-    var edgeArray=[];
     for (var edgeIdx= 0; edgeIdx < model_def['edges'].length; edgeIdx++){
         var edge = model_def['edges'][edgeIdx];
         for (var edgeDetailIdx=0; edgeDetailIdx < edge.edgeList.length; edgeDetailIdx++){
@@ -218,11 +217,6 @@ function populateData(allnodes){
         }
     }
 
-//    for(var i=0; i < alledges.length; i++){
-//          edgeArray.push( {term1: alledges[i].source, term2: alledges[i].target,pf1: alledges[i].pf1, pf2: alledges[i].pf2,
-//                        uni1:alledges[i].uni1,uni2:alledges[i].uni2,type:alledges[i].type,pf1_count:alledges[i].pf1_count,pf2_count:alledges[i].pf2_count});
-//    }
-    completeData['edges'] = edgeArray;
     var histData=[];
     for(var domainItem in domainCounts){
         histData.push(domainCounts[domainItem]);

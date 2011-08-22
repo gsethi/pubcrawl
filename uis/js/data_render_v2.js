@@ -381,16 +381,35 @@ function renderEdgeTable(data){
     dataTable_window.show();
     dataTable_window_mask =  new Ext.LoadMask('datatable-window', {msg:"Loading Data..."});
     dataTable_window_mask.show();
-    var selectedEdgeData=[];
-    for(var i=0; i< completeData['edges'].length; i++){
-        var item=completeData['edges'][i];
-          if((item.term2 == data) ||(item.term1 == data)){
-                selectedEdgeData.push(item);
-           }
-    }
+    Ext.Ajax.request({
+            method:"GET",
+            url: "/pubcrawl_svc/relationships/" + data.toLowerCase(),
+            success: function(o) {
+                var json = Ext.util.JSON.decode(o.responseText);
+                  var selectedEdgeData=[];
+                if(json.edges == undefined || json.edges.length == 0){
+                    //do nothing in this case - just send an empty selectedEdgeData to the table
+                }
+                else{
+                     for(var i=0; i < json.edges.length; i++){
+                         if(json.edges[i].target.toLowerCase()==completeData['nodes']){
+                      selectedEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].pf1, pf2: json.edges[i].pf2,
+                          uni1:json.edges[i].uni1,uni2:json.edges[i].uni2,type:json.edges[i].type,pf1_count:json.edges[i].pf1_count,pf2_count:json.edges[i].pf2_count});
+                      }
+                     }
+                }
 
-    Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedEdgeData);
-    dataTable_window_mask.hide();
+                 Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedEdgeData);
+                dataTable_window_mask.hide();
+
+            },
+            failure: function(o) {
+                Ext.StoreMgr.get('dataEdge_grid_store').loadData([]);
+                dataTable_window_mask.hide();
+                Ext.MessageBox.alert('Error Retrieving Edges', o.statusText);
+            }
+        });
+
 }
 
 function renderDocumentTable(documentData){
