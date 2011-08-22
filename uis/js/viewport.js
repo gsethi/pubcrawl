@@ -315,7 +315,27 @@ Ext.onReady(function() {
                                 }
                             }
                     }]
-                }]
+                },{
+            fieldLabel: 'Incl. Standalone Nodes',
+              xtype: 'checkbox',
+              checked:true,
+              name: 'standaloneCheckbox',
+              id: 'standaloneCheckbox',
+                            listeners:{
+                                    check: function(cb,checked){
+                                        if(cb.checked){
+                                            //TODO: add in nodes to model_def['nodes']
+                                            filterStandaloneNodes(false);
+                                             renderModel();
+                                        }
+                                        else{
+                                            //TODO: take out nodes in model_def that are standalone and put into temp
+                                            filterStandaloneNodes(true);
+                                            renderModel();
+                                        }
+                                    }
+                                }
+              }]
             }]
     });
 
@@ -343,8 +363,9 @@ Ext.onReady(function() {
                             },
                             cm : new Ext.grid.ColumnModel({
                                 columns: [
-                                    { header: "Term", width: 100,  id:'term2', dataIndex:'term2',groupName:'Node'},
-                                    { header: "Term Single Count", width:50 , id:'term2count', dataIndex:'term2count',groupName:'Node'},
+                                    { header: "Term", width: 100,  id:'term1', dataIndex:'term1',groupName:'Node'},
+                                    { header: "Aliases", width: 150, id:'alias1', dataIndex: 'alias1',groupName:'Node'},
+                                    { header: "Term Single Count", width:50 , id:'term1count', dataIndex:'term1count',groupName:'Node'},
                                     { header: "Term Combo Count", width:50, id:'combocount',dataIndex:'combocount',groupName:'Node'},
                                     { header: "NGD", width:50, id:'ngd',dataIndex:'ngd',groupName:'Node'}
                                 ],
@@ -356,12 +377,13 @@ Ext.onReady(function() {
                             store : new Ext.data.JsonStore({
                                 autoLoad:false,
                                 storeId:'dataNode_grid_store',
-                                fields : ['term1','term2','term1count','term2count','combocount','ngd']
+                                fields : ['term1','alias1','term1count','combocount','ngd']
+
                             }),
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    renderEdgeTable(record.get('term2'));
+                                    renderEdgeTable(record.get('term1'));
                                 }
                             }
                         }]
