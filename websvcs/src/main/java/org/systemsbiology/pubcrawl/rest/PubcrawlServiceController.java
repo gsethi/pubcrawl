@@ -1,5 +1,6 @@
 package org.systemsbiology.pubcrawl.rest;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.neo4j.graphdb.*;
@@ -63,6 +64,28 @@ public class PubcrawlServiceController implements InitializingBean {
         log.info("request.getMethod: " + request.getMethod());
         JSONObject json = getGraph(bean);
         json.put("node", bean.getNode());
+        return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
+
+    @RequestMapping(value= "/relationships/**",method= RequestMethod.GET)
+    protected ModelAndView handleDomineRelationships(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        String nodeUri = StringUtils.substringAfterLast(requestUri, "relationships/");
+        String node="";
+            log.info("nodeUri: " + nodeUri);
+            if (nodeUri != null) {
+                String[] splits = nodeUri.split("/");
+                if (splits.length > 0) {
+                    node = splits[0].replaceAll("%20", " ");
+
+                }
+            }
+
+        log.info("request.getMethod: " + request.getMethod());
+        JSONObject json = getDomineEdges(node);
+        json.put("node", nodeUri);
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
@@ -273,6 +296,37 @@ public class PubcrawlServiceController implements InitializingBean {
         return json;
     }
 
+    protected JSONObject getDomineEdges(String node){
+        JSONObject  json=new JSONObject();
+
+        try {
+                   IndexManager indexMgr = graphDB.index();
+                   Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+                   Node searchNode = nodeIdx.get("name", node).getSingle();
+
+            JSONArray edgeArray = new JSONArray();
+            for(Relationship rel : searchNode.getRelationships(Direction.OUTGOING,MyRelationshipTypes.DOMINE)){
+                JSONObject relJson = new JSONObject();
+                relJson.put("pf1",  rel.getProperty("pf1"));
+                            relJson.put("pf2",  rel.getProperty("pf2"));
+                            relJson.put("uni1", rel.getProperty("uni1"));
+                            relJson.put("uni2", rel.getProperty("uni2"));
+                            relJson.put("type",  rel.getProperty("domine_type"));
+                            relJson.put("pf1_count", rel.getProperty("pf1_count"));
+                            relJson.put("pf2_count", rel.getProperty("pf2_count"));
+                relJson.put("source",node);
+                relJson.put("target",rel.getEndNode().getProperty("name"));
+                 edgeArray.put(relJson);
+            }
+
+            json.put("edges",edgeArray);
+        }catch(Exception e){
+            log.info("error in retrieving edges: " + e.getMessage());
+            return new JSONObject();
+        }
+        return json;
+    }
+
     protected boolean insertGraphNodeData(PubcrawlNetworkBean bean) {
         Index<Node> nodeIdx = graphDB.index().forNodes("geneIdx");
         boolean alias = bean.getAlias();
@@ -285,7 +339,6 @@ public class PubcrawlServiceController implements InitializingBean {
             try {
                 while ((vertexLine = vertexFile.readLine()) != null) {
                     //for the first line we need to get the term value, then get relationships
-                    log.info("on read line");
                     String[] vertexInfo = vertexLine.split("\t");
                     if (first) {
                         first = false;
