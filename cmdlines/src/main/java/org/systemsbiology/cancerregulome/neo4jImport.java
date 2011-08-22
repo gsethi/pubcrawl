@@ -20,10 +20,16 @@ public class neo4jImport {
 
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS
     }
 
     public static void main(String[] args) throws Exception {
+
+            insertGenes();
+            insertDrugs();
+    }
+
+    private static void insertGenes() {
         BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx", MapUtil.stringMap("type", "exact"));
@@ -121,5 +127,59 @@ public class neo4jImport {
         indexProvider.shutdown();
         inserter.shutdown();
     }
+
+    private static void insertDrugs() {
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
+           BatchInserterIndex drugs = indexProvider.nodeIndex("drugIdx", MapUtil.stringMap("type", "exact"));
+            BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
+         BatchInserterIndex ngdRel = indexProvider.nodeIndex("drugNGDRelIdx", MapUtil.stringMap("type", "exact"));
+           drugs.setCacheCapacity("name", 40000);
+
+           try {
+               BufferedReader drugFile = new BufferedReader(new FileReader("drugNGD.txt"));
+               String drugLine;
+               String currentNode="";
+               long drugId=0;
+               System.out.println("reading drug file");
+               while ((drugLine = drugFile.readLine()) != null) {
+                   String[] drugInfo = drugLine.split("\t");
+
+                   if(!currentNode.equals(drugInfo[0].toLowerCase())){
+                        Map<String, Object> properties = MapUtil.map("name", drugInfo[0].toLowerCase(), "aliases", drugInfo[1], "termcount_alias", new Integer(drugInfo[4]),
+                           "nodeType", "drug");
+                        drugId = inserter.createNode(properties);
+                        drugs.add(drugId, properties);
+                        drugs.flush();
+                       currentNode=drugInfo[0].toLowerCase();
+                       System.out.println("inserted drug: " + currentNode);
+                   }
+
+
+                   Long geneId = genes.get("name", drugInfo[2].toLowerCase()).getSingle();
+                       Double ngd = new Double(drugInfo[7]);
+                       if (ngd >= 0) {
+                           Map<String, Object> properties = MapUtil.map("value", ngd, "combocount", new Integer(drugInfo[6]));
+                           long rel = inserter.createRelationship(geneId,drugId, MyRelationshipTypes.DRUG_NGD_ALIAS, properties);
+                           ngdRel.add(rel, properties);
+                             System.out.println("inserted rel with gene: " + drugInfo[2].toLowerCase());
+                       }
+
+
+
+               }
+
+                ngdRel.flush();
+               drugFile.close();
+
+
+           } catch (IOException ex) {
+               ex.printStackTrace();
+           }
+
+           indexProvider.shutdown();
+           inserter.shutdown();
+       }
+
 
 }
