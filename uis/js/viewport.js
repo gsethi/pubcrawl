@@ -818,9 +818,9 @@ Ext.onReady(function() {
         // initialization options
         var options = {
             // where you have the Cytoscape Web SWF
-            swfPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.7.2/swf/CytoscapeWeb",
+            swfPath: "/cytoscapeweb_v0.7.2/swf/CytoscapeWeb",
             // where you have the Flash installer SWF
-            flashInstallerPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.7.2/swf/playerProductInstall"
+            flashInstallerPath: "/cytoscapeweb_v0.7.2/swf/playerProductInstall"
         };
 
         // init and draw
