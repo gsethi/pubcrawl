@@ -392,10 +392,10 @@ function renderEdgeTable(data){
                 }
                 else{
                      for(var i=0; i < json.edges.length; i++){
-                         if(json.edges[i].target.toLowerCase()==completeData['nodes']){
+                    
                       selectedEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].pf1, pf2: json.edges[i].pf2,
                           uni1:json.edges[i].uni1,uni2:json.edges[i].uni2,type:json.edges[i].type,pf1_count:json.edges[i].pf1_count,pf2_count:json.edges[i].pf2_count});
-                      }
+
                      }
                 }
 
