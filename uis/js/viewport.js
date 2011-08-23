@@ -314,8 +314,7 @@ Ext.onReady(function() {
                                     vis.layout(vislayout);
                                 }
                             }
-                    }]
-                },{
+                    },{
             fieldLabel: 'Incl. Standalone Nodes',
               xtype: 'checkbox',
               checked:true,
@@ -336,6 +335,7 @@ Ext.onReady(function() {
                                     }
                                 }
               }]
+                }]
             }]
     });
 
