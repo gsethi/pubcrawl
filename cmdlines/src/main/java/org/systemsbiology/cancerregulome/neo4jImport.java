@@ -162,7 +162,7 @@ public class neo4jImport {
                            Map<String, Object> properties = MapUtil.map("value", ngd, "combocount", new Integer(drugInfo[6]));
                            long rel = inserter.createRelationship(geneId,drugId, MyRelationshipTypes.DRUG_NGD_ALIAS, properties);
                            ngdRel.add(rel, properties);
-                             System.out.println("inserted rel with gene: " + drugInfo[2].toLowerCase());
+
                        }
 
 

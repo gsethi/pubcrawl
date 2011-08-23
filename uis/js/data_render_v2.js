@@ -49,14 +49,16 @@ function filterVis(){
     vis.filter("edges", function(edge){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
             var hcChecked = Ext.getCmp('hc-cb').getValue();
-                    var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
+            var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+            if(edge.data.edgeList != undefined){
             for(var i=0; i< edge.data.edgeList.length; i++){
               if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
                 edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
                 edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
                   return true;
               }
+            }
             }
             return false;
     });
@@ -255,15 +257,30 @@ function getVisualStyle(){
     vis["customTooltip"] = function (data) {
          var edgeList = data["edgeList"];
         var tooltip = 'Edge: ' + data.source + ' to ' + data.target +
-                '<br>NGD: ' + (data.ngd == null ? "infinite" : data.ngd) +
-                '<br>Domain connections in this link are: <br>';
+                '<br>NGD: ' + (data.ngd == null ? "infinite" : data.ngd);
+
+        if(edgeList != undefined){
+                tooltip = tooltip + '<br>Domain connections in this link are: <br>';
+
+
         for( var i=0; i< edgeList.length; i++){
             var edgeDetails = edgeList[i];
             tooltip=tooltip + edgeDetails.pf1 + ' --- ' + edgeDetails.pf2 + '<br>';
         }
+        }
 
      return tooltip;
  };
+
+       vis["customNodeTooltip"] = function (data) {
+        var tooltip = 'NGD: ' + data.ngd;
+           if(data.aliases != ""){
+                tooltip=tooltip + '<br>Aliases: ' + data.aliases;
+           }
+
+     return tooltip;
+ };
+
     vis["customNodeColor"] = function(data){
         if(data.somatic && data.germline){
             return "#FC4EE8";
@@ -274,8 +291,32 @@ function getVisualStyle(){
         else if(data.germline){
             return "#FC4E4E"
         }
+        else if(data.drug){
+            return "#518985";
+        }
         else
             return "#10B622";
+    };
+
+        vis["customEdgeColor"] = function(data){
+        if(data.connType == "drugNGD"){
+            return "#39485F";
+        }
+        else {
+            return "#F78800";
+        }
+    };
+
+        vis["customNodeShape"] = function(data){
+        if(data.tf){
+            return "diamond";
+        }
+        else if(data.drug){
+            return "triangle";
+        }
+        else {
+            return "ellipse";
+        }
     };
 
 
@@ -285,22 +326,16 @@ function getVisualStyle(){
         },
         nodes: {
             size: 40,
-            shape: {
-                discreteMapper:{attrName: "tf",
-                                entries:[{attrValue: "true", value: "diamond"},
-                                    {attrValue: "false", value: "ellipse"}]}
-            },
+            shape: {customMapper:{functionName: "customNodeShape"}},
             color: { customMapper: { functionName: "customNodeColor"}},
             labelHorizontalAnchor: "center",
             labelFontSize: 14,
-            tooltipText: "NGD: ${ngd}",
+            tooltipText:{customMapper: {functionName: "customNodeTooltip"}},
             tooltipBackgroundColor: "#7385A0"
         },
         edges: {
             width: 2,
-            color: {discreteMapper:{attrName: "directed",
-                            entries:[{attrValue: "true", value: "#F78800"},
-                                {attrValue: "false", value: "#F7BA6F"}]}},
+            color: {customMapper:{functionName: "customEdgeColor"}},
             tooltipText:{ customMapper: { functionName: "customTooltip"}},
             targetArrowShape: {discreteMapper:{attrName: "directed",
                             entries:[{attrValue: "true", value: "ARROW"},
@@ -327,6 +362,7 @@ function getModelDef(){
                 {name: "cc", type: "double"},
                 {name: "searchterm", type: "string"},
                 {name: "tf", type: "boolean"},
+                {name: "drug", type: "boolean"},
                 {name: "somatic", type: "boolean"},
                 {name: "germline", type: "boolean"},
                 {name: "aliases", type: "string"},
@@ -336,6 +372,7 @@ function getModelDef(){
             edges: [
                 { name: "label", type: "string"},
                 {name: "ngd", type:"double"},
+                {name: "connType", type: "string"},
                 {name: "edgeList", type:"object"}
             ]
         },
