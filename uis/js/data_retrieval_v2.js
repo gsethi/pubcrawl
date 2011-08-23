@@ -193,6 +193,7 @@ function populateData(allnodes){
     var domainCounts = {};
     for (var edgeIdx= 0; edgeIdx < model_def['edges'].length; edgeIdx++){
         var edge = model_def['edges'][edgeIdx];
+        if(edge.edgeList != undefined){
         for (var edgeDetailIdx=0; edgeDetailIdx < edge.edgeList.length; edgeDetailIdx++){
             var edgeDetail = edge.edgeList[edgeDetailIdx];
      
@@ -214,6 +215,7 @@ function populateData(allnodes){
                 domainCounts[pf2_count]= {start: pf2_count - .5, end: pf2_count + .5, label: count2+1, count:count2+1, ngd: pf2_count};
             }
 
+        }
         }
     }
 

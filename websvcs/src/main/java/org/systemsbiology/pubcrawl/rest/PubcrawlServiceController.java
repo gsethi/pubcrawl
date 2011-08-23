@@ -36,7 +36,7 @@ public class PubcrawlServiceController implements InitializingBean {
     private GraphDatabaseService graphDB;
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS
     }
 
     public void afterPropertiesSet() throws Exception {
@@ -112,10 +112,12 @@ public class PubcrawlServiceController implements InitializingBean {
 
             // traverseGraph(searchNode);
             ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
+            ArrayList<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
             ArrayList<Node> nodeList = new ArrayList<Node>();
             HashMap<String, Node> geneMap = new HashMap<String, Node>();
             HashMap<String, String> processedMap = new HashMap<String, String>();
             HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
+            HashMap<String, Node> drugMap = new HashMap<String, Node>();
             JSONArray geneArray = new JSONArray();
              JSONArray summaryGeneArray = new JSONArray();
 
@@ -198,7 +200,6 @@ public class PubcrawlServiceController implements InitializingBean {
 
                  summaryGeneArray.put(summaryGeneJson);
             }
-            json.put("nodes", geneArray);
 
             log.info("total nodes: " + geneArray.length());
 
@@ -212,19 +213,24 @@ public class PubcrawlServiceController implements InitializingBean {
                 for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
                     Node endNode = connection.getEndNode();
                     String nodeName = (String) endNode.getProperty("name");
+                    if(connection.isType(MyRelationshipTypes.DRUG_NGD_ALIAS)){
+                        sortedDrugNGDList.add(connection);
+                    }
+                    else{
                     //do this relationship if the end node is in our list and it hasn't already been processed
-                    if (geneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)) {
+                        if (geneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)) {
                         //keep this relationship
-                        if (relMap.containsKey(nodeName)) {
-                            relList = relMap.get(nodeName);
-                            relList.add(connection);
-                            relMap.put(nodeName, relList);
-                        } else {
-                            relList = new ArrayList<Relationship>();
-                            relList.add(connection);
-                            relMap.put(nodeName, relList);
-                        }
+                            if (relMap.containsKey(nodeName)) {
+                                relList = relMap.get(nodeName);
+                                relList.add(connection);
+                                relMap.put(nodeName, relList);
+                            } else {
+                                relList = new ArrayList<Relationship>();
+                                relList.add(connection);
+                                relMap.put(nodeName, relList);
+                            }
 
+                        }
                     }
                 }
                 processedMap.put(geneName, geneName);
@@ -263,6 +269,7 @@ public class PubcrawlServiceController implements InitializingBean {
                             edgeListArray.put(edgeListItem);
 
                         }
+
                     }
                     if (edgeJson.has("id")) {
                         edgeJson.put("edgeList", edgeListArray);
@@ -279,11 +286,41 @@ public class PubcrawlServiceController implements InitializingBean {
                 relMap.clear();
             }
 
+            //go thru drugMap and put into node array
+             Collections.sort(sortedDrugNGDList, new Comparator() {
+                public int compare(Object a, Object b) {
+                    return ((Double) ((Relationship) a).getProperty("value")).compareTo((Double) ((Relationship) b).getProperty("value"));
+                }
+            });
+
+              for(int i=0; i< sortedDrugNGDList.size() && i < 100; i++){
+                  JSONObject edgeJson = new JSONObject();
+                  Relationship rel = sortedDrugNGDList.get(i);
+                         String startName=((String)rel.getStartNode().getProperty("name")).toUpperCase();
+                                String endName = ((String) rel.getEndNode().getProperty("name")).toUpperCase();
+                             edgeJson.put("directed", true);
+                             edgeJson.put("source",startName);
+                             edgeJson.put("target",endName);
+                            edgeJson.put("ngd", (Double) rel.getProperty("value"));
+                  edgeJson.put("connType","drugNGD");
+                            edgeJson.put("id",startName + endName);
+                  edgeArray.put(edgeJson);
+                  drugMap.put((String)rel.getEndNode().getProperty("name"),rel.getEndNode());
+              }
+            for(Node drug: drugMap.values()){
+                JSONObject drugJson = new JSONObject();
+                drugJson.put("aliases",drug.getProperty("aliases",""));
+                drugJson.put("label",  drug.getProperty("name"));
+                drugJson.put("termcount", drug.getProperty("termcount_alias",0));
+                drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
+                 drugJson.put("drug", true);
+                geneArray.put(drugJson);
+            }
 
             log.info("done getting graph edges");
              //now get all domine edges between all nodes
 
-
+            json.put("nodes", geneArray);
             json.put("edges", edgeArray);
 
              json.put("allnodes",summaryGeneArray);
