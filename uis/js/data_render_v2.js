@@ -42,8 +42,12 @@ function filterVis(){
             var ngdend = parseFloat(Ext.getCmp('f1_ngd_end').getValue());
             var ccstart = parseFloat(Ext.getCmp('f1_cc_start').getValue());
             var ccend = parseFloat(Ext.getCmp('f1_cc_end').getValue());
+        if(!node.data.drug){
         return ((node.data.ngd >= ngdstart && node.data.ngd <= ngdend) &&
                 (node.data.cc >= ccstart && node.data.cc <= ccend));
+        }
+        else
+            return true;
     });
 
     vis.filter("edges", function(edge){
@@ -59,6 +63,9 @@ function filterVis(){
                   return true;
               }
             }
+            }
+            else{
+                return true;
             }
             return false;
     });
