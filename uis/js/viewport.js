@@ -323,12 +323,12 @@ Ext.onReady(function() {
                             listeners:{
                                     check: function(cb,checked){
                                         if(cb.checked){
-                                            //TODO: add in nodes to model_def['nodes']
+
                                             filterStandaloneNodes(false);
                                              renderModel();
                                         }
                                         else{
-                                            //TODO: take out nodes in model_def that are standalone and put into temp
+
                                             filterStandaloneNodes(true);
                                             renderModel();
                                         }
