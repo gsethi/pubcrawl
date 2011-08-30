@@ -247,6 +247,17 @@ Ext.onReady(function() {
                             autoHeight: true,
                             title: 'Domain',
                             items:[{
+            fieldLabel: 'Incl. Domain Only Edges',
+              xtype: 'checkbox',
+              checked:true,
+              name: 'domainOnlyCheckbox',
+              id: 'domainOnly-cb',
+                            listeners:{
+                                    check: function(cb,checked){
+                                            filterVis();
+                                    }
+                                }
+              },{
                                 xtype: 'checkboxgroup',
                                 fieldLabel: 'Type:',
                                 columns: 2,
