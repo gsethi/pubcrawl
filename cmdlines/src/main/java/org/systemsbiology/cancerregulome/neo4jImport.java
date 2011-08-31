@@ -20,7 +20,7 @@ public class neo4jImport {
 
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE
     }
 
     public static void main(String[] args) throws Exception {
@@ -133,7 +133,7 @@ public class neo4jImport {
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
            BatchInserterIndex drugs = indexProvider.nodeIndex("drugIdx", MapUtil.stringMap("type", "exact"));
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
-         BatchInserterIndex ngdRel = indexProvider.nodeIndex("drugNGDRelIdx", MapUtil.stringMap("type", "exact"));
+         BatchInserterIndex ngdRel = indexProvider.relationshipIndex("drugNGDRelIdx", MapUtil.stringMap("type", "exact"));
            drugs.setCacheCapacity("name", 40000);
 
            try {
@@ -171,6 +171,60 @@ public class neo4jImport {
 
                 ngdRel.flush();
                drugFile.close();
+
+
+           } catch (IOException ex) {
+               ex.printStackTrace();
+           }
+
+           indexProvider.shutdown();
+           inserter.shutdown();
+       }
+
+        private static void insertRFACE() {
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
+            BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
+            BatchInserterIndex features = indexProvider.nodeIndex("featureIdx",MapUtil.stringMap("type","exact"));
+         BatchInserterIndex relidx = indexProvider.relationshipIndex("RFACERelIdx", MapUtil.stringMap("type", "exact"));
+
+           try {
+               BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
+                         String vertexLine = null;
+                         System.out.println("Now loading features");
+                         while ((vertexLine = vertexFile.readLine()) != null) {
+                             String[] vertexInfo = vertexLine.split("\t");
+                             if (vertexInfo[2].toLowerCase().equals("clin")) {
+                              Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
+                                 long node = inserter.createNode(properties);
+                                 features.add(node, properties);
+
+                             }
+                         }
+
+                         features.flush();
+                         System.out.println("loaded clinical features");
+                         //now load up the feature relationships
+                         BufferedReader featureFile = new BufferedReader(new FileReader("featureAssociations.txt"));
+                         String assocLine = null;
+                         System.out.println("Now loading feature associations");
+
+                         while ((assocLine = featureFile.readLine()) != null) {
+                             String[] assocInfo = assocLine.split("\t");
+
+                             Long feature1 = features.get("featureid", assocInfo[0]).getSingle();
+                             Long feature2 = features.get("featureid", assocInfo[1]).getSingle();
+                             if (!feature1.equals(feature2)) {
+                             Map<String, Object> properties = MapUtil.map("pvalue",new Double(assocInfo[2]),"importance",new Double(assocInfo[3]),"correlation",new Double(assocInfo[4]));
+                                 long rel = inserter.createRelationship(feature1, feature2, MyRelationshipTypes.RFACE, properties);
+                                 relidx.add(rel, properties);
+                             long rel2=inserter.createRelationship(feature2,feature1,MyRelationshipTypes.RFACE,properties);
+                              relidx.add(rel2,properties);
+                             }
+                         }
+
+                         relidx.flush();
+
 
 
            } catch (IOException ex) {
