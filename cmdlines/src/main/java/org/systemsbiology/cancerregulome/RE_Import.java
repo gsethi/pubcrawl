@@ -46,7 +46,7 @@ public class RE_Import {
                         mutationType = vertexInfo[3].substring(index + 1, vertexInfo[3].length());
                         gene = vertexInfo[3].substring(0, index);
                     }
-                    System.out.println("mutation type: " + mutationType + " gene: " + gene);
+
                  Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3],"mutationType",mutationType,"gene",gene);
                     if (vertexInfo.length > 4) {
                         properties.put("chr", vertexInfo[4]);
@@ -97,8 +97,6 @@ public class RE_Import {
                 Map<String, Object> properties = MapUtil.map("pvalue",new Double(assocInfo[2]),"importance",new Double(assocInfo[3]),"correlation",new Double(assocInfo[4]));
                     long rel = inserter.createRelationship(feature1, feature2, MyRelationshipTypes.RFACE, properties);
                     featureRelationships.add(rel, properties);
-                long rel2=inserter.createRelationship(feature2,feature1,MyRelationshipTypes.RFACE,properties);
-                 featureRelationships.add(rel2,properties);
                 }
             }
 
