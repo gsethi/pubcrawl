@@ -60,7 +60,7 @@ public class RE_Import {
                 } else {
                  Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
                  if(vertexInfo[2].toLowerCase().equals("gexp")){
-                     properties.put("gene",vertexInfo[2]);
+                     properties.put("gene",vertexInfo[3]);
 
                  }
 
@@ -101,6 +101,7 @@ public class RE_Import {
             }
 
             featureRelationships.flush();
+            System.out.println("completed");
 
         } catch (Exception ex) {
             ex.printStackTrace();
