@@ -11,6 +11,8 @@ import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -20,17 +22,22 @@ public class neo4jImport {
 
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624
     }
 
     public static void main(String[] args) throws Exception {
 
-            insertGenes();
+           // insertGenes();
+            System.out.println("inserting RFACE");
+            insertRFACE();
+            System.out.println("done inserting RFACE");
             insertDrugs();
+        return;
+
     }
 
     private static void insertGenes() {
-        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx", MapUtil.stringMap("type", "exact"));
         genes.setCacheCapacity("name", 40000);
@@ -51,7 +58,7 @@ public class neo4jImport {
             //now load up the ngd relationships
             BufferedReader ngdFile = new BufferedReader(new FileReader("ngd_noAlias.txt"));
             String ngdLine;
-            BatchInserterIndex ngdRel = indexProvider.nodeIndex("ngdRelIdx", MapUtil.stringMap("type", "exact"));
+            BatchInserterIndex ngdRel = indexProvider.relationshipIndex("ngdRelIdx", MapUtil.stringMap("type", "exact"));
             System.out.println("Now loading ngd edges");
             while ((ngdLine = ngdFile.readLine()) != null) {
                 String[] ngdInfo = ngdLine.split("\t");
@@ -73,7 +80,7 @@ public class neo4jImport {
             //now load up the ngd alias relationships
             BufferedReader ngdFile_alias = new BufferedReader(new FileReader("ngd_alias.txt"));
             ngdLine = null;
-            BatchInserterIndex ngdAliasRel = indexProvider.nodeIndex("ngdAliasRelIdx", MapUtil.stringMap("type", "exact"));
+            BatchInserterIndex ngdAliasRel = indexProvider.relationshipIndex("ngdAliasRelIdx", MapUtil.stringMap("type", "exact"));
             System.out.println("Now loading ngd alias edges");
             while ((ngdLine = ngdFile_alias.readLine()) != null) {
                 String[] ngdInfo = ngdLine.split("\t");
@@ -96,7 +103,7 @@ public class neo4jImport {
             BufferedReader domineFile = new BufferedReader(new FileReader("domineEdgeInfo.txt"));
             String domineLine = null;
             System.out.println("Now loading domine edges");
-            BatchInserterIndex domineRel = indexProvider.nodeIndex("domineRelIdx", MapUtil.stringMap("type", "exact"));
+            BatchInserterIndex domineRel = indexProvider.relationshipIndex("domineRelIdx", MapUtil.stringMap("type", "exact"));
             while ((domineLine = domineFile.readLine()) != null) {
                 String[] domineInfo = domineLine.split("\t");
 
@@ -122,14 +129,15 @@ public class neo4jImport {
 
         } catch (IOException ex) {
             ex.printStackTrace();
-        }
+        }finally{
 
         indexProvider.shutdown();
         inserter.shutdown();
+        }
     }
 
     private static void insertDrugs() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
            BatchInserterIndex drugs = indexProvider.nodeIndex("drugIdx", MapUtil.stringMap("type", "exact"));
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
@@ -175,53 +183,151 @@ public class neo4jImport {
 
            } catch (IOException ex) {
                ex.printStackTrace();
-           }
+           }finally{
 
            indexProvider.shutdown();
            inserter.shutdown();
+           }
        }
 
         private static void insertRFACE() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
             BatchInserterIndex features = indexProvider.nodeIndex("featureIdx",MapUtil.stringMap("type","exact"));
          BatchInserterIndex relidx = indexProvider.relationshipIndex("RFACERelIdx", MapUtil.stringMap("type", "exact"));
 
            try {
-               BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
-                         String vertexLine = null;
-                         System.out.println("Now loading features");
-                         while ((vertexLine = vertexFile.readLine()) != null) {
-                             String[] vertexInfo = vertexLine.split("\t");
-                             if (vertexInfo[2].toLowerCase().equals("clin")) {
-                              Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
-                                 long node = inserter.createNode(properties);
-                                 features.add(node, properties);
+        //       BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
+        //                 String vertexLine = null;
+        //                 System.out.println("Now loading features");
+        //                 while ((vertexLine = vertexFile.readLine()) != null) {
+        //                     String[] vertexInfo = vertexLine.split("\t");
+        //                     if (vertexInfo[2].toLowerCase().equals("clin")) {
+        //                      Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
+        //                         long node = inserter.createNode(properties);
+        //                         features.add(node, properties);
 
-                             }
-                         }
+        //                     }
+        //                 }
 
-                         features.flush();
-                         System.out.println("loaded clinical features");
+       //                  features.flush();
+       //                  System.out.println("loaded clinical features");
                          //now load up the feature relationships
                          BufferedReader featureFile = new BufferedReader(new FileReader("featureAssociations.txt"));
                          String assocLine = null;
-                         System.out.println("Now loading feature associations");
+                         System.out.println("Now loading RFACE associations");
+
+               HashMap<String,ArrayList> rface_assoc = new HashMap<String, ArrayList>();
 
                          while ((assocLine = featureFile.readLine()) != null) {
                              String[] assocInfo = assocLine.split("\t");
+                             String[] feature1=assocInfo[0].split(":");
+                             String[] feature2=assocInfo[1].split(":");
+                             String gene1="";
+                             String gene2="";
+                             Long sourceId;
+                             Long targetId;
 
-                             Long feature1 = features.get("featureid", assocInfo[0]).getSingle();
-                             Long feature2 = features.get("featureid", assocInfo[1]).getSingle();
-                             if (!feature1.equals(feature2)) {
-                             Map<String, Object> properties = MapUtil.map("pvalue",new Double(assocInfo[2]),"importance",new Double(assocInfo[3]),"correlation",new Double(assocInfo[4]));
-                                 long rel = inserter.createRelationship(feature1, feature2, MyRelationshipTypes.RFACE, properties);
-                                 relidx.add(rel, properties);
-                             long rel2=inserter.createRelationship(feature2,feature1,MyRelationshipTypes.RFACE,properties);
-                              relidx.add(rel2,properties);
+                             if((feature1[1].toLowerCase().equals("gexp") || feature1[1].toLowerCase().equals("gnab") || feature1[1].toLowerCase().equals("clin")) &&
+                                 (feature2[1].toLowerCase().equals("gexp") || feature2[1].toLowerCase().equals("gnab") || feature2[1].toLowerCase().equals("clin"))){
+
+                                 if(feature1[1].toLowerCase().equals("gexp")){
+                                    gene1=feature1[2].toLowerCase();
+                                 }
+                                 else if(feature1[1].toLowerCase().equals("gnab")){
+                                      int index = feature1[2].indexOf("_");
+
+                                     if (index == -1) {
+                                         gene1 = feature1[2];
+                                     } else {
+                                         gene1 = feature1[2].substring(0, index);
+                                     }
+                                 }
+
+                                 if(feature2[1].toLowerCase().equals("gexp")){
+                                    gene2=feature2[2].toLowerCase();
+                                 }
+                                 else if(feature2[1].toLowerCase().equals("gnab")){
+                                      int index = feature2[2].indexOf("_");
+
+                                     if (index == -1) {
+                                         gene2 = feature2[2];
+                                     } else {
+                                         gene2 = feature2[2].substring(0, index);
+                                     }
+                                 }
+
+                                 if(gene1.equals("")){
+                                     //this means it is a clinical feature
+                                     sourceId = features.get("featureid", assocInfo[0].trim()).getSingle();
+                                     if(sourceId == null){
+                                         System.out.println("couldn't find: " + assocInfo[0].trim());
+                                     }
+                                 }
+                                 else{
+                                     sourceId = genes.get("name",gene1).getSingle();
+                                      if(sourceId == null){
+                                         System.out.println("couldn't find: " + gene1);
+                                     }
+                                 }
+
+                                 if(gene2.equals("")){
+                                     targetId = features.get("featureid", assocInfo[1].trim()).getSingle();
+                                     if(targetId == null){
+                                         System.out.println("couldn't find: " + assocInfo[1].trim());
+                                     }
+                                 }
+                                 else{
+                                     targetId = genes.get("name",gene2).getSingle();
+                                     if(targetId == null){
+                                         System.out.println("couldn't find: " + gene2);
+                                     }
+                                 }
+
+                                 //now put in hashmap because we are going to compile all of them into one link to reduce edges in graph.  Currently won't query on
+                                 //pvalue, importance, etc.
+                                 if(sourceId != null && targetId != null){
+                                 String key = sourceId+"_"+targetId;
+                                 if(rface_assoc.containsKey(key)){
+                                    ArrayList assocList = rface_assoc.get(key);
+                                     String properties = "feature1id\t" + assocInfo[0] + "\tfeature2id\t" + assocInfo[1] + "\tpvalue\t" + assocInfo[2] + "\timportance\t" + assocInfo[3] + "\tcorrelation\t" + assocInfo[4];
+                                     assocList.add(properties);
+                                     rface_assoc.put(key,assocList);
+                                 }
+                                 else{
+                                     ArrayList assocList = new ArrayList();
+                                      String properties = "feature1id\t" + assocInfo[0] + "\tfeature2id\t" + assocInfo[1] + "\tpvalue\t" + assocInfo[2] + "\timportance\t" + assocInfo[3] + "\tcorrelation\t" + assocInfo[4];
+                                     assocList.add(properties);
+                                     rface_assoc.put(key,assocList);
+                                 }
+                                 }
+
+
+
                              }
                          }
+
+               //now go thru Hashmap keys and add in relationships
+               for(String key : rface_assoc.keySet()){
+                    int index = key.indexOf("_");
+                   System.out.println("key: " + key);
+
+                   Long sourceId = Long.parseLong(key.substring(0, index));
+                   Long targetId = Long.parseLong(key.substring(index + 1, key.length()));
+
+                   System.out.println("sourceId: " + sourceId + " targetId: " + targetId);
+                   ArrayList rfaceList = rface_assoc.get(key);
+                   String[] rfaceArray = new String[rfaceList.size()];
+                   for(int listIndex=0; listIndex < rfaceList.size(); listIndex++){
+                       rfaceArray[listIndex]=(String)rfaceList.get(listIndex);
+
+                   }
+                    Map<String,Object> properties = MapUtil.map("featureDetails",rfaceArray);
+                    long rel = inserter.createRelationship(sourceId, targetId, MyRelationshipTypes.RFACE_COADREAD_0624, properties);
+                    relidx.add(rel, properties);
+
+               }
 
                          relidx.flush();
 
@@ -230,9 +336,10 @@ public class neo4jImport {
            } catch (IOException ex) {
                ex.printStackTrace();
            }
-
+           finally{
            indexProvider.shutdown();
            inserter.shutdown();
+           }
        }
 
 

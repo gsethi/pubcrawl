@@ -106,9 +106,12 @@ public class RE_Import {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
-        indexProvider.shutdown();
+        finally{
+            indexProvider.shutdown();
         inserter.shutdown();
+        }
+
+
     }
 
 }
