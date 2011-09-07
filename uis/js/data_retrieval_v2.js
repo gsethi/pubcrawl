@@ -145,10 +145,10 @@ function populateData(allnodes){
      var ngdSummary={};
     for (var index=0; index < allnodes.length; index++){
         var node = allnodes[index];
-        nodeArray.push({term1: node.name.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
+        nodeArray.push({term1: node.label.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
                     ngd:node.ngd});
 
-        if(node.name.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
+        if(node.label.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
             if(node.graph == 1){
             if(comboCounts[node.cc] == undefined){
                 comboCounts[node.cc] = {start:node.cc - .5, end: node.cc + .5, label: 1, ngd: node.cc, count: 1};
