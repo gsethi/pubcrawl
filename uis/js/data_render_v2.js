@@ -53,14 +53,19 @@ function filterVis(){
     vis.filter("edges", function(edge){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
             var hcChecked = Ext.getCmp('hc-cb').getValue();
+            var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
-            if(edge.data.edgeList != undefined){
+            if(edge.data.edgeList != undefined && edge.data.edgeList.length > 0){
             for(var i=0; i< edge.data.edgeList.length; i++){
               if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
                 edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
                 edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
-                  return true;
+                  if(!domainOnlyChecked && edge.data.ngd == null){
+                      return false;
+                  }
+                  else
+                    return true;
               }
             }
             }
@@ -241,6 +246,51 @@ function getVisLayout(layout){
     return layoutConfig;
 }
 
+function collapseSuperNodes(){
+  var nodes = vis.nodes();
+  var nodeHash = {};
+  var superNodes = {};
+  for(var index=0; index < nodes.length; index++){
+      if(nodes[index].visible){
+        var neighborInfo = vis.firstNeighbors([nodes[index]],true);
+        var edgeString="";
+        for(var i=0; i<neighborInfo.edges.length; i++){
+            edgeString=edgeString+neighborInfo.edges[i].data.source;
+        }
+        if(edgeString != ""){
+        if(nodeHash[edgeString] == undefined){
+          nodeHash[edgeString]=nodes[index];
+        }
+        else{
+          if(superNodes[edgeString] == undefined){
+            superNodes[edgeString]=[nodeHash[edgeString],nodes[index]];
+          }
+          else{
+            superNodes[edgeString].push(nodes[index]);
+          }
+        }
+      }
+      }
+  }
+
+  for(var sNodes in superNodes){
+    var neighbor = vis.firstNeighbors([superNodes[sNodes][0]],true);
+    var edges = neighbor.edges;
+    for(var j=0; j<superNodes[sNodes].length; j++){
+      vis.removeNode(superNodes[sNodes][j]);
+    }
+    var node = superNodes[sNodes][0];
+    node.data.id="super_"+node.data.id;
+    vis.addNode(node.x,node.y,node.data);
+    for(var e=0; e < edges.length; e++){
+      edges[e].data.target=node.data.id;
+      vis.addEdge(edges[e].data);
+    }
+  }
+
+
+}
+
 function visReady(){
     vis.addListener("layout", function(evt){
                filterVis();
@@ -257,6 +307,8 @@ function visReady(){
        var term2= evt.target.data.searchterm;
        retrieveMedlineDocuments(term1,term2);
     });
+
+ //   collapseSuperNodes();
 }
 
 function getVisualStyle(){
@@ -274,6 +326,9 @@ function getVisualStyle(){
             var edgeDetails = edgeList[i];
             tooltip=tooltip + edgeDetails.pf1 + ' --- ' + edgeDetails.pf2 + '<br>';
         }
+        }
+        if(data["connType"] == "rface"){
+            tooltip=tooltip + '<br>RFACE Connection: <br>';// + data["details"];
         }
 
      return tooltip;
@@ -309,9 +364,16 @@ function getVisualStyle(){
         if(data.connType == "drugNGD"){
             return "#39485F";
         }
-        else {
-            return "#F78800";
+        else if(data.connType == "rface"){
+            return "#6BAB46";
         }
+        else if(data.connType == "combo"){
+              return "#CC00CC";
+        }
+        else {
+                return "#F9AF46";
+            }
+
     };
 
         vis["customNodeShape"] = function(data){
@@ -325,6 +387,22 @@ function getVisualStyle(){
             return "ellipse";
         }
     };
+
+    vis["customEdgeStyle"] = function(data){
+        if(data.ngd == null){
+            return "LONG_DASH";
+        }
+        else
+            return "SOLID";
+    };
+
+    vis["customEdgeWidth"] = function(data){
+        if(data.connType == "combo"){
+            return 6;
+        }
+        else
+            return 2;
+    }
 
 
     return{
@@ -341,25 +419,23 @@ function getVisualStyle(){
             tooltipBackgroundColor: "#7385A0"
         },
         edges: {
-            width: 2,
+            width: {customMapper:{functionName: "customEdgeWidth"}},
             color: {customMapper:{functionName: "customEdgeColor"}},
             tooltipText:{ customMapper: { functionName: "customTooltip"}},
             targetArrowShape: {discreteMapper:{attrName: "directed",
                             entries:[{attrValue: "true", value: "ARROW"},
                                 {attrValue: "false", value: "NONE"}]}},
-            sourceArrowShape: {discreteMapper:{attrName: "directed",
-                            entries:[{attrValue: "true", value: "ARROW"},
-                                {attrValue: "false", value: "NONE"}]}},
-            style: {discreteMapper:{attrName: "directed",
-                            entries:[{attrValue: "true", value: "SOLID"},
-                                {attrValue: "false", value: "LONG_DASH"}]}},
+            sourceArrowShape: "NONE",
+            style: {customMapper: { functionName: "customEdgeStyle"}},
             tooltipBackgroundColor: "#7385A0"
+
 
         }
     };
 }
 
 function getModelDef(){
+    //collapse super nodes and super edges if there are any
 
     return{
         dataSchema:{
@@ -380,6 +456,7 @@ function getModelDef(){
                 { name: "label", type: "string"},
                 {name: "ngd", type:"double"},
                 {name: "connType", type: "string"},
+              //  {name: "details", type:"object"},
                 {name: "edgeList", type:"object"}
             ]
         },
