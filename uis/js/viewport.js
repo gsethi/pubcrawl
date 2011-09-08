@@ -643,6 +643,7 @@ Ext.onReady(function() {
               },deNovoSearchTablePanel]
       });
 
+
     var networkvizPanel = new Ext.Panel({
         id:'networkviz-panel',
         name:'networkviz-panel',
@@ -669,6 +670,27 @@ Ext.onReady(function() {
                 width:1050,
                 title: 'Visualization',
                 contentEl: 'cytoscapeweb',
+                tbar:[{
+                    id:'visDataMenu',
+                    text:'Data',
+                    labelStyle: 'font-weight:bold;',
+                    menu: [{
+                        text: 'Export Options',
+                        menu:[
+                '<b class="menu-title">Choose a Data Format</b>',
+                    {
+                        text: 'png',
+                        value: 'png',
+                        group: 'theme',
+                        handler: exportVisData
+                    },{
+                        text: 'svg',
+                        group: 'theme',
+                        value: 'svg',
+                        handler: exportVisData
+                    }]
+            }]
+        }],
                 listeners: {
                     render: function() {
                         renderNetworkViz();

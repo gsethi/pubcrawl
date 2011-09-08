@@ -277,3 +277,7 @@ function searchHandler(){
             }
         });
 }
+
+function exportVisData(){
+   vis.exportNetwork(this.value, 'pubcrawl_svc/export?type='+this.value);
+}

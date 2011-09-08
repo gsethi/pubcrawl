@@ -16,11 +16,12 @@ import org.springframework.web.servlet.mvc.AbstractController;
 import org.systemsbiology.addama.commons.web.views.JsonItemsView;
 import org.systemsbiology.pubcrawl.pojos.PubcrawlNetworkBean;
 
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import javax.swing.*;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -124,6 +125,51 @@ public class PubcrawlServiceController implements InitializingBean {
 
         json.put("node", bean.getNode());
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
+
+        @RequestMapping(value="/export",method= RequestMethod.POST)
+    protected ModelAndView exportNetwork(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+        log.info("request.getMethod: " + request.getMethod());
+            log.info("request.dataFormat : " + request.getParameter("type"));
+
+        String dataFormat = request.getParameter("type");
+        if(dataFormat.toLowerCase().equals("png")){
+                response.setContentType("image/png");
+                response.setHeader("Content-Disposition", "attachment;filename=graph.png");
+        }
+        else if(dataFormat.toLowerCase().equals("svg")){
+            response.setContentType("image/svg+xml");
+            response.setHeader("Content-Disposition", "attachment;filename=graph.svg");
+        }
+             else if(dataFormat.toLowerCase().equals("pdf")){
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment;filename=graph.pdf");
+        }
+
+        try{
+
+            BufferedInputStream in = new BufferedInputStream(request.getInputStream());
+            BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+            log.info("got streams");
+            byte[] outputByte = new byte[2048];
+            log.info("input stream length: " + request.getContentLength());
+
+            int bytesRead=0;
+            while((bytesRead = in.read(outputByte)) != -1){
+                out.write(outputByte, 0, bytesRead);
+            }
+            in.close();
+            out.flush();
+            out.close();
+
+        }catch(Exception e){
+            log.info("exception occurred: " + e.getMessage());
+            return null;
+        }
+
+        return null;
     }
 
     protected JSONObject getGraph(PubcrawlNetworkBean bean) {
