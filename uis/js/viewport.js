@@ -2,7 +2,7 @@ Ext.onReady(loadDeNovoSearches);
 
 Ext.onReady(function() {
 
-    var ngdValueFields = new Ext.Panel({
+    var nodeNgdValueFields = new Ext.Panel({
             // column layout with 2 columns
              layout:'column',
              border: false
@@ -16,8 +16,8 @@ Ext.onReady(function() {
             ,items:[{
                  defaults:{anchor:'100%'}
                 ,items:[{xtype: 'numberfield',
-                                    id: 'f1_ngd_start',
-                                    name: 'f1_ngd_start',
+                                    id: 'node_ngd_start',
+                                    name: 'node_ngd_start',
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
@@ -32,8 +32,8 @@ Ext.onReady(function() {
             },{
                  defaults:{anchor:'100%'}
                 ,items:[{xtype: 'numberfield',
-                                    id: 'f1_ngd_end',
-                                    name: 'f1_ngd_end',
+                                    id: 'node_ngd_end',
+                                    name: 'node_ngd_end',
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
@@ -48,7 +48,54 @@ Ext.onReady(function() {
             }]
         });
 
-    var comboCountValueFields = new Ext.Panel({
+
+      var edgeNgdValueFields = new Ext.Panel({
+            // column layout with 2 columns
+             layout:'column',
+             border: false
+            ,defaults:{
+                 columnWidth:0.5
+                ,layout:'form'
+                ,border:false
+                ,xtype:'panel'
+                ,bodyStyle:'padding:0 50px 0 50px'
+            }
+            ,items:[{
+                 defaults:{anchor:'100%'}
+                ,items:[{xtype: 'numberfield',
+                                    id: 'edge_ngd_start',
+                                    name: 'edge_ngd_start',
+                                    allowNegative: false,
+                                    decimalPrecision: 0,
+                                    invalidText: 'This value is not valid.',
+                                    maxValue: 99999999,
+                                    minValue: 0,
+                                    tabIndex: 2,
+                                    validateOnBlur: true,
+                                    allowDecimals: false,
+                                    value:'',
+                                    hideLabel: true
+                                }]
+            },{
+                 defaults:{anchor:'100%'}
+                ,items:[{xtype: 'numberfield',
+                                    id: 'edge_ngd_end',
+                                    name: 'edge_ngd_end',
+                                    allowNegative: false,
+                                    decimalPrecision: 0,
+                                    invalidText: 'This value is not valid.',
+                                    maxValue: 99999999,
+                                    minValue: 0,
+                                    tabIndex: 2,
+                                    validateOnBlur: true,
+                                    allowDecimals: false,
+                                    value:'',
+                                    hideLabel: true
+                                }]
+            }]
+        });
+
+    var nodeCCValueFields = new Ext.Panel({
                 // column layout with 2 columns
                  layout:'column',
                 border:false,
@@ -62,8 +109,8 @@ Ext.onReady(function() {
                 ,items:[{
                      defaults:{anchor:'100%'}
                     ,items:[{xtype: 'numberfield',
-                                        id: 'f1_cc_start',
-                                        name: 'f1_cc_start',
+                                        id: 'node_cc_start',
+                                        name: 'node_cc_start',
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
@@ -78,8 +125,8 @@ Ext.onReady(function() {
                 },{
                      defaults:{anchor:'100%'}
                     ,items:[{xtype: 'numberfield',
-                                        id: 'f1_cc_end',
-                                        name: 'f1_cc_end',
+                                        id: 'node_cc_end',
+                                        name: 'node_cc_end',
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
@@ -93,6 +140,53 @@ Ext.onReady(function() {
                                     }]
                 }]
             });
+
+
+    var edgeCCValueFields = new Ext.Panel({
+                   layout:'column',
+                  border:false,
+                  defaults:{
+                       columnWidth:0.5
+                      ,layout:'form'
+                      ,border:false
+                      ,xtype:'panel'
+                      ,bodyStyle:'padding:0 50px 0 50px'
+                  }
+                  ,items:[{
+                       defaults:{anchor:'100%'}
+                      ,items:[{xtype: 'numberfield',
+                                          id: 'edge_cc_start',
+                                          name: 'edge_cc_start',
+                                          allowNegative: false,
+                                          decimalPrecision: 0,
+                                          invalidText: 'This value is not valid.',
+                                          maxValue: 99999999,
+                                          minValue: 0,
+                                          tabIndex: 2,
+                                          validateOnBlur: true,
+                                          allowDecimals: false,
+                                          value:'',
+                                          hideLabel:true
+                                      }]
+                  },{
+                       defaults:{anchor:'100%'}
+                      ,items:[{xtype: 'numberfield',
+                                          id: 'edge_cc_end',
+                                          name: 'edge_cc_end',
+                                          allowNegative: false,
+                                          decimalPrecision: 0,
+                                          invalidText: 'This value is not valid.',
+                                          maxValue: 99999999,
+                                          minValue: 0,
+                                          tabIndex: 2,
+                                          validateOnBlur: true,
+                                          allowDecimals: false,
+                                          value:'',
+                                          hideLabel:true
+                                      }]
+                  }]
+              });
+
 
     var DomainCountValueFields = new Ext.Panel({
             // column layout with 2 columns
@@ -140,22 +234,20 @@ Ext.onReady(function() {
             }]
         });
 
-    var filterPanel = new Ext.Panel({
-        id:'filterPanel',
-        name:'filterPanel',
-        title: 'Filtering',
+    var nodeFilterPanel = new Ext.Panel({
+        id:'nodeFilterPanel',
+        name:'nodeFilterPanel',
+        title: 'Node Filter',
         autoScroll: true,
         height:600,
-        collapsible: true,
-        collapsed: true,
         autoWidth: true,
-        items: [{ xtype:'panel', id:'filters',
+        items: [{ xtype:'panel', id:'nodefilters',
                 autoScroll: true,
                 autoHeight: true,
                 border: false,
                 items:[{ xtype: 'panel',
-                        id: 'filter_panel',
-                        name: 'filter_panel',
+                        id: 'node_filter_panel',
+                        name: 'node_filter_panel',
                         bodyStyle: 'padding:5px 5px 5px 5px',
                         defaults:{anchor:'100%'},
                         border:false,
@@ -171,12 +263,12 @@ Ext.onReady(function() {
                                 defaultType: 'textfield',
                                 autoHeight:true,
                                 title: 'NGD',
-                                items:[ngdValueFields,
-                                    {xtype: 'panel', id: 'linear-ngd',
-                                       // width:380,
-                                        x:20,
-                                        y:20
-                                    }
+                                items:[nodeNgdValueFields,
+                                    {xtype: 'panel', id: 'node-ngd',x:20, y:20,
+                                    listeners: {
+                                    afterlayout: function(thisPanel,layout){
+                                        renderNGDHistogramData();
+                                }}}
                                 ]
                             }, { xtype: 'fieldset',
                                 defaults: {anchor: '100%'},
@@ -184,30 +276,48 @@ Ext.onReady(function() {
                                 defaultType: 'textfield',
                                 autoHeight: true,
                                 title: 'Combo Count',
-                                items:[ comboCountValueFields,
-                                    { xtype: 'panel', id: 'linear-cc',
-                                    //    width:380,
-                                        x:20,
-                                        y:20
-                                    }]
-                            },{
+                                items:[ nodeCCValueFields,
+                                    { xtype: 'panel', id: 'node-cc',x:20, y:20,
+                                    listeners: {
+                                    afterlayout: function(thisPanel,layout){
+                                        renderCCLinearBrowserData();
+                                }}}
+                                ]
+                            }]
+                }]
+        }]
+    });
+
+        var edgeFilterPanel = new Ext.Panel({
+        id:'edgeFilterPanel',
+        name:'edgeFilterPanel',
+        title: 'Edge Filter',
+        autoScroll: true,
+        height:600,
+        autoWidth: true,
+        items: [{ xtype:'panel', id:'edgefilters',
+                autoScroll: true,
+                autoHeight: true,
+                border: false,
+                items:[{ xtype: 'panel',
+                        id: 'edge_filter_panel',
+                        name: 'edge_filter_panel',
+                        bodyStyle: 'padding:5px 5px 5px 5px',
+                        defaults:{anchor:'100%'},
+                        border:false,
+                        labelAlign: 'right',
+                        labelWidth: 100,
+                        labelSeparator:'',
+                        defaultType:'textfield',
+                        monitorValid: true,
+                        bodypadding: 10,
+                        items:[{
                             xtype: 'fieldset',
                             defaults: {anchor: '100%'},
                             labelSeparator: '',
                             autoHeight: true,
                             title: 'Domain',
                             items:[{
-            fieldLabel: 'Incl. Domain Only Edges',
-              xtype: 'checkbox',
-              checked:true,
-              name: 'domainOnlyCheckbox',
-              id: 'domainOnly-cb',
-                            listeners:{
-                                    check: function(cb,checked){
-                                            filterVis();
-                                    }
-                                }
-              },{
                                 xtype: 'checkboxgroup',
                                 fieldLabel: 'Type:',
                                 columns: 2,
@@ -217,30 +327,51 @@ Ext.onReady(function() {
                                 listeners:{
                                     change: function(combo,items){
                                         filterVis();
-                                    }
-                                }
-                            }, DomainCountValueFields,{ xtype: 'panel', id: 'linear-dc',
-                                  //      width:380,
-                                        x:20,
-                                        y:20
-                                    }]
+                                }}
+                            },DomainCountValueFields,
+                                { xtype: 'panel', id: 'linear-dc',x:20,y:20
+                            }]
+                        },{
+                            xtype: 'fieldset',
+                            defaults:{anchor:'100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight:true,
+                            title: 'NGD',
+                            items:[edgeNgdValueFields,
+                                {xtype: 'panel', id: 'edge-ngd', x:20, y:20,
+                                listeners: {
+                                    afterlayout: function(thisPanel,layout){
+                                        renderEdgeNGDHistogramData();
+                                }}}
+                            ]
+                         },{
+                            xtype: 'fieldset',
+                            defaults: {anchor: '100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight: true,
+                            title: 'Combo Count',
+                            items:[ edgeCCValueFields,
+                                { xtype: 'panel', id: 'edge-cc', x:20, y:20}
+                            ]
                         }]
-                    }]
-            }]
+                }]
+        }]
     });
 
      var configPanel = new Ext.Panel({
         id:'configPanel',
         name:'configPanel',
         autoScroll: true,
-        height:150,
+        height:600,
+        autoWidth: true,
         title: 'Configuration',
-        collapsible: true,
         border: false,
-        collapsed: true,
         items: [{ xtype:'panel', id:'config',
                 autoScroll: true,
-                height: 100,
+                autoHeight: true,
+                border: false,
                 items:[{xtype:'fieldset',
                         defaults:{anchor:'100%'},
                         labelSeparator : '',
@@ -293,6 +424,17 @@ Ext.onReady(function() {
                                             filterStandaloneNodes(true);
                                             renderModel();
                                         }
+                                    }
+                                }
+              },{
+            fieldLabel: 'Incl. Domain Only Edges',
+              xtype: 'checkbox',
+              checked:true,
+              name: 'domainOnlyCheckbox',
+              id: 'domainOnly-cb',
+                            listeners:{
+                                    check: function(cb,checked){
+                                            filterVis();
                                     }
                                 }
               }]
@@ -594,6 +736,19 @@ Ext.onReady(function() {
               },deNovoSearchTablePanel]
       });
 
+    var toolTabPanel = new Ext.TabPanel({
+                region: 'east',
+                activeTab: 0,
+                defaults:{autoScroll: true},
+                floatable: true,
+                autoHide:false,
+                split: true,
+                width: 500,
+                height: 900,
+                autoScroll: true,
+                collapsible: true,
+                items:[configPanel, nodeFilterPanel,edgeFilterPanel]
+            });
 
     var networkvizPanel = new Ext.Panel({
         region: 'center',
@@ -609,10 +764,8 @@ Ext.onReady(function() {
         items:[{region: 'north',
                 id: 'north-toolbar',
                 cls: 'x-panel-header-noborder',
-                height: 50,
                 border: false,
                 tbar:[{ id: 'submitMenu',
-                  height:50,
                   text: 'Submit',
                   labelStyle: 'font-weight:bold;',
                   menu:[{
@@ -625,7 +778,6 @@ Ext.onReady(function() {
                     handler: launchDenovoWindow
                     }]},' ',{
                 id:'visDataMenu',
-                height: 50,
                     text:'Export',
                     labelStyle: 'font-weight:bold;',
                     menu: [{
@@ -644,19 +796,15 @@ Ext.onReady(function() {
                         handler: exportVisData}]
                   }]
               },{ id: 'legendMenu',
-                  height:50,
                   text: 'Legend',
                   labelStyle: 'font-weight:bold;',
                   menu:[{
                     text: 'Node Legend',
-                    value: 'node_legend',
+                    value: 'node_legend'
                     },{
                     text: 'Edge Legend',
-                    value: 'edge_legend',
-                    }]},'->',{xtype:'label',text:'Current Terms: '},
-                    {xtype:'textfield',
-                     width: 200},{xtype:'label', text:'Use Alias'},
-                    {xtype:'checkbox'} 
+                    value: 'edge_legend'
+                    }]}
               ]
             },
             {region: 'center',
@@ -681,17 +829,7 @@ Ext.onReady(function() {
                     }
                 }
 
-            },dataNodeTablePanel]},{region: 'east',
-                collapsible: true,
-                floatable: true,
-                autoHide:false,
-                split: true,
-                width: 500,
-                height: 900,
-                title: 'Tools',
-                autoScroll: true,
-                items:[configPanel, filterPanel]
-            }]
+            },dataNodeTablePanel]},toolTabPanel]
     });
 
 

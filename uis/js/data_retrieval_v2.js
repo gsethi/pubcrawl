@@ -21,6 +21,7 @@ var base_query_url = '',
 
 var model_def;
 var ngdPlotData;
+var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
 var saNodes;
@@ -141,9 +142,11 @@ function filterStandaloneNodes(filterOut){
 function populateData(allnodes){
     completeData={nodes:null,edges:null};
     ngdPlotData = {data:null};
+    edgeNGDPlotData = {data:null};
     var nodeArray=[];
     var comboCounts={};
      var ngdSummary={};
+    var edgeNGDSummary={};
     for (var index=0; index < allnodes.length; index++){
         var node = allnodes[index];
         nodeArray.push({term1: node.label.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
@@ -218,12 +221,30 @@ function populateData(allnodes){
 
         }
         }
+
+        if(edge.ngd != undefined){
+            ngdtrunc = Math.round(node.ngd * 100)/100;
+            if (edgeNGDSummary[ngdtrunc] == undefined){
+                edgeNGDSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:1};
+            }
+            else{
+                edgeNGDSummary[ngdtrunc].count = edgeNGDSummary[ngdtrunc].count+1;
+                edgeNGDSummary[ngdtrunc].value = edgeNGDSummary[ngdtrunc].value +1;
+            }
+        }
     }
 
     var histData=[];
     for(var domainItem in domainCounts){
         histData.push(domainCounts[domainItem]);
     }
+
+    var histedgeNGD=[];
+    for(var edgengdItem in edgeNGDSummary){
+        histedgeNGD.push(edgeNGDSummary[edgengdItem]);
+    }
+    edgeNGDPlotData['data'] =  histedgeNGD;
+    renderEdgeNGDHistogramData();
 
     domainCountData={data:null};
     domainCountData['data']=histData;
