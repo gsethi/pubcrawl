@@ -1,4 +1,14 @@
 
+.my-title-header {
+  background: #4B586C url(../images/isb_logo_title.png) left center no-repeat; 
+  background-position: 10px;
+  height: 75px;
+  font-size: 50px;
+  line-height:75px; 
+  font-family: helvetica, serif;
+  font-weight:bold;
+}
+
 /*icons*/
 .data {
     background-image: url(../images/control_equalizer.png) !important

@@ -1,56 +1,6 @@
 Ext.onReady(loadDeNovoSearches);
 
 Ext.onReady(function() {
-    var searchPanel = new Ext.Panel({
-        id:'search',
-        title : 'Search',
-        autoScroll: true,
-        height : 130,
-        autoWidth: true,
-        collapsible: true,
-        items :[
-            { xtype:'form',
-                id :'search_panel',
-                name :'search_panel',
-                defaults:{anchor:'100%'},
-                border : false,
-                labelAlign : 'right',
-                labelWidth: 75,
-                defaultType:'textfield',
-                monitorValid: true,
-                items : [{xtype:'fieldset',
-                        defaults:{anchor:'100%',border: false},
-                        labelSeparator : '',
-                        defaultType:'textfield',
-                        autoHeight:true,
-                        border: false,
-                        items: [ {name: 'f1_term_value',
-                                id: 'f1_term_value',
-                                emptyText: 'Input Term...',
-                                tabIndex: 1,
-                                selectOnFocus:true,
-                                fieldLabel: 'Term'
-                                },{
-                                fieldLabel: 'Use Alias',
-                                xtype: 'checkbox',
-                                name: 'f2_alias_value',
-                                id: 'f2_alias_value'
-                        }],
-                        buttons:[{ text: 'Search',
-                                formBind: true,
-                                id: 'search_button',
-                                name: 'search_button',
-                                listeners: {
-                                    click: function(button, e) {
-                                      var term = Ext.getCmp('f1_term_value').getValue();
-                                      var alias = Ext.getCmp('f2_alias_value').getValue();
-                                      generateNetworkRequest(term,alias,false);
-                                    }
-                                }
-                            }]
-                    }]
-            }]
-    });
 
     var ngdValueFields = new Ext.Panel({
             // column layout with 2 columns
@@ -592,6 +542,7 @@ Ext.onReady(function() {
     var deNovoPanel = new Ext.Panel({
       id:'deNovo-panel',
       name:'deNovo-panel',
+      height: 800,
       layout:{
         type: 'vbox',
         padding: '5',
@@ -645,6 +596,7 @@ Ext.onReady(function() {
 
 
     var networkvizPanel = new Ext.Panel({
+        region: 'center',
         id:'networkviz-panel',
         name:'networkviz-panel',
         layout : 'border',
@@ -654,25 +606,27 @@ Ext.onReady(function() {
             animFloat: false,
             floatable: false
         },
-        items:[{region: 'center',
-            id: 'networkviz-acc',
-            name: 'networkviz-acc',
-            layout: 'accordion',
-            layoutConfig: {
-                titleCollapse: false,
-                animate: true
-               },
-            items:[{ id: 'cytoscape-web',
-                border : false,
-                xtype: 'panel',
-                layout : 'absolute',
-                height: 900,
-                width:1050,
-                title: 'Visualization',
-                contentEl: 'cytoscapeweb',
-                tbar:[{
-                    id:'visDataMenu',
-                    text:'Data',
+        items:[{region: 'north',
+                id: 'north-toolbar',
+                cls: 'x-panel-header-noborder',
+                height: 50,
+                border: false,
+                tbar:[{ id: 'submitMenu',
+                  height:50,
+                  text: 'Submit',
+                  labelStyle: 'font-weight:bold;',
+                  menu:[{
+                    text: 'Submit Query',
+                    value: 'query',
+                    handler: launchQueryWindow
+                    },{
+                    text: 'Submit DeNovo Search',
+                    value: 'job',
+                    handler: launchDenovoWindow
+                    }]},' ',{
+                id:'visDataMenu',
+                height: 50,
+                    text:'Export',
                     labelStyle: 'font-weight:bold;',
                     menu: [{
                         text: 'Export Options',
@@ -687,10 +641,40 @@ Ext.onReady(function() {
                         text: 'svg',
                         group: 'theme',
                         value: 'svg',
-                        handler: exportVisData
-                    }]
-            }]
-        }],
+                        handler: exportVisData}]
+                  }]
+              },{ id: 'legendMenu',
+                  height:50,
+                  text: 'Legend',
+                  labelStyle: 'font-weight:bold;',
+                  menu:[{
+                    text: 'Node Legend',
+                    value: 'node_legend',
+                    },{
+                    text: 'Edge Legend',
+                    value: 'edge_legend',
+                    }]},'->',{xtype:'label',text:'Current Terms: '},
+                    {xtype:'textfield',
+                     width: 200},{xtype:'label', text:'Use Alias'},
+                    {xtype:'checkbox'} 
+              ]
+            },
+            {region: 'center',
+            id: 'networkviz-acc',
+            name: 'networkviz-acc',
+            layout: 'accordion',
+            layoutConfig: {
+                titleCollapse: false,
+                animate: true
+               },
+            items:[{ id: 'cytoscape-web',
+                border : false,
+                xtype: 'panel',
+                layout : 'absolute',
+                height: 900,
+                width:1050,
+                title:'Visualization',
+                contentEl: 'cytoscapeweb',
                 listeners: {
                     render: function() {
                         renderNetworkViz();
@@ -706,7 +690,7 @@ Ext.onReady(function() {
                 height: 900,
                 title: 'Tools',
                 autoScroll: true,
-                items:[searchPanel, configPanel, filterPanel]
+                items:[configPanel, filterPanel]
             }]
     });
 
@@ -722,90 +706,16 @@ Ext.onReady(function() {
         items: [ {region: 'north', id:'toolbar-region',
                 collapsible: false,
                 border : false,
-                title: 'Pubcrawl',
                 split: false,
+                headerCfg:{
+                  tag:'center',
+                  html:'Pubcrawl',
+                  cls: 'x-panel-header my-title-header'
+                },
                 height: 27,
                 layout : 'fit'
-            },{region: 'west',
-                id:'nav-region',
-                collapsible: true,
-                expanded: true,
-                width: 200,
-                layout: {
-                    type: 'vbox',
-                    padding: '5,5,5,5',
-                    align: 'stretch'
-                },
-                defaults : {
-                    padding : '0, 0, 5, 0'
-                },
-                items : [{xtype:'treepanel',
-                        title: 'Navigation',
-                        iconCls: 'navigation',
-                        rootVisible: false,
-                        lines: false,
-                        singleExpand: true,
-                        useArrows: true,
-                        height : 380,
-                        padding: '5',
-                        autoScroll: true,
-                        loader: new Ext.tree.TreeLoader(),
-                        root: new Ext.tree.AsyncTreeNode({
-                            expanded: true,
-                            children: [{text: 'Home Page',
-                                    iconCls: 'home',
-                                    leaf: true,
-                                    id: 'homepage'
-                                },{text: 'Network Visualization',
-                                    leaf: false,
-                                    iconCls : 'network_visualization',
-                                    id: 'networkviz',
-                                    leaf: true
-                                    },{text:'DeNovo Search',
-                                    iconCls: 'deNovoSearch',
-                                    leaf: true,
-                                    id: 'jobsubmittal'}
-                                  ]
-                        }),
-                        listeners : {
-                            click : function(selected_node) {
-                                switch (selected_node.id) {
-                                    case('networkviz'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('networkviz-panel');
-                                        Ext.getCmp('nav-region').collapse();
-                                        break;
-                                    case('homepage'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('homepage-panel');
-                                        break;
-                                    case('jobsubmittal'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('deNovo-panel');
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }]
-            },{ region:'center',
-                id:'center-panel', name:'center-panel',
-                layout:'card',
-                border:false,
-                closable:false,
-                activeItem:0,
-                height: 800,
-                margins: '0 5 5 0',
-                items:[{id:'homepage-panel',
-                        iconCls:'home',
-                        layout: 'fit',
-                        autoScroll : true,
-                        autoLoad : {
-                            url : 'home_tab.html'
-                        },
-                        title: 'Home'
-                    },
-                    networkvizPanel,deNovoPanel
-                ]
-            }],
+            },networkvizPanel
+            ],
         renderTo:Ext.getBody()
     });
 
@@ -827,6 +737,86 @@ Ext.onReady(function() {
                 items : [dataEdgeTablePanel]
             });
     dataTable_window.hide();
+
+    query_window =
+          new Ext.Window({
+              id: 'query-window',
+              renderTo: 'networkviz-acc',
+              modal: false,
+              width: 600,
+              closeAction: 'hide',
+              title: "Search",
+              closable: true,
+              layoutConfig:{
+                animate: true
+              },
+              maximizable: false,
+                      items :[
+            { xtype:'form',
+                id :'search_panel',
+                name :'search_panel',
+                defaults:{anchor:'100%'},
+                border : false,
+                labelAlign : 'right',
+                labelWidth: 75,
+                defaultType:'textfield',
+                monitorValid: true,
+                items : [{xtype:'fieldset',
+                        defaults:{anchor:'100%',border: false},
+                        labelSeparator : '',
+                        defaultType:'textfield',
+                        autoHeight:true,
+                        border: false,
+                        items: [ {name: 'f1_term_value',
+                                id: 'f1_term_value',
+                                emptyText: 'Input Term...',
+                                tabIndex: 1,
+                                selectOnFocus:true,
+                                fieldLabel: 'Term'
+                                },{
+                                fieldLabel: 'Use Alias',
+                                xtype: 'checkbox',
+                                name: 'f2_alias_value',
+                                id: 'f2_alias_value'
+                        }],
+                        buttons:[{ text: 'Search',
+                                formBind: true,
+                                id: 'search_button',
+                                name: 'search_button',
+                                listeners: {
+                                    click: function(button, e) {
+                                      var term = Ext.getCmp('f1_term_value').getValue();
+                                      var alias = Ext.getCmp('f2_alias_value').getValue();
+                                      generateNetworkRequest(term,alias,false);
+                                    }
+                                }
+                            }]
+                    }]
+            }]
+
+
+    });
+    query_window.hide();
+
+    denovo_window = 
+          new Ext.Window({
+              id: 'denovo-window',
+              renderTo: 'networkviz-acc',
+              modal: false,
+              width: 800,
+              height: 600,
+              closeAction: 'hide',
+              closable: true,
+              title: "DeNovo Search",
+              layoutConfig: {
+                animate: true
+              },
+              maximizable: false,
+              items:[deNovoPanel]
+                
+
+    });
+    denovo_window.hide();
 
     documentTable_window =
             new Ext.Window({
