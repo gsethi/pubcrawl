@@ -89,6 +89,7 @@ function loadModel(term1, alias,deNovo, callback) {
 
                     }
                     model_def['edges']=json.edges;
+                    query_window.hide();
                     populateData(json.allnodes);
                 }
 
@@ -281,3 +282,4 @@ function searchHandler(){
 function exportVisData(){
    vis.exportNetwork(this.value, 'pubcrawl_svc/export?type='+this.value);
 }
+

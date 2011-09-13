@@ -533,6 +533,16 @@ function renderEdgeTable(data){
 
 }
 
+function launchQueryWindow(){
+    query_window.show();
+
+}
+
+function launchDenovoWindow(){
+    denovo_window.show();
+    loadDeNovoSearches();
+}
+
 function renderDocumentTable(documentData){
     documentTable_window.show();
 
