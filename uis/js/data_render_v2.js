@@ -1,26 +1,29 @@
 
 function updateCCRange(start,width){
-      Ext.getCmp('f1_cc_start').setValue(new Number(start).toFixed());
-      Ext.getCmp('f1_cc_end').setValue(new Number(start+width).toFixed());
+      Ext.getCmp('node_cc_start').setValue(new Number(start).toFixed());
+      Ext.getCmp('node_cc_end').setValue(new Number(start+width).toFixed());
     if(vis_ready){
     filterVis();
     }
-    else{
-        model_def['ccstart']= parseFloat(Ext.getCmp('f1_cc_start').getValue());
-        model_def['ccend'] = parseFloat(Ext.getCmp('f1_cc_end').getValue());
-    }
+
 }
 
 function updateNGDRange(start,width){
-      Ext.getCmp('f1_ngd_start').setValue(start);
-      Ext.getCmp('f1_ngd_end').setValue(new Number(start+width).toPrecision(2));
+      Ext.getCmp('node_ngd_start').setValue(start);
+      Ext.getCmp('node_ngd_end').setValue(new Number(start+width).toPrecision(2));
     if(vis_ready){
     filterVis();
     }
-    else{
-       model_def['ngdstart']= parseFloat(Ext.getCmp('f1_ngd_start').getValue());
-       model_def['ngdend']= parseFloat(Ext.getCmp('f1_ngd_end').getValue());
+
+}
+
+function updateEdgeNGDRange(start,width){
+      Ext.getCmp('edge_ngd_start').setValue(start);
+      Ext.getCmp('edge_ngd_end').setValue(new Number(start+width).toPrecision(2));
+    if(vis_ready){
+    filterVis();
     }
+
 }
 
 function updateDCRange(start,width){
@@ -38,10 +41,10 @@ function filterVis(){
         if(node.data.label.toUpperCase() == model_def['term']){
             return true;
         }
-            var ngdstart = parseFloat(Ext.getCmp('f1_ngd_start').getValue());
-            var ngdend = parseFloat(Ext.getCmp('f1_ngd_end').getValue());
-            var ccstart = parseFloat(Ext.getCmp('f1_cc_start').getValue());
-            var ccend = parseFloat(Ext.getCmp('f1_cc_end').getValue());
+            var ngdstart = parseFloat(Ext.getCmp('node_ngd_start').getValue());
+            var ngdend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+            var ccstart = parseFloat(Ext.getCmp('node_cc_start').getValue());
+            var ccend = parseFloat(Ext.getCmp('node_cc_end').getValue());
         if(!node.data.drug){
         return ((node.data.ngd >= ngdstart && node.data.ngd <= ngdend) &&
                 (node.data.cc >= ccstart && node.data.cc <= ccend));
@@ -56,22 +59,25 @@ function filterVis(){
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+            var ngdstart = parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+            var ngdend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
             if(edge.data.edgeList != undefined && edge.data.edgeList.length > 0){
-            for(var i=0; i< edge.data.edgeList.length; i++){
-              if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
-                edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
-                edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
-                  if(!domainOnlyChecked && edge.data.ngd == null){
-                      return false;
-                  }
-                  else
-                    return true;
-              }
-            }
-            }
-            else{
+                for(var i=0; i< edge.data.edgeList.length; i++){
+                    if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
+                        edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
+                        edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
+
+                        if(!domainOnlyChecked && edge.data.ngd == null){
+                             return false;
+                        }
+                        else
+                            return true;
+                    }
+                }
+            }else{
                 return true;
             }
+
             return false;
     });
 
@@ -104,12 +110,45 @@ function renderNGDHistogramData(){
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
-            container: document.getElementById('linear-ngd'),
+            container: document.getElementById('node-ngd'),
             data_array: ngdPlotData['data'],
             interval: maxPosValueX,
             fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateNGDRange,
+        callback_always: true
+    }};
+
+  var flexscroll_browser = new vq.FlexScrollBar();
+  var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
+  flexscroll_browser.draw(flexscroll_data);
+  return flexscroll_browser;
+
+}
+
+function renderEdgeNGDHistogramData(){
+
+
+      var ngdArray = edgeNGDPlotData['data'].map(function(node){return node.count;});
+
+  var maxPosY = pv.max(ngdArray)+1;
+  var ngdValueArray = ngdPlotData['data'].map(function(node){return node.ngd;});
+  var maxPosValueX = parseFloat(pv.max(ngdValueArray))+.1;
+
+    var data_obj = function(){ return {
+        PLOT: {
+            height: 100,
+            width: 350,
+            min_position:0,
+            max_position: maxPosValueX,
+            vertical_padding: 10,
+            horizontal_padding:10,
+            container: document.getElementById('edge-ngd'),
+            data_array: edgeNGDPlotData['data'],
+            interval: maxPosValueX,
+            fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
+        },
+        notifier: updateEdgeNGDRange,
         callback_always: true
     }};
 
@@ -169,7 +208,7 @@ function renderCCLinearBrowserData(){
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
-            container: document.getElementById('linear-cc'),
+            container: document.getElementById('node-cc'),
             data_array: ccPlotData['data'],
             interval: maxPosValueX
 
@@ -295,8 +334,8 @@ function visReady(){
     vis.addListener("layout", function(evt){
                filterVis();
     });
-    filterVis();
     vis_ready = true;
+    filterVis();
     vis.addContextMenuItem("Medline Documents","edges",function(evt){
        var term1 = evt.target.data.source;
        var term2= evt.target.data.target;
@@ -551,7 +590,7 @@ function renderDocumentTable(documentData){
 
 function generateNetworkRequest(term,alias,deNovo){
         vis_ready=false;
-        model_def= {nodes: null,edges: null,ccstart:null,ccend:null,ngdstart:null,ngdend:null};
+        model_def= {nodes: null,edges: null};
         loadModel(term,alias,deNovo, renderModel);
 
 
