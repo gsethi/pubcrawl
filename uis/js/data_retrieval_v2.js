@@ -25,6 +25,8 @@ var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
 var saNodes;
+var saDomainEdges;
+var saRFACEEdges;
 
 
 selectModel = function(set_label) {
@@ -84,13 +86,22 @@ function loadModel(term1, alias,deNovo, callback) {
                 }
                 else{
                     model_def['nodes']=json.nodes;
-                    if(!Ext.getCmp('standaloneCheckbox').getValue()){
-
-                        filterStandaloneNodes(true);
-
-                    }
                     model_def['edges']=json.edges;
+                    Ext.getCmp('currentTerm-dfield').setValue(model_def['term']);
+                    Ext.getCmp('alias-dfield').setValue(model_def['alias']);
+                    if(!Ext.getCmp('domainOnly-cb').getValue()){
+                        filterDomainOnlyEdges(true);
+                    }
+                    if(!Ext.getCmp('rfaceOnly-cb').getValue()){
+                        filterRFACEOnlyEdges(true);
+                    }
+                    if(!Ext.getCmp('standalone-cb').getValue()){
+                        filterStandaloneNodes(true);
+                    }
+                    Ext.getCmp('nodeFilterPanel').enable();
+                    Ext.getCmp('edgeFilterPanel').enable();
                     query_window.hide();
+                    denovo_window.hide();
                     populateData(json.allnodes);
                 }
 
@@ -136,7 +147,54 @@ function filterStandaloneNodes(filterOut){
                  model_def['nodes'].push(saNodes[index]);
              }
 
+             saNodes=[];
          }
+}
+
+function filterDomainOnlyEdges(filterOut){
+    var edgeList={};
+    if(filterOut){
+          saDomainEdges=[];
+        var tempModelEdges=[];
+        for(var index=0; index < model_def['edges'].length; index++){
+            if(model_def['edges'][index].ngd == null  && model_def['edges'][index].connType == 'domine'){
+                saDomainEdges.push(model_def['edges'][index]);
+            }
+            else
+                tempModelEdges.push(model_def['edges'][index]);
+        }
+
+        model_def['edges'] = tempModelEdges;
+    }
+    else{
+        for(var index=0; index < saDomainEdges.length; index++){
+            model_def['edges'].push(saDomainEdges[index]);
+        }
+        saDomainEdges=[];
+    }
+}
+
+function filterRFACEOnlyEdges(filterOut){
+    var edgeList={};
+    if(filterOut){
+          saRFACEEdges=[];
+        var tempModelEdges=[];
+        for(var index=0; index < model_def['edges'].length; index++){
+            if(model_def['edges'][index].ngd == null && model_def['edges'][index].connType == 'rface'){
+                saRFACEEdges.push(model_def['edges'][index]);
+            }
+            else
+                tempModelEdges.push(model_def['edges'][index]);
+        }
+
+        model_def['edges'] = tempModelEdges;
+    }
+    else{
+        for(var index=0; index < saRFACEEdges.length; index++){
+            model_def['edges'].push(saRFACEEdges[index]);
+        }
+        saRFACEEdges=[];
+    }
 }
 
 function populateData(allnodes){
@@ -147,6 +205,7 @@ function populateData(allnodes){
     var comboCounts={};
      var ngdSummary={};
     var edgeNGDSummary={};
+    var edgeCCSummary={};
     for (var index=0; index < allnodes.length; index++){
         var node = allnodes[index];
         nodeArray.push({term1: node.label.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
@@ -191,7 +250,7 @@ function populateData(allnodes){
         histCC.push(comboCounts[ccItem]);
     }
     ccPlotData['data']=histCC;
-    renderCCLinearBrowserData();
+    renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange);
 
 
     var domainCounts = {};
@@ -223,13 +282,23 @@ function populateData(allnodes){
         }
 
         if(edge.ngd != undefined){
-            ngdtrunc = Math.round(node.ngd * 100)/100;
+            ngdtrunc = Math.round(edge.ngd * 100)/100;
             if (edgeNGDSummary[ngdtrunc] == undefined){
                 edgeNGDSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:1};
             }
             else{
                 edgeNGDSummary[ngdtrunc].count = edgeNGDSummary[ngdtrunc].count+1;
                 edgeNGDSummary[ngdtrunc].value = edgeNGDSummary[ngdtrunc].value +1;
+            }
+        }
+
+        if(edge.cc != undefined){
+            if(edgeCCSummary[edge.cc] == undefined){
+                edgeCCSummary[edge.cc] = {start:edge.cc - .5, end: edge.cc + .5, label: 1, ngd: edge.cc, count: 1};
+            }
+            else{
+                edgeCCSummary[edge.cc].count= edgeCCSummary[edge.cc].count+1;
+                edgeCCSummary[edge.cc].label=edgeCCSummary[edge.cc].count;
             }
         }
     }
@@ -246,6 +315,14 @@ function populateData(allnodes){
     edgeNGDPlotData['data'] =  histedgeNGD;
     renderEdgeNGDHistogramData();
 
+    edgeCCPlotData={data:null};
+    var histedgeCC=[];
+    for(var ccItem in edgeCCSummary){
+        histedgeCC.push(edgeCCSummary[ccItem]);
+    }
+    edgeCCPlotData['data']=histedgeCC;
+    renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange);
+
     domainCountData={data:null};
     domainCountData['data']=histData;
     renderDCHistogramData(histData);
@@ -258,7 +335,7 @@ function retrieveMedlineDocuments(term1,term2){
      Ext.StoreMgr.get('dataDocument_grid_store').on({
          beforeload:{
              fn: function(store,options){
-                 store.proxy.setUrl('/solr/select/?q=%2Btext%3A\"' + term1 + '\" %2Btext%3A\"' + term2 + '\"&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
+                 store.proxy.setUrl('/solr/select/?q=%2Btext%3A(' + term1 + ') %2Btext%3A(' + term2 + ')&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
                 '&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true');
              }
          }
