@@ -26,6 +26,15 @@ function updateEdgeNGDRange(start,width){
 
 }
 
+function updateEdgeCCRange(start,width){
+      Ext.getCmp('edge_cc_start').setValue(new Number(start).toFixed());
+      Ext.getCmp('edge_cc_end').setValue(new Number(start+width).toFixed());
+    if(vis_ready){
+    filterVis();
+    }
+
+}
+
 function updateDCRange(start,width){
     var starta=Math.round(start);
     var enda = Math.round(width)+starta;
@@ -45,7 +54,8 @@ function filterVis(){
             var ngdend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
             var ccstart = parseFloat(Ext.getCmp('node_cc_start').getValue());
             var ccend = parseFloat(Ext.getCmp('node_cc_end').getValue());
-        if(!node.data.drug){
+        var standaloneChecked = Ext.getCmp('standalone-cb').getValue();
+        if(node.data.ngd != null){
         return ((node.data.ngd >= ngdstart && node.data.ngd <= ngdend) &&
                 (node.data.cc >= ccstart && node.data.cc <= ccend));
         }
@@ -57,6 +67,7 @@ function filterVis(){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
             var hcChecked = Ext.getCmp('hc-cb').getValue();
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
+            var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
             var ngdstart = parseFloat(Ext.getCmp('edge_ngd_start').getValue());
@@ -67,8 +78,11 @@ function filterVis(){
                         edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
                         edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
 
-                        if(!domainOnlyChecked && edge.data.ngd == null){
+                        if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
                              return false;
+                        }
+                        else if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
+                            return false;
                         }
                         else
                             return true;
@@ -105,7 +119,7 @@ function renderNGDHistogramData(){
     var data_obj = function(){ return {
         PLOT: {
             height: 100,
-            width: 350,
+            width: 400,
             min_position:0,
             max_position: maxPosValueX,
             vertical_padding: 10,
@@ -192,11 +206,11 @@ function renderDCHistogramData(dcPlotData){
 
 }
 
-function renderCCLinearBrowserData(){
+function renderCCLinearBrowserData(ccData,elementId,notifyCall){
 
-  var ccArray = ccPlotData['data'].map(function(node){ return node.count;});
+  var ccArray = ccData.map(function(node){ return node.count;});
   var maxPosY = pv.max(ccArray)+1;
-  var ngdValueArray = ccPlotData['data'].map(function(node){return node.ngd;});
+  var ngdValueArray = ccData.map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(ngdValueArray)+ 1;
 
 
@@ -208,12 +222,12 @@ function renderCCLinearBrowserData(){
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
-            container: document.getElementById('node-cc'),
-            data_array: ccPlotData['data'],
+            container: document.getElementById(elementId),
+            data_array: ccData,
             interval: maxPosValueX
 
         },
-        notifier: updateCCRange,
+        notifier: notifyCall,
         callback_always: true
     }};
 
@@ -330,6 +344,19 @@ function collapseSuperNodes(){
 
 }
 
+function getSolrCombinedTerm(node){
+    var fullTerm=node.data.id;
+    if(node.data.aliases != undefined){
+        var alias_array = node.data.aliases.split(",");
+        fullTerm="";
+        for(var i=0; i< alias_array.length; i++){
+            fullTerm = fullTerm + " \"" + alias_array[i] + "\" ";
+        }
+    }
+
+    return fullTerm;
+
+}
 function visReady(){
     vis.addListener("layout", function(evt){
                filterVis();
@@ -337,17 +364,27 @@ function visReady(){
     vis_ready = true;
     filterVis();
     vis.addContextMenuItem("Medline Documents","edges",function(evt){
-       var term1 = evt.target.data.source;
-       var term2= evt.target.data.target;
-       retrieveMedlineDocuments(term1,term2);
+       var source = evt.target.data.source;
+       var target = evt.target.data.target;
+       var sourceNode=vis.node(source);
+       var targetNode=vis.node(target);
+
+       var fullTerm1=getSolrCombinedTerm(sourceNode);
+       var fullTerm2=getSolrCombinedTerm(targetNode);
+       retrieveMedlineDocuments(fullTerm1,fullTerm2);
     });
         vis.addContextMenuItem("Medline Documents","nodes",function(evt){
+
        var term1 = evt.target.data.id;
        var term2= evt.target.data.searchterm;
+    //   var term1Node = vis.node(term1);
+    //   var term2Node = vis.node(term2);
+
+    //   var fullTerm1 = getSolrCombinedTerm(term1Node);
+    //   var fullTerm2 = getSolrCombinedTerm(term2Node);
        retrieveMedlineDocuments(term1,term2);
     });
 
- //   collapseSuperNodes();
 }
 
 function getVisualStyle(){
@@ -383,17 +420,11 @@ function getVisualStyle(){
  };
 
     vis["customNodeColor"] = function(data){
-        if(data.somatic && data.germline){
+        if(data.somatic || data.germline){
             return "#FC4EE8";
         }
-        else if(data.somatic){
-            return "#9D7FFF";
-        }
-        else if(data.germline){
-            return "#FC4E4E"
-        }
         else if(data.drug){
-            return "#518985";
+            return "#58C0D2";
         }
         else
             return "#10B622";
@@ -401,10 +432,10 @@ function getVisualStyle(){
 
         vis["customEdgeColor"] = function(data){
         if(data.connType == "drugNGD"){
-            return "#39485F";
+            return "#7ED8D2";  
         }
         else if(data.connType == "rface"){
-            return "#6BAB46";
+            return "#0F8C06"; //39485F";
         }
         else if(data.connType == "combo"){
               return "#CC00CC";
@@ -495,6 +526,7 @@ function getModelDef(){
                 { name: "label", type: "string"},
                 {name: "ngd", type:"double"},
                 {name: "connType", type: "string"},
+                    {name: "cc", type: "double"},
               //  {name: "details", type:"object"},
                 {name: "edgeList", type:"object"}
             ]

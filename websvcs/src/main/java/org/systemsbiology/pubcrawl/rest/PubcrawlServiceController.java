@@ -195,7 +195,9 @@ public class PubcrawlServiceController implements InitializingBean {
 
 
             JSONObject searchNodeJson = new JSONObject();
-            searchNodeJson.put("aliases", (String) searchNode.getProperty("aliases", ""));
+            if(bean.getAlias()){
+                searchNodeJson.put("aliases", (String) searchNode.getProperty("aliases", ""));
+            }
             searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
             searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
             searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
@@ -242,7 +244,9 @@ public class PubcrawlServiceController implements InitializingBean {
 
                 JSONObject geneJson = new JSONObject();
                 Node searchGene = ngdRelationship.getStartNode();
+                 if(bean.getAlias()){
                 geneJson.put("aliases", gene.getProperty("aliases", ""));
+                 }
                 geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
                 geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
                 geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
@@ -309,6 +313,7 @@ public class PubcrawlServiceController implements InitializingBean {
                         if ((item.isType(MyRelationshipTypes.NGD) && !bean.getAlias()) ||
                                 (item.isType(MyRelationshipTypes.NGD_ALIAS) && bean.getAlias())) {
                             edgeJson.put("ngd",  item.getProperty("value"));
+                            edgeJson.put("cc", item.getProperty("combocount"));
                         } else if (item.isType(MyRelationshipTypes.DOMINE)) {
                                 String hgnc1=((String)item.getStartNode().getProperty("name")).toUpperCase();
                                 String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
