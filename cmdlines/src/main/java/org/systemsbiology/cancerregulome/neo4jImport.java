@@ -27,17 +27,17 @@ public class neo4jImport {
 
     public static void main(String[] args) throws Exception {
 
-           // insertGenes();
-            System.out.println("inserting RFACE");
-            insertRFACE();
-            System.out.println("done inserting RFACE");
-            insertDrugs();
+            insertGenes();
+
+        //    insertRFACE();
+       
+        //    insertDrugs();
         return;
 
     }
 
     private static void insertGenes() {
-        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
+        BatchInserter inserter = new BatchInserterImpl("/hdfs3/neo4j-community-1.4.M06/data/pubcrawl.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx", MapUtil.stringMap("type", "exact"));
         genes.setCacheCapacity("name", 40000);
@@ -98,34 +98,8 @@ public class neo4jImport {
             }
             ngdAliasRel.flush();
             ngdFile_alias.close();
+           // insertDomineInfo(inserter, indexProvider, genes);
 
-            //now load up domine relationships
-            BufferedReader domineFile = new BufferedReader(new FileReader("domineEdgeInfo.txt"));
-            String domineLine = null;
-            System.out.println("Now loading domine edges");
-            BatchInserterIndex domineRel = indexProvider.relationshipIndex("domineRelIdx", MapUtil.stringMap("type", "exact"));
-            while ((domineLine = domineFile.readLine()) != null) {
-                String[] domineInfo = domineLine.split("\t");
-
-                try {
-                    Long gene1 = genes.get("name", domineInfo[0].toLowerCase()).getSingle();
-                    Long gene2 = genes.get("name", domineInfo[3].toLowerCase()).getSingle();
-                    if (!gene1.equals(gene2)) {
-                        Map<String, Object> properties1 = MapUtil.map("uni1", domineInfo[1], "pf1", domineInfo[2], "uni2", domineInfo[4], "pf2", domineInfo[5], "pf1_count", new Integer(domineInfo[6]),
-                                "pf2_count", new Integer(domineInfo[7]), "domine_type", domineInfo[8]);
-                        Map<String, Object> properties2 = MapUtil.map("uni2", domineInfo[1], "pf2", domineInfo[2], "uni1", domineInfo[4], "pf1", domineInfo[5], "pf2_count", new Integer(domineInfo[6]),
-                                "pf1_count", new Integer(domineInfo[7]), "domine_type", domineInfo[8]);
-                        long rel1 = inserter.createRelationship(gene1, gene2, MyRelationshipTypes.DOMINE, properties1);
-                        long rel2 = inserter.createRelationship(gene2, gene1, MyRelationshipTypes.DOMINE, properties2);
-                        domineRel.add(rel1, properties1);
-                        domineRel.add(rel2, properties2);
-                    }
-
-                } catch (Exception ex) {
-                    System.out.println("didn't find genes: " + domineInfo[0].toLowerCase() + " " + domineInfo[3].toLowerCase());
-                }
-            }
-            domineRel.flush();
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -134,6 +108,36 @@ public class neo4jImport {
         indexProvider.shutdown();
         inserter.shutdown();
         }
+    }
+
+    private static void insertDomineInfo(BatchInserter inserter, BatchInserterIndexProvider indexProvider, BatchInserterIndex genes) throws IOException {
+        //now load up domine relationships
+        BufferedReader domineFile = new BufferedReader(new FileReader("domineEdgeInfo.txt"));
+        String domineLine = null;
+        System.out.println("Now loading domine edges");
+        BatchInserterIndex domineRel = indexProvider.relationshipIndex("domineRelIdx", MapUtil.stringMap("type", "exact"));
+        while ((domineLine = domineFile.readLine()) != null) {
+            String[] domineInfo = domineLine.split("\t");
+
+            try {
+                Long gene1 = genes.get("name", domineInfo[0].toLowerCase()).getSingle();
+                Long gene2 = genes.get("name", domineInfo[3].toLowerCase()).getSingle();
+                if (!gene1.equals(gene2)) {
+                    Map<String, Object> properties1 = MapUtil.map("uni1", domineInfo[1], "pf1", domineInfo[2], "uni2", domineInfo[4], "pf2", domineInfo[5], "pf1_count", new Integer(domineInfo[6]),
+                            "pf2_count", new Integer(domineInfo[7]), "domine_type", domineInfo[8]);
+                    Map<String, Object> properties2 = MapUtil.map("uni2", domineInfo[1], "pf2", domineInfo[2], "uni1", domineInfo[4], "pf1", domineInfo[5], "pf2_count", new Integer(domineInfo[6]),
+                            "pf1_count", new Integer(domineInfo[7]), "domine_type", domineInfo[8]);
+                    long rel1 = inserter.createRelationship(gene1, gene2, MyRelationshipTypes.DOMINE, properties1);
+                    long rel2 = inserter.createRelationship(gene2, gene1, MyRelationshipTypes.DOMINE, properties2);
+                    domineRel.add(rel1, properties1);
+                    domineRel.add(rel2, properties2);
+                }
+
+            } catch (Exception ex) {
+                System.out.println("didn't find genes: " + domineInfo[0].toLowerCase() + " " + domineInfo[3].toLowerCase());
+            }
+        }
+        domineRel.flush();
     }
 
     private static void insertDrugs() {
