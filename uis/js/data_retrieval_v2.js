@@ -24,9 +24,9 @@ var ngdPlotData;
 var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
-var saNodes;
-var saDomainEdges;
-var saRFACEEdges;
+var saNodes=[];
+var saDomainEdges=[];
+var saRFACEEdges=[];
 
 
 selectModel = function(set_label) {
@@ -85,21 +85,13 @@ function loadModel(term1, alias,deNovo, callback) {
                    
                 }
                 else{
-                    model_def['nodes']=json.nodes;
-                    model_def['edges']=json.edges;
                     Ext.getCmp('currentTerm-dfield').setValue(model_def['term']);
                     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
-                    if(!Ext.getCmp('domainOnly-cb').getValue()){
-                        filterDomainOnlyEdges(true);
-                    }
-                    if(!Ext.getCmp('rfaceOnly-cb').getValue()){
-                        filterRFACEOnlyEdges(true);
-                    }
-                    if(!Ext.getCmp('standalone-cb').getValue()){
-                        filterStandaloneNodes(true);
-                    }
                     Ext.getCmp('nodeFilterPanel').enable();
                     Ext.getCmp('edgeFilterPanel').enable();
+
+                    filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
+                            Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
                     query_window.hide();
                     denovo_window.hide();
                     populateData(json.allnodes);
@@ -114,88 +106,45 @@ function loadModel(term1, alias,deNovo, callback) {
 
 }
 
-function filterStandaloneNodes(filterOut){
+function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChecked,nodes,edges){
+
+    var tempModelEdges=[];
     var nodeList={};
-         if(filterOut){
+    for(var index=0; index < edges.length; index++){
+        if(!drugChecked && edges[index].connType == 'drugNGD'){
+             continue;
+        }
+        if(!rfaceOnlyChecked && edges[index].ngd == null && edges[index].connType == 'rface'){
+            continue;
+        }
+        if(!domainOnlyChecked && edges[index].ngd == null && edges[index].connType == 'domine'){
+            continue;
+        }
 
-             var tempModelNodes=[];
-             saNodes=[];
-             //go thru edges and figure out which nodes are standalone and put into temp node area
-             for (var index=0; index < model_def['edges'].length; index++){
-                      nodeList[model_def['edges'][index].source.toUpperCase()] = 1;
-                      nodeList[model_def['edges'][index].target.toUpperCase()] = 1;
-             }
+        tempModelEdges.push(edges[index]);
 
-             for (var index=0; index < model_def['nodes'].length; index++){
-                 if(nodeList[model_def['nodes'][index].id] == undefined){
-                     //wasn't found in edges - and filtering out - so put into saNodes;
-                     saNodes.push(model_def['nodes'][index]);
-                 }
-                 else{
-                    tempModelNodes.push(model_def['nodes'][index]);
-                 }
-             }
+        //figure out which nodes are standalone
+        nodeList[edges[index].source.toUpperCase()] = 1;
+        nodeList[edges[index].target.toUpperCase()] = 1;
+    }
 
-             //done going thru nodes - now clear out model_def and put new temp nodes in there
-             model_def['nodes']=tempModelNodes;
-             tempModelNodes=[];
+    model_def['edges'] = tempModelEdges;
 
-         }
-    else{
-             //we aren't filtering out - we are putting in....so take what is in sanodes and put into model_def['nodes']
-             for(var index=0; index < saNodes.length; index++){
-                 model_def['nodes'].push(saNodes[index]);
-             }
+    var tempModelNodes=[];
+    for(var nIndex=0; nIndex < nodes.length; nIndex++){
+        if(!drugChecked && nodes[nIndex].drug){
+            continue;
+        }
 
-             saNodes=[];
-         }
+        if(!standaloneChecked && nodeList[nodes[nIndex].id] == undefined){
+                     continue;     //standalone node, so filter out
+        }
+        tempModelNodes.push(nodes[nIndex]);
+    }
+
+    model_def['nodes'] = tempModelNodes;
 }
 
-function filterDomainOnlyEdges(filterOut){
-    var edgeList={};
-    if(filterOut){
-          saDomainEdges=[];
-        var tempModelEdges=[];
-        for(var index=0; index < model_def['edges'].length; index++){
-            if(model_def['edges'][index].ngd == null  && model_def['edges'][index].connType == 'domine'){
-                saDomainEdges.push(model_def['edges'][index]);
-            }
-            else
-                tempModelEdges.push(model_def['edges'][index]);
-        }
-
-        model_def['edges'] = tempModelEdges;
-    }
-    else{
-        for(var index=0; index < saDomainEdges.length; index++){
-            model_def['edges'].push(saDomainEdges[index]);
-        }
-        saDomainEdges=[];
-    }
-}
-
-function filterRFACEOnlyEdges(filterOut){
-    var edgeList={};
-    if(filterOut){
-          saRFACEEdges=[];
-        var tempModelEdges=[];
-        for(var index=0; index < model_def['edges'].length; index++){
-            if(model_def['edges'][index].ngd == null && model_def['edges'][index].connType == 'rface'){
-                saRFACEEdges.push(model_def['edges'][index]);
-            }
-            else
-                tempModelEdges.push(model_def['edges'][index]);
-        }
-
-        model_def['edges'] = tempModelEdges;
-    }
-    else{
-        for(var index=0; index < saRFACEEdges.length; index++){
-            model_def['edges'].push(saRFACEEdges[index]);
-        }
-        saRFACEEdges=[];
-    }
-}
 
 function populateData(allnodes){
     completeData={nodes:null,edges:null};
@@ -206,13 +155,17 @@ function populateData(allnodes){
      var ngdSummary={};
     var edgeNGDSummary={};
     var edgeCCSummary={};
+    var graphNodes={};
+    for (var nIndex=0; nIndex < model_def['nodes'].length; nIndex++){
+        graphNodes[model_def['nodes'][nIndex].label.toUpperCase()]="";
+    }
     for (var index=0; index < allnodes.length; index++){
         var node = allnodes[index];
         nodeArray.push({term1: node.label.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
-                    ngd:node.ngd});
+                    ngd:node.ngd, label: node.label, cc: node.cc});
 
         if(node.label.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
-            if(node.graph == 1){
+            if(graphNodes[node.label.toUpperCase()] != undefined){
             if(comboCounts[node.cc] == undefined){
                 comboCounts[node.cc] = {start:node.cc - .5, end: node.cc + .5, label: 1, ngd: node.cc, count: 1};
             }
@@ -224,12 +177,12 @@ function populateData(allnodes){
 
             var ngdtrunc = Math.round(node.ngd * 100)/100;
             if (ngdSummary[ngdtrunc] == undefined){
-                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:node.graph};
+                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph: graphNodes[node.label.toUpperCase()] == undefined ? 0:1};
             }
             else{
                 ngdSummary[ngdtrunc].count = ngdSummary[ngdtrunc].count+1;
                 ngdSummary[ngdtrunc].value = ngdSummary[ngdtrunc].value +1;
-                ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+node.graph;
+                ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+  (graphNodes[node.label.toUpperCase()] == undefined ? 0:1);
             }
         }
 
@@ -378,6 +331,11 @@ function searchHandler(){
 }
 
 function exportVisData(){
-   vis.exportNetwork(this.value, 'pubcrawl_svc/export?type='+this.value);
+   vis.exportNetwork(this.value, 'pubcrawl_svc/exportGraph?type='+this.value);
+}
+
+function exportNodeData(){
+    document.getElementById('frame').src='http://' + window.location.host + encodeURI('/pubcrawl_svc/exportNodes/'+model_def['term'].toLowerCase()+'?alias='+model_def['alias']+'&type=csv');
+
 }
 

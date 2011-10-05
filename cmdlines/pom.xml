@@ -250,6 +250,37 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>retrieveNGDMatrix</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>2.2-beta-4</version>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>retrieveNGDMatrix</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.systemsbiology.cancerregulome.retrieveNGDMatrix</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <phase>package</phase>
+                                <id>make-assembly</id>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencies>

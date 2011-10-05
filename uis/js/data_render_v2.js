@@ -54,7 +54,7 @@ function filterVis(){
             var ngdend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
             var ccstart = parseFloat(Ext.getCmp('node_cc_start').getValue());
             var ccend = parseFloat(Ext.getCmp('node_cc_end').getValue());
-        var standaloneChecked = Ext.getCmp('standalone-cb').getValue();
+
         if(node.data.ngd != null){
         return ((node.data.ngd >= ngdstart && node.data.ngd <= ngdend) &&
                 (node.data.cc >= ccstart && node.data.cc <= ccend));
@@ -68,32 +68,96 @@ function filterVis(){
             var hcChecked = Ext.getCmp('hc-cb').getValue();
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
             var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
+            var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
             var ngdstart = parseFloat(Ext.getCmp('edge_ngd_start').getValue());
             var ngdend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+            var ccstart = parseFloat(Ext.getCmp('edge_cc_start').getValue());
+            var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+
+        if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
+         return false;
+    }
+    if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
+        return false;
+    }
+    if(!drugChecked && edge.data.connType == 'drugNGD'){
+         return false;
+    }
+        
             if(edge.data.edgeList != undefined && edge.data.edgeList.length > 0){
                 for(var i=0; i< edge.data.edgeList.length; i++){
-                    if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
+                    if(!(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
                         edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
-                        edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
+                        edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend)){
 
-                        if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
-                             return false;
-                        }
-                        else if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
-                            return false;
-                        }
-                        else
-                            return true;
+                        return false;
                     }
                 }
+                if(edge.data.ngd != null){
+                    return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
+                    (edge.data.cc >= ccstart && edge.data.cc <= ccend));
+                }
+                else
+                    return true;
+
             }else{
-                return true;
+                   if(edge.data.ngd != null){
+                    return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
+                    (edge.data.cc >= ccstart && edge.data.cc <= ccend));
+                }
+                else
+                    return true;
             }
 
             return false;
     });
+
+}
+
+function trimModel(){
+    var inclStandalone= Ext.getCmp('standalone-cb').getValue();
+    var nodeModel=[];
+    var edgeModel=[];
+    var inclDrug=Ext.getCmp('showDrugs-cb').getValue();
+    //first go thru edges and filter out - make not visible ones that don't meet the criteria
+  //  var visEdges=vis.edges();
+  //  for(var e=0; e< visEdges.length; e++){
+  //      if(!inclDomainOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'domine'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //      if(!inclRFAceOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'rface'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //      if(!inclDrug && visEdges[e].data.connType == 'drugNGD'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //  }
+
+    filterVis();
+
+    var visNodes=vis.nodes();
+    for(var n=0; n < visNodes.length; n++){
+        if(visNodes[n].visible){
+            if(!inclStandalone && vis.firstNeighbors([visNodes[n].data.id],true).neighbors.length == 0){
+                continue;
+            }
+            else if(!inclDrug && visNodes[n].data.drug){
+                continue;
+            }
+            nodeModel.push(visNodes[n].data);
+        }
+    }
+
+    var visEdges=vis.edges();
+    for(var e=0; e< visEdges.length; e++){
+        if(visEdges[e].visible){
+            edgeModel.push(visEdges[e].data);
+        }
+    }
+    model_def['nodes']=nodeModel;
+    model_def['edges']=edgeModel;
 
 }
 
@@ -346,7 +410,7 @@ function collapseSuperNodes(){
 
 function getSolrCombinedTerm(node){
     var fullTerm=node.data.id;
-    if(node.data.aliases != undefined){
+    if(node.data.aliases != undefined && node.data.aliases != ""){
         var alias_array = node.data.aliases.split(",");
         fullTerm="";
         for(var i=0; i< alias_array.length; i++){
@@ -432,10 +496,10 @@ function getVisualStyle(){
 
         vis["customEdgeColor"] = function(data){
         if(data.connType == "drugNGD"){
-            return "#7ED8D2";  
+            return "#58C0D2";//"#7ED8D2";
         }
         else if(data.connType == "rface"){
-            return "#0F8C06"; //39485F";
+            return "#10B622";//"#0F8C06"; //39485F";
         }
         else if(data.connType == "combo"){
               return "#CC00CC";

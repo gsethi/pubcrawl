@@ -57,8 +57,8 @@ public class Pubcrawl {
             String term1Combined = createCombinedTerm(term1Array);
             String term2Combined = createCombinedTerm(term2Array);
 
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1Combined + ")");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term2Combined + ")");
+            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term1Combined + ")");
+            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term2Combined + ")");
             query.setParam("fl", "pmid");
             try {
                 QueryResponse rsp = this.server.query(query);
@@ -433,7 +433,7 @@ public class Pubcrawl {
             }
 
 
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1 + ")");
+            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term1 + ")");
             query.setParam("fl", "pmid");
             try {
                 QueryResponse rsp = server.query(query);

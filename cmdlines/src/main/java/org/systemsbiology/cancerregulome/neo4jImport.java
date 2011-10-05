@@ -22,22 +22,24 @@ public class neo4jImport {
 
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624, DRUG_NGD
     }
 
     public static void main(String[] args) throws Exception {
 
             insertGenes();
 
-        //    insertRFACE();
+            insertRFACE();
        
-        //    insertDrugs();
+           insertDrugs();
+
+
         return;
 
     }
 
     private static void insertGenes() {
-        BatchInserter inserter = new BatchInserterImpl("/hdfs3/neo4j-community-1.4.M06/data/pubcrawl.db");
+        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx", MapUtil.stringMap("type", "exact"));
         genes.setCacheCapacity("name", 40000);
@@ -98,7 +100,7 @@ public class neo4jImport {
             }
             ngdAliasRel.flush();
             ngdFile_alias.close();
-           // insertDomineInfo(inserter, indexProvider, genes);
+            insertDomineInfo(inserter, indexProvider, genes);
 
 
         } catch (IOException ex) {
@@ -141,11 +143,12 @@ public class neo4jImport {
     }
 
     private static void insertDrugs() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
            BatchInserterIndex drugs = indexProvider.nodeIndex("drugIdx", MapUtil.stringMap("type", "exact"));
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
          BatchInserterIndex ngdRel = indexProvider.relationshipIndex("drugNGDRelIdx", MapUtil.stringMap("type", "exact"));
+         BatchInserterIndex ngdRelAlias = indexProvider.relationshipIndex("drugNGDAliasRelIdx", MapUtil.stringMap("type", "exact"));
            drugs.setCacheCapacity("name", 40000);
 
            try {
@@ -158,8 +161,7 @@ public class neo4jImport {
                    String[] drugInfo = drugLine.split("\t");
 
                    if(!currentNode.equals(drugInfo[0].toLowerCase())){
-                        Map<String, Object> properties = MapUtil.map("name", drugInfo[0].toLowerCase(), "aliases", drugInfo[1], "termcount_alias", new Integer(drugInfo[4]),
-                           "nodeType", "drug");
+                        Map<String, Object> properties = MapUtil.map("name", drugInfo[0].toLowerCase(), "nodeType", "drug");
                         drugId = inserter.createNode(properties);
                         drugs.add(drugId, properties);
                         drugs.flush();
@@ -168,11 +170,11 @@ public class neo4jImport {
                    }
 
 
-                   Long geneId = genes.get("name", drugInfo[2].toLowerCase()).getSingle();
-                       Double ngd = new Double(drugInfo[7]);
+                   Long geneId = genes.get("name", drugInfo[1].toLowerCase()).getSingle();
+                       Double ngd = new Double(drugInfo[5]);
                        if (ngd >= 0) {
-                           Map<String, Object> properties = MapUtil.map("value", ngd, "combocount", new Integer(drugInfo[6]));
-                           long rel = inserter.createRelationship(geneId,drugId, MyRelationshipTypes.DRUG_NGD_ALIAS, properties);
+                           Map<String, Object> properties = MapUtil.map("value", ngd, "combocount", new Integer(drugInfo[4]));
+                           long rel = inserter.createRelationship(geneId,drugId, MyRelationshipTypes.DRUG_NGD, properties);
                            ngdRel.add(rel, properties);
 
                        }
@@ -183,6 +185,30 @@ public class neo4jImport {
 
                 ngdRel.flush();
                drugFile.close();
+
+               BufferedReader drugAliasFile = new BufferedReader(new FileReader("drugAliasNGD.txt"));
+               drugId=0;
+               System.out.println("reading drug file");
+               while ((drugLine = drugAliasFile.readLine()) != null) {
+                   String[] drugInfo = drugLine.split("\t");
+
+                   drugId = drugs.get("name", drugInfo[0].toLowerCase()).getSingle();
+                   Long geneId = genes.get("name", drugInfo[2].toLowerCase()).getSingle();
+                       Double ngd = new Double(drugInfo[7]);
+                       if (ngd >= 0) {
+                           Map<String, Object> properties = MapUtil.map("value", ngd, "combocount", new Integer(drugInfo[6]));
+                           long rel = inserter.createRelationship(geneId,drugId, MyRelationshipTypes.DRUG_NGD_ALIAS, properties);
+                           ngdRelAlias.add(rel, properties);
+
+                       }
+
+
+
+               }
+
+                ngdRelAlias.flush();
+
+               drugAliasFile.close();
 
 
            } catch (IOException ex) {
@@ -195,7 +221,7 @@ public class neo4jImport {
        }
 
         private static void insertRFACE() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
             BatchInserterIndex features = indexProvider.nodeIndex("featureIdx",MapUtil.stringMap("type","exact"));
