@@ -37,7 +37,7 @@ public class PubcrawlServiceController implements InitializingBean {
     private GraphDatabaseService graphDB;
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624,DRUG_NGD
     }
 
     public void afterPropertiesSet() throws Exception {
@@ -127,8 +127,70 @@ public class PubcrawlServiceController implements InitializingBean {
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
-        @RequestMapping(value="/export",method= RequestMethod.POST)
+    @RequestMapping(value="/exportNodes/**",method= RequestMethod.GET)
     protected ModelAndView exportNetwork(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        String dataFormat = request.getParameter("type");
+        if(dataFormat.toLowerCase().equals("csv")){
+            response.setContentType("text/csv");
+            response.setHeader("Content-Disposition","attachment;filename=nodes.csv");
+        }
+        else if(dataFormat.toLowerCase().equals("tsv")){
+             response.setContentType("text/tsv");
+            response.setHeader("Content-Disposition","attachment;filename=nodes.tsv");
+        }
+
+        String nodeUri = StringUtils.substringAfterLast(requestUri, "exportNodes/");
+        String node="";
+        node = getNodeName(nodeUri,node);
+
+        log.info("request.getMethod: " + request.getMethod());
+
+ 
+        boolean alias = new Boolean(request.getParameter("alias")).booleanValue();
+        try{
+
+            BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+
+            String csvLine = "gene,singlecount,ngd,combocount\n";
+            out.write(csvLine.getBytes());
+
+            IndexManager indexMgr = graphDB.index();
+            Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+            Node searchNode = nodeIdx.get("name",node).getSingle();
+
+            csvLine=node+","+searchNode.getProperty("termcount",0)+",0,"+searchNode.getProperty("termcount",0)+"\n";
+            out.write(csvLine.getBytes());
+            MyRelationshipTypes relationshipType = MyRelationshipTypes.NGD;
+
+            if(alias){
+                relationshipType = MyRelationshipTypes.NGD_ALIAS;
+            }
+
+            //go thru ngd relationships and create an array of all node objects that have an ngd distance from the search term
+            for(Relationship rel: searchNode.getRelationships(Direction.OUTGOING,relationshipType)){
+                JSONObject relJson = new JSONObject();
+                Node gene = rel.getEndNode();
+                csvLine=gene.getProperty("name")+","+ gene.getProperty("termcount",0)+ "," + rel.getProperty("value")+","+rel.getProperty("combocount")+"\n";
+                out.write(csvLine.getBytes());
+            }
+
+
+            out.flush();
+            out.close();
+
+        }catch(Exception e){
+            log.info("exception occurred: " + e.getMessage());
+            return null;
+        }
+
+        return null;
+    }
+
+    @RequestMapping(value="/exportGraph",method= RequestMethod.POST)
+    protected ModelAndView exportGraph(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
         log.info("request.getMethod: " + request.getMethod());
@@ -271,6 +333,7 @@ public class PubcrawlServiceController implements InitializingBean {
             //Done getting the correct nodes, now find all the edges
 
             JSONArray edgeArray = new JSONArray();
+           MyRelationshipTypes drugType = bean.getAlias() ? MyRelationshipTypes.DRUG_NGD_ALIAS : MyRelationshipTypes.DRUG_NGD;
 
             //now get the edges between all graph nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
             for (Node gene : geneMap.values()) {
@@ -279,8 +342,10 @@ public class PubcrawlServiceController implements InitializingBean {
                 for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
                     Node endNode = connection.getEndNode();
                     String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
-                    if(connection.isType(MyRelationshipTypes.DRUG_NGD_ALIAS)){
+                    if(connection.isType(MyRelationshipTypes.DRUG_NGD_ALIAS) || connection.isType(MyRelationshipTypes.DRUG_NGD) ){
+                        if(connection.isType(drugType)){
                         sortedDrugNGDList.add(connection);
+                        }
                     }
                     else{
                     //do this relationship if the end node is in our list and it hasn't already been processed
@@ -405,9 +470,9 @@ public class PubcrawlServiceController implements InitializingBean {
               }
             for(Node drug: drugMap.values()){
                 JSONObject drugJson = new JSONObject();
-                drugJson.put("aliases",drug.getProperty("aliases",""));
+                drugJson.put("aliases","");
                 drugJson.put("label",  drug.getProperty("name"));
-                drugJson.put("termcount", drug.getProperty("termcount_alias",0));
+                drugJson.put("termcount", 0);
                 drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
                  drugJson.put("drug", true);
                 geneArray.put(drugJson);

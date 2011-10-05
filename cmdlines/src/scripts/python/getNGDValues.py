@@ -17,7 +17,7 @@ def usage_error():
 
 if __name__ == "__main__":
     try:
-        optlist, args=getopt.getopt(sys.argv[1:],'ao:')
+        optlist, args=getopt.getopt(sys.argv[1:],'o:')
     except:
         usage_error();
         exit(1);

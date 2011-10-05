@@ -409,7 +409,8 @@ Ext.onReady(function() {
                             },{
             fieldLabel: 'Include Nodes',
               xtype: 'checkboxgroup',
-                items:[{boxLabel: 'Standalone',name: 'standalone-cb', id: 'standalone-cb', checked: true}]
+                items:[{boxLabel: 'Standalone',name: 'standalone-cb', id: 'standalone-cb', checked: true},
+                    {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: true}]
               },{
             fieldLabel: 'Include Edges',
               xtype: 'checkboxgroup',
@@ -417,27 +418,24 @@ Ext.onReady(function() {
                   {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true }]
                }]
                 }],
-            buttons:[{text: 'Refresh',
+            buttons:[{text: '<font color="black">Refresh</font>',
             listeners:{
                                     click: function(button,e){
-                                        if(Ext.getCmp('domainOnly-cb').getValue()){
-                                            filterDomainOnlyEdges(false);
-                                        }else{
-                                             filterDomainOnlyEdges(true);
-                                         }
 
-                                        if(Ext.getCmp('rfaceOnly-cb').getValue()){
-                                            filterRFACEOnlyEdges(false);
-                                        }else{
-                                            filterRFACEOnlyEdges(true);
+                                        trimModel();
+                                        if(!Ext.getCmp('domainOnly-cb').getValue()){
+                                            Ext.getCmp('domainOnly-cb').disable();
                                         }
 
-                                        if(Ext.getCmp('standalone-cb').getValue()){
-                                            filterStandaloneNodes(false);
-                                        } else{
-                                            filterStandaloneNodes(true);
+                                        if(!Ext.getCmp('rfaceOnly-cb').getValue()){
+                                            Ext.getCmp('rfaceOnly-cb').disable();
                                         }
 
+                                        if(!Ext.getCmp('showDrugs-cb').getValue()){
+                                            Ext.getCmp('showDrugs-cb').disable();
+                                        }
+
+                                        populateData(completeData['nodes']);
                                         renderModel();
                                     }
                                 }}]
@@ -799,7 +797,7 @@ Ext.onReady(function() {
                     text:'Export',
                     labelStyle: 'font-weight:bold;',
                     menu: [{
-                        text: 'Export Options',
+                        text: 'Graph',
                         menu:[
                 '<b class="menu-title">Choose a Data Format</b>',
                     {
@@ -812,16 +810,31 @@ Ext.onReady(function() {
                         group: 'theme',
                         value: 'svg',
                         handler: exportVisData}]
+                  },{
+                        text: 'Nodes',
+                        menu:[
+                '<b class="menu-title">Choose a Data Format</b>',
+                    {
+                        text: 'csv',
+                        value: 'csv',
+                        group: 'theme',
+                        handler: exportNodeData
+                    }]
                   }]
               },{ id: 'legendMenu',
                   text: 'Legend',
                   labelStyle: 'font-weight:bold;',
                   menu:[{
                     text: 'Node Legend',
-                    value: 'node_legend'
+                    menu:[{text: 'Gene or DeNovo Term', iconCls:'normalNode'},
+                        {text: 'Cosmic Mutations', iconCls:'mutation'},
+                        {text: 'Drug', iconCls:'drug'}]
                     },{
                     text: 'Edge Legend',
-                    value: 'edge_legend'
+                   menu:[{text:'Domine', iconCls:'domine'},
+                       {text:'RF-ACE', iconCls:'normalNode'},
+                       {text: 'Drug', iconCls: 'drug'},
+                       {text: 'RF-ACE & Domine', iconCls: 'combo'}]
                     }]}
               ]
             },
@@ -935,7 +948,7 @@ Ext.onReady(function() {
                                 name: 'f2_alias_value',
                                 id: 'f2_alias_value'
                         }],
-                        buttons:[{ text: 'Search',
+                        buttons:[{ text: '<font color="black">Search</font>',
                                 formBind: true,
                                 id: 'search_button',
                                 name: 'search_button',
