@@ -1,4 +1,116 @@
 
+/* background positioning */
+.x-toolbar .rightBtn .x-btn-tr i, .x-btn-tl i, .x-btn-mr i, .x-btn-ml i, .x-btn-br i, .x-btn-bl i{
+    font-size:1px;
+    line-height:1px;
+    width:3px;
+    display:block;
+    overflow:hidden;
+}
+
+.x-toolbar .rightBtn .x-btn-tr i, .x-btn-tl i, .x-btn-br i, .x-btn-bl i{
+    height:3px;
+}
+
+.x-toolbar .rightBtn  .x-btn-tl{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: -6px 0;
+}
+
+.x-toolbar .rightBtn  .x-btn-tr{
+    background-position: -9px 0;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-tc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: 0 -9px;
+}
+
+.x-toolbar .rightBtn  .x-btn-ml{
+    background-position: -6px -24px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-mr{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: -9px -24px;
+}
+
+.x-toolbar .rightBtn  .x-btn-mc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: 0 -2168px;
+}
+
+.x-toolbar .rightBtn  .x-btn-bl{
+    background-position: -6px -3px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-br{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: -9px -3px;
+}
+.x-toolbar .rightBtn  .x-btn-bc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: 0 -18px;
+}
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tl{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: -6px 0;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tr{
+    background-position: -9px 0;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: 0 -9px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-ml{
+    background-position: -6px -24px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-mr{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: -9px -24px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-mc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: 0 -2168px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-bl{
+    background-position: -6px -3px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-br{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: -9px -3px;
+}
+.x-toolbar .rightBtn .x-btn-over  .x-btn-bc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: 0 -18px;
+}
+
 .my-title-header {
   background: #4B586C url(../images/isb_logo_title.png) left center no-repeat; 
   background-position: 10px;

@@ -78,8 +78,18 @@ function loadModel(term1, alias,deNovo, callback) {
                 if(json.nodes == undefined || json.nodes.length == 0){
 
                         Ext.MessageBox.show({
-                            msg: 'No terms were found.  Please go to DeNovo Search and submit a job.',
-                            width:300
+                            title:'Submit DeNovo Search?',
+                            msg: 'No matching term was found.  Would you like to run a denovo search for the term: ' + model_def['term'] + ' ?',
+                            width:400,
+                            height: 200,
+                            buttons: Ext.Msg.OKCANCEL,
+                            style:{color:'black'},
+                            fn: function(id){
+                                if(id == 'ok'){
+                                    searchHandler();
+                                }
+                                
+                            }
                         });
                     vis_mask.hide();
                    
@@ -308,8 +318,8 @@ function searchHandler(){
             }
         });
 
-        var jobSearchTerm = Ext.getDom("jobSearchTerm").value;
-        var alias = Ext.getDom("aliasJobCheckbox").checked;
+        var jobSearchTerm = model_def['term'];
+        var alias = model_def['alias'];
 
         Ext.Ajax.request({
             method:"POST",
@@ -321,8 +331,8 @@ function searchHandler(){
             },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
-                setTimeout("Ext.MessageBox.hide();", 1000);
-                setTimeout("loadDeNovoSearches();", 3000);
+                setTimeout("Ext.MessageBox.hide();", 12000);
+                setTimeout("loadDeNovoSearches();", 12000);
             },
             failure: function(o) {
                 Ext.MessageBox.alert('Error Submitting Job', o.statusText);

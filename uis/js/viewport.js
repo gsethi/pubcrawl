@@ -417,28 +417,7 @@ Ext.onReady(function() {
               items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: true},
                   {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true }]
                }]
-                }],
-            buttons:[{text: '<font color="black">Refresh</font>',
-            listeners:{
-                                    click: function(button,e){
-
-                                        trimModel();
-                                        if(!Ext.getCmp('domainOnly-cb').getValue()){
-                                            Ext.getCmp('domainOnly-cb').disable();
-                                        }
-
-                                        if(!Ext.getCmp('rfaceOnly-cb').getValue()){
-                                            Ext.getCmp('rfaceOnly-cb').disable();
-                                        }
-
-                                        if(!Ext.getCmp('showDrugs-cb').getValue()){
-                                            Ext.getCmp('showDrugs-cb').disable();
-                                        }
-
-                                        populateData(completeData['nodes']);
-                                        renderModel();
-                                    }
-                                }}]
+                }]
             }]
     });
 
@@ -632,7 +611,7 @@ Ext.onReady(function() {
      var deNovoSearchTablePanel = new Ext.Panel({
                     id:'deNovoTerms-panel',
                     name : 'deNovoTerms-panel',
-                    title : 'Completed Search Terms',
+                    title : 'Completed Denovo Search Terms',
                     monitorResize : true,
                     autoScroll : false,
                     flex: 4,
@@ -746,8 +725,10 @@ Ext.onReady(function() {
             items:[{
               xtype: 'button',
               width: 100,
-              text: 'Submit Job',
-              handler: searchHandler}]}]
+              text: '<font color="black">Submit</font>',
+              handler: function(){var term = Ext.getCmp('jobSearchTerm').getValue();
+                  var alias = Ext.getCmp('aliasJobCheckbox').getValue();
+                  generateNetworkRequest(term,alias,false);}}]}]
               },deNovoSearchTablePanel]
       });
 
@@ -763,6 +744,9 @@ Ext.onReady(function() {
                 autoScroll: true,
                 collapsible: true,
                 deferredRender: false,
+                tbar:[ '->',{text: 'Redraw',width:40, ctCls:'rightBtn',handler: function(){ redraw();}},{xtype: 'tbspacer'},
+                    {text: 'Reset', width:40, ctCls: 'rightBtn',handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
+              ],
                 items:[configPanel, nodeFilterPanel,edgeFilterPanel]
             });
 
@@ -781,18 +765,7 @@ Ext.onReady(function() {
                 id: 'north-toolbar',
                 cls: 'x-panel-header-noborder',
                 border: false,
-                tbar:[{ id: 'submitMenu',
-                  text: 'Submit',
-                  labelStyle: 'font-weight:bold;',
-                  menu:[{
-                    text: 'Submit Query',
-                    value: 'query',
-                    handler: launchQueryWindow
-                    },{
-                    text: 'Submit DeNovo Search',
-                    value: 'job',
-                    handler: launchDenovoWindow
-                    }]},' ',{
+                tbar:[{
                 id:'visDataMenu',
                     text:'Export',
                     labelStyle: 'font-weight:bold;',
@@ -821,7 +794,7 @@ Ext.onReady(function() {
                         handler: exportNodeData
                     }]
                   }]
-              },{ id: 'legendMenu',
+              },{xtype: 'tbspacer'},{ id: 'legendMenu',
                   text: 'Legend',
                   labelStyle: 'font-weight:bold;',
                   menu:[{
@@ -835,8 +808,26 @@ Ext.onReady(function() {
                        {text:'RF-ACE', iconCls:'normalNode'},
                        {text: 'Drug', iconCls: 'drug'},
                        {text: 'RF-ACE & Domine', iconCls: 'combo'}]
-                    }]}
-              ]
+                    }]},'->',{name: 'f1_search_value',
+                                id: 'f1_search_value',
+                                emptyText: 'Input Search Term...',
+                                tabIndex: 1,
+                                selectOnFocus:true,
+                                xtype:'textfield',
+                                width: 350
+                                },{name:'f1_search_btn',
+                                      id: 'f1_search_btn',
+                                      tabIndex:2,
+                                      iconCls:'gene_select',
+                                        listeners: {
+                                    click: function(button, e) {
+                                      var term = Ext.getCmp('f1_search_value').getValue();
+                                      generateNetworkRequest(term,false,false);
+                                    }
+                                }},
+                    {xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'},
+                    {html:'<p style="text-decoration:underline;">Advanced</p>', style:{color:'white'},listeners:{click: function(){launchDenovoWindow();}}},
+                    {xtype:'tbspacer', xtype:'tbspacer'},{xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'},{xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'}]
             },
             {region: 'center',
             id: 'networkviz-acc',
@@ -976,7 +967,7 @@ Ext.onReady(function() {
               height: 600,
               closeAction: 'hide',
               closable: true,
-              title: "DeNovo Search",
+              title: "Search",
               layoutConfig: {
                 animate: true
               },
