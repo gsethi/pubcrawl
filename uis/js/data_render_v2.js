@@ -692,3 +692,22 @@ function generateNetworkRequest(term,alias,deNovo){
 
 }
 
+function redraw(){
+    trimModel();
+
+    if(!Ext.getCmp('domainOnly-cb').getValue()){
+        Ext.getCmp('domainOnly-cb').disable();
+    }
+
+    if(!Ext.getCmp('rfaceOnly-cb').getValue()){
+        Ext.getCmp('rfaceOnly-cb').disable();
+    }
+
+    if(!Ext.getCmp('showDrugs-cb').getValue()){
+        Ext.getCmp('showDrugs-cb').disable();
+    }
+
+    populateData(completeData['nodes']);
+    renderModel();
+}
+
