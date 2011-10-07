@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 /**
  * @author aeakin
  */
@@ -238,7 +240,7 @@ public class neo4jImport {
                         }
                     }
 
-                    if (gene1.equals("")) {
+                    if (isEmpty(gene1)) {
                         //this means it is a clinical feature
                         sourceId = features.get("featureid", assocInfo[0].trim()).getSingle();
                         if (sourceId == null) {
@@ -251,7 +253,7 @@ public class neo4jImport {
                         }
                     }
 
-                    if (gene2.equals("")) {
+                    if (isEmpty(gene2)) {
                         targetId = features.get("featureid", assocInfo[1].trim()).getSingle();
                         if (targetId == null) {
                             log.info("couldn't find: " + assocInfo[1].trim());
