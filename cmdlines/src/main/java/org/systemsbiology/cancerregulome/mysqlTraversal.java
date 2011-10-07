@@ -5,11 +5,13 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * @author aeakin
  */
 public class mysqlTraversal {
+    private static final Logger log = Logger.getLogger(mysqlTraversal.class.getName());
 
     // TODO : May want to use JDBCTemplate
     public static void main(String[] args) throws Exception {
@@ -29,7 +31,7 @@ public class mysqlTraversal {
             long secondTime = System.currentTimeMillis();
 
             //now go thru and find DOMINE connections
-            System.out.println("found " + nodeMap.size() + " nodes in time: " + (secondTime - firstTime));
+            log.info("found " + nodeMap.size() + " nodes in time: " + (secondTime - firstTime));
             HashMap<String, String> relMap = new HashMap<String, String>();
             for (String nodeName : nodeMap.keySet()) {
                 s = conn.createStatement();
@@ -57,19 +59,20 @@ public class mysqlTraversal {
             }
 
             long thirdTime = System.currentTimeMillis();
-            System.out.println("done finding " + relMap.size() + " relationships in time: " + (thirdTime - secondTime));
-            System.out.println("total time: " + (thirdTime - secondTime));
+            log.info("done finding " + relMap.size() + " relationships in time: " + (thirdTime - secondTime));
+            log.info("total time: " + (thirdTime - secondTime));
             rs.close();
             s.close();
             conn.close();
 
         } catch (Exception e) {
-            System.out.println("Error " + e.getMessage());
+            log.warning(e.getMessage());
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (Exception e) {
+                    log.warning(e.getMessage());
                 }
 
             }

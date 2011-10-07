@@ -3,7 +3,6 @@ package org.systemsbiology.cancerregulome;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.BatchInserterIndexProvider;
-import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.index.impl.lucene.LuceneBatchInserterIndexProvider;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
@@ -12,27 +11,28 @@ import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author aeakin
  */
 public class RE_Import {
-
+    private static final Logger log = Logger.getLogger(RE_Import.class.getName());
 
     enum MyRelationshipTypes implements RelationshipType {
         RFACE
     }
 
     public static void main(String[] args) throws Exception {
-         BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/rface_coadread.db");
+        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/rface_coadread.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex features = indexProvider.nodeIndex("featureIdx", MapUtil.stringMap("type", "exact"));
-         features.setCacheCapacity("name", 40000);
+        features.setCacheCapacity("name", 40000);
 
         try {
             BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
             String vertexLine = null;
-            System.out.println("Now loading features");
+            log.info("Now loading features");
             while ((vertexLine = vertexFile.readLine()) != null) {
                 String[] vertexInfo = vertexLine.split("\t");
                 if (vertexInfo[2].toLowerCase().equals("gnab")) {
@@ -47,7 +47,7 @@ public class RE_Import {
                         gene = vertexInfo[3].substring(0, index);
                     }
 
-                 Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3],"mutationType",mutationType,"gene",gene);
+                    Map<String, Object> properties = MapUtil.map("featureid", vertexInfo[0], "type", vertexInfo[1], "source", vertexInfo[2], "name", vertexInfo[3], "mutationType", mutationType, "gene", gene);
                     if (vertexInfo.length > 4) {
                         properties.put("chr", vertexInfo[4]);
                         properties.put("start", new Integer(vertexInfo[5]));
@@ -58,11 +58,12 @@ public class RE_Import {
                     long node = inserter.createNode(properties);
                     features.add(node, properties);
                 } else {
-                 Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
-                 if(vertexInfo[2].toLowerCase().equals("gexp")){
-                     properties.put("gene",vertexInfo[3]);
+                    Map<String, Object> properties = MapUtil.map("featureid", vertexInfo[0], "type", vertexInfo[1], "source", vertexInfo[2], "name", vertexInfo[3]);
+                    ;
+                    if (vertexInfo[2].toLowerCase().equals("gexp")) {
+                        properties.put("gene", vertexInfo[3]);
 
-                 }
+                    }
 
                     if (vertexInfo.length > 4) {
                         properties.put("chr", vertexInfo[4]);
@@ -81,11 +82,11 @@ public class RE_Import {
             }
 
             features.flush();
-            System.out.println("loaded features");
+            log.info("loaded features");
             //now load up the feature relationships
             BufferedReader featureFile = new BufferedReader(new FileReader("featureAssociations.txt"));
             String assocLine = null;
-            System.out.println("Now loading feature associations");
+            log.info("Now loading feature associations");
             BatchInserterIndex featureRelationships = indexProvider.relationshipIndex("assocIdx", MapUtil.stringMap("type", "exact"));
             featureRelationships.setCacheCapacity("featureid", 40000);
             while ((assocLine = featureFile.readLine()) != null) {
@@ -94,21 +95,20 @@ public class RE_Import {
                 Long feature1 = features.get("featureid", assocInfo[0]).getSingle();
                 Long feature2 = features.get("featureid", assocInfo[1]).getSingle();
                 if (!feature1.equals(feature2)) {
-                Map<String, Object> properties = MapUtil.map("pvalue",new Double(assocInfo[2]),"importance",new Double(assocInfo[3]),"correlation",new Double(assocInfo[4]));
+                    Map<String, Object> properties = MapUtil.map("pvalue", new Double(assocInfo[2]), "importance", new Double(assocInfo[3]), "correlation", new Double(assocInfo[4]));
                     long rel = inserter.createRelationship(feature1, feature2, MyRelationshipTypes.RFACE, properties);
                     featureRelationships.add(rel, properties);
                 }
             }
 
             featureRelationships.flush();
-            System.out.println("completed");
+            log.info("completed");
 
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
-        finally{
+        } finally {
             indexProvider.shutdown();
-        inserter.shutdown();
+            inserter.shutdown();
         }
 
 

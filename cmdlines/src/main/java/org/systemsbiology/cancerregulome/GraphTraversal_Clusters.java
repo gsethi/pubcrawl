@@ -8,11 +8,13 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * @author aeakin
  */
 public class GraphTraversal_Clusters {
+    private static final Logger log = Logger.getLogger(GraphTraversal_Clusters.class.getName());
 
     public static void main(String[] args) throws Exception {
 
@@ -27,12 +29,12 @@ public class GraphTraversal_Clusters {
             ngd_threshold = new Double(prop.getProperty("ngd_threshold"));
             iterations = new Integer(prop.getProperty("iterations"));
         } catch (IOException ex) {
-            System.err.println("Config load failed. Reason: " + ex.getMessage());
+            log.warning("Config load failed. Reason: " + ex.getMessage());
             System.exit(1);
         }
 
         String termLine = null;
-        System.out.println("Now going thru terms");
+        log.info("Now going thru terms");
         HashMap<String, String> processedGenes = new HashMap<String, String>();
         HashMap<String, String[]> connectedGenes = new HashMap<String, String[]>();
         HashMap<String, String> connectedTemp = new HashMap<String, String>();
@@ -42,7 +44,7 @@ public class GraphTraversal_Clusters {
             geneNames.put(gene_name, gene_name);
 
             if (processedGenes.containsKey(gene_name)) { //already seen this gene, don't process it
-                System.out.println("already processed: " + gene_name + ", skipping");
+                log.info("already processed: " + gene_name + ", skipping");
             } else {
                 boolean merge = false;
                 String mergeGene = "";
@@ -54,7 +56,7 @@ public class GraphTraversal_Clusters {
                     connectedTemp.put(gene, "temp");
                     if (processedGenes.containsKey(gene)) {
                         //print this out - probably want to merge if this happens a lot?
-                        //    System.out.println("Found an already processed item - " + (String)genes.get(i));
+                        //    log.info("Found an already processed item - " + (String)genes.get(i));
                         //merge graphs of this gene_name and the one connected to this already found item
                         merge = true;
                         mergeGene = processedGenes.get(gene);
@@ -65,7 +67,7 @@ public class GraphTraversal_Clusters {
                 }
 
                 if (merge) {
-                    System.out.println("merge gene: " + mergeGene);
+                    log.info("merge gene: " + mergeGene);
 
                     String[] mergeSet = connectedGenes.get(mergeGene);
 

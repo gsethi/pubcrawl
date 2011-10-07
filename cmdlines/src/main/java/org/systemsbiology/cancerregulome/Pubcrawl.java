@@ -18,11 +18,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 /**
  * @author aeakin
  */
 public class Pubcrawl {
+    private static final Logger log = Logger.getLogger(Pubcrawl.class.getName());
 
     public static class SolrCallable implements Callable {
         private String term1;
@@ -64,7 +66,7 @@ public class Pubcrawl {
                 QueryResponse rsp = this.server.query(query);
                 totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
             } catch (SolrServerException e) {
-                System.out.println("Error retrieving results from Solr.");
+                log.warning(e.getMessage());
                 System.exit(1);
             }
             return totalResults;
@@ -189,7 +191,7 @@ public class Pubcrawl {
                 filterListFileName = line.getOptionValue("r");
             }
         } catch (ParseException exp) {
-            System.err.println("Command line parsing failed.  Reason:" + exp.getMessage());
+            log.warning("Command line parsing failed.  Reason:" + exp.getMessage());
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("pubcrawl", options);
             System.exit(1);
@@ -220,7 +222,7 @@ public class Pubcrawl {
             dbpassword = prop.getProperty("db_password");
             solrServer = prop.getProperty("solr_server");
         } catch (IOException ex) {
-            System.err.println("Database config load failed. Reason: " + ex.getMessage());
+            log.warning("Database config load failed. Reason: " + ex.getMessage());
             System.exit(1);
         }
 
@@ -243,7 +245,7 @@ public class Pubcrawl {
             bufReader.close();
         }
 
-        System.out.println("loading filterlist filename");
+        log.info("loading filterlist filename");
         if (!filterListFileName.equals("")) {
             //need to load the filterlist hashmap
             FileReader inputReader = new FileReader(filterListFileName);
@@ -440,7 +442,7 @@ public class Pubcrawl {
                 searchTermCount = rsp.getResults().getNumFound();
             } catch (SolrServerException e) {
                 //exit out if there is an error
-                System.out.println("Error retrieving result from Solr.");
+                log.warning(e.getMessage());
                 System.exit(1);
             }
         } else {
