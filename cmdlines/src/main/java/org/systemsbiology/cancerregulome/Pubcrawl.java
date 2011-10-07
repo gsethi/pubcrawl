@@ -377,7 +377,8 @@ public class Pubcrawl {
 
     private static long getTermCount(SolrServer server, Map<String, Integer> singleCountMap, SearchTermAndList searchTermAndList, Map<String, String> filterGrayList,
                                      Map<String, String> keepGrayList) {
-        Integer searchTermCountObject = singleCountMap.get(join(searchTermAndList.asArray(), ","));
+        String[] searchTerms = searchTermAndList.asArray();
+        Integer searchTermCountObject = singleCountMap.get(join(searchTerms, ","));
         long searchTermCount = 0;
         if (searchTermCountObject == null) {
             //didn't find it in map, so need to go get count
@@ -385,7 +386,7 @@ public class Pubcrawl {
             query.setQuery("+text:(*:*)");
 
             String term1 = "";
-            for (String aTermArray : searchTermAndList.getItems()) {
+            for (String aTermArray : searchTerms) {
                 if (filterGrayList.containsKey(aTermArray.toLowerCase())) {
                     String filterTerms = filterGrayList.get(aTermArray.toLowerCase());
                     String[] splitFilterTerms = filterTerms.split(",");
@@ -439,12 +440,11 @@ public class Pubcrawl {
             finalItems[i] = replace(termItems[i], "\"", "\\\"").toLowerCase();
         }
 
-        SearchTermAndList terms = new SearchTermAndList();
-        terms.setTerm(finalItems[0]);
+        SearchTermAndList terms = new SearchTermAndList(finalItems[0]);
         if (useAlias) {
-            terms.getItems().addAll(asList(finalItems));
+            terms.addItems(finalItems);
         } else {
-            terms.getItems().add(finalItems[0]);
+            terms.addItems(finalItems[0]);
         }
         return terms;
     }

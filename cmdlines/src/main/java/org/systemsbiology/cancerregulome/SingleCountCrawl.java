@@ -326,13 +326,11 @@ public class SingleCountCrawl {
             finalItems[i] = strip(termItems[i], "\"").toLowerCase();
         }
 
-        SearchTermAndList stal = new SearchTermAndList();
-        stal.setTerm(finalItems[0]);
-
+        SearchTermAndList stal = new SearchTermAndList(finalItems[0]);
         if (useAlias) {
-            stal.getItems().addAll(asList(finalItems));
+            stal.addItems(finalItems);
         } else {
-            stal.getItems().add(finalItems[0]);
+            stal.addItems(finalItems[0]);
         }
         return stal;
     }
