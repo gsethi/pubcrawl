@@ -3,23 +3,25 @@ package org.systemsbiology.cancerregulome;
 import java.util.ArrayList;
 import java.util.List;
 
+import static scala.actors.threadpool.Arrays.asList;
+
 /**
-* @author hrovira
-*/
+ * @author hrovira
+ */
 public class SearchTermAndList {
-    private String term;
-    private List<String> items = new ArrayList<String>();
+    private final String term;
+    private final List<String> items = new ArrayList<String>();
+
+    public SearchTermAndList(String term) {
+        this.term = term;
+    }
 
     public String getTerm() {
         return term;
     }
 
-    public void setTerm(String term) {
-        this.term = term;
-    }
-
-    public List<String> getItems() {
-        return items;
+    public void addItems(String... items) {
+        this.items.addAll(asList(items));
     }
 
     public String[] asArray() {
