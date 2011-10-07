@@ -1,0 +1,9 @@
+pubcrawl.iml
+pubcrawl.ipr
+pubcrawl.iws
+cmdlines/target
+cmdlines/cmdlines.iml
+websvcs/target
+websvcs/websvcs.iml
+syntax: glob
+websvcs/src/main/java/org/systemsbiology/pubcrawl/rest/PubcrawlServiceController.java.orig
