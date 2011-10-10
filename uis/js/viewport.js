@@ -848,16 +848,9 @@ Ext.onReady(function() {
     documentTable_window.hide();
 
     function renderNetworkViz() {
-        // initialization options
-        var options = {
-            // where you have the Cytoscape Web SWF
-            swfPath: "/cytoscapeweb_v0.7.2/swf/CytoscapeWeb",
-            // where you have the Flash installer SWF
-            flashInstallerPath: "/cytoscapeweb_v0.7.2/swf/playerProductInstall"
-        };
-
-        // init and draw
-        vis = new org.cytoscapeweb.Visualization("cytoscapeweb", options);
-
+        vis = new org.cytoscapeweb.Visualization("cytoscapeweb", {
+            swfPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/CytoscapeWeb",
+            flashInstallerPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/playerProductInstall"
+        });
     }
 });
