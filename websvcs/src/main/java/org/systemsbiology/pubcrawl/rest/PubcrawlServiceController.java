@@ -6,7 +6,6 @@ import org.json.JSONObject;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,16 +33,12 @@ import static org.systemsbiology.addama.commons.web.utils.HttpIO.pipe_close;
  * @author aeakin
  */
 @Controller
-public class PubcrawlServiceController implements InitializingBean {
+public class PubcrawlServiceController {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
     private GraphDatabaseService graphDB;
 
     enum MyRelationshipTypes implements RelationshipType {
         NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624
-    }
-
-    public void afterPropertiesSet() throws Exception {
-
     }
 
     @RequestMapping(value = "/node/**", method = RequestMethod.GET)
