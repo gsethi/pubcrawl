@@ -27,7 +27,7 @@ countsdb = MySQLdb.connect(host=db_host, user=db_user,passwd=db_password,db=db_n
 
 counts_cur = countsdb.cursor();
 
-i=1;
+i=1;                                                       "
 exclude=0;
 for line in geneNameFile:
 	linesplit = line.strip().split("\t");

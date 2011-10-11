@@ -29,16 +29,17 @@ public class Pubcrawl {
         private String term2;
         private long term1count;
         private long term2count;
-        private String[] term1Array;
+        private ArrayList<String[]> term1Array;
         private String[] term2Array;
         private SolrServer server;
         private boolean useAlias;
+        private boolean expr;
         private HashMap<String, String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
         private HashMap<String, String> keepGrayList;    //only keep the keys if the values occur with them
 
-        public SolrCallable(String term1, String[] term1Array, String term2, String[] term2Array, long term1count, long term2count, SolrServer server, boolean useAlias,
-                            HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList) {
-            this.term1 = term1;
+        public SolrCallable(ArrayList<String[]> term1Array, String term2, String[] term2Array, long term1count, long term2count, SolrServer server, boolean useAlias,
+                            HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList, boolean expr) {
+            this.term1 = term1Array.get(0)[0];
             this.term2 = term2;
             this.term1count = term1count;
             this.term2count = term2count;
@@ -46,6 +47,7 @@ public class Pubcrawl {
             this.term1Array = term1Array;
             this.term2Array = term2Array;
             this.useAlias = useAlias;
+            this.expr = expr;
             this.filterGrayList = filterGrayList;
             this.keepGrayList = keepGrayList;
         }
@@ -54,15 +56,18 @@ public class Pubcrawl {
             NGDItem totalResults = null;
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
-            String term1Combined = createCombinedTerm(term1Array);
             String term2Combined = createCombinedTerm(term2Array);
 
-            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term1Combined + ")");
-            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term2Combined + ")");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            for(int i=1; i< term1Array.size(); i++){
+                String term1Combined = createCombinedTerm(term1Array.get(i));
+                query.addFilterQuery("+text:(" + term1Combined + ")");
+            }
+            query.addFilterQuery("+text:(" + term2Combined + ")");
             query.setParam("fl", "pmid");
             try {
                 QueryResponse rsp = this.server.query(query);
-                totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
+                totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias, expr);
             } catch (SolrServerException e) {
                 System.out.println("Error retrieving results from Solr.");
                 System.exit(1);
@@ -108,15 +113,17 @@ public class Pubcrawl {
         private String term1;
         private String term2;
         private long combocount;
-        private String[] term1Array;
+        private ArrayList<String[]> term1Array;
         private String[] term2Array;
         private boolean useAlias;
+        private boolean expr;
 
-        public NGDItem(long term1count, long term2count, String term1, String term2, String[] term1Array, String[] term2Array, long combocount, boolean useAlias) {
+        public NGDItem(long term1count, long term2count, String term1, String term2, ArrayList<String[]> term1Array, String[] term2Array, long combocount, boolean useAlias, boolean expr) {
             this.term1count = term1count;
             this.term2count = term2count;
             this.term1 = term1;
             this.term2 = term2;
+            this.expr = expr;
             this.combocount = combocount;
             this.term1Array = term1Array;
             this.term2Array = term2Array;
@@ -136,7 +143,10 @@ public class Pubcrawl {
 
         public String printItem() {
             if (this.useAlias) {
-                return this.term1 + "\t" + StringUtils.join(this.term1Array, ",") + "\t" + this.term2 + "\t" + StringUtils.join(this.term2Array, ",") + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
+                if(!this.expr)
+                    return this.term1 + "\t" + StringUtils.join(this.term1Array.get(1), ",") + "\t" + this.term2 + "\t" + StringUtils.join(this.term2Array, ",") + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
+                else
+                    return this.term1 + "\t" + this.term1 + "\t" + this.term2  + "\t" + StringUtils.join(this.term2Array, ",") + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
             } else {
                 return this.term1 + "\t" + this.term2 + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
             }
@@ -300,19 +310,51 @@ public class Pubcrawl {
             }
         }
 
-        ArrayList searchTermArray = new ArrayList();
+         ArrayList<String[]> searchTermArray = new ArrayList<String[]>();
         long searchTermCount = 0;
+        boolean expr=false;
         if (inputFileName.equals("")) { //entered term option, just have one to calculate
-            searchTermArray = getTermAndTermList(searchTerm.trim(), useAlias,false);
-            searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+            //check to see if this is an expression
+        
+            if(searchTerm.trim().endsWith(")") && searchTerm.trim().startsWith("(")){
+                expr=true;
+                String[] termName = new String[1];
+                termName[0]=searchTerm.trim();
 
+                int startIndex=1;
+                int phraseIndex=searchTerm.trim().indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    ArrayList termInfo = getTermAndTermList(searchTerm.trim().substring(startIndex,phraseIndex),true,false);
+                    searchTermArray.add((String[])termInfo.get(1));
+                    startIndex=searchTerm.trim().indexOf("(",phraseIndex) + 1;
+                    phraseIndex=searchTerm.trim().indexOf(")",startIndex);
+                }
+
+                searchTermArray.add(0,termName);  //first element should be the term name
+
+            }
+            else{
+                ArrayList termInfo = getTermAndTermList(searchTerm.trim(), useAlias,false);
+                String[] termName = new String[1];
+                termName[0] = (String)termInfo.get(0);
+                searchTermArray.add(0,termName);
+                searchTermArray.add(1,(String[])termInfo.get(1));
+
+            }
+
+            if(expr){
+                searchTermCount = getTermCountExpr(server, searchTermArray, filterGrayList, keepGrayList);
+            }
+            else {
+                searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+            }
             ExecutorService pool = Executors.newFixedThreadPool(16);
             Set<Future<NGDItem>> set = new HashSet<Future<NGDItem>>();
             Date firstTime = new Date();
             for (String secondTerm : term2List) {
                 ArrayList secondTermArray = getTermAndTermList(secondTerm, useAlias,false);
                 long secondTermCount = getTermCount(server, SingleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = new SolrCallable((String) searchTermArray.get(0), (String[]) searchTermArray.get(1), (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = new SolrCallable(searchTermArray, (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList,expr);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
             }
@@ -334,8 +376,31 @@ public class Pubcrawl {
             FileReader inputReader = new FileReader(inputFileName);
             BufferedReader bufReader = new BufferedReader(inputReader);
             String fileSearchTerm = bufReader.readLine();
-            searchTermArray = getTermAndTermList(fileSearchTerm, useAlias,true);
-            searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+            if(fileSearchTerm.trim().endsWith(")") && fileSearchTerm.trim().startsWith("(")){
+                expr=true;
+                 String[] termName = new String[1];
+                termName[0]=fileSearchTerm.trim();
+
+                int startIndex=1;
+                int phraseIndex=fileSearchTerm.trim().indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    ArrayList termInfo = getTermAndTermList(fileSearchTerm.trim().substring(startIndex,phraseIndex),true,false);
+                    searchTermArray.add((String[])termInfo.get(1));
+                    startIndex=fileSearchTerm.trim().indexOf("(",phraseIndex) + 1;
+                    phraseIndex=fileSearchTerm.trim().indexOf(")",startIndex);
+                }
+                 searchTermArray.add(0,termName);  //first element should be the term name
+                 searchTermCount = getTermCountExpr(server, searchTermArray, filterGrayList, keepGrayList);
+            }
+            else{
+                ArrayList termInfo = getTermAndTermList(fileSearchTerm.trim(), useAlias,false);
+                String[] termName = new String[1];
+                termName[0] = (String)termInfo.get(0);
+                searchTermArray.add(0,termName);
+                searchTermArray.add(1,(String[])termInfo.get(1));
+                 searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+
+            }
 
             //do this once with a lower amount of threads, in case we are running on a server where new caching is taking place
             ExecutorService pool = Executors.newFixedThreadPool(16);
@@ -344,7 +409,7 @@ public class Pubcrawl {
             for (String secondTerm : term2List) {
                 ArrayList secondTermArray = getTermAndTermList(secondTerm, useAlias,false);
                 long secondTermCount = getTermCount(server, SingleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = new SolrCallable((String) searchTermArray.get(0), (String[]) searchTermArray.get(1), (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = new SolrCallable(searchTermArray, (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList,expr);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
             }
@@ -361,13 +426,37 @@ public class Pubcrawl {
             pool = Executors.newFixedThreadPool(32);
             fileSearchTerm = bufReader.readLine();
             while (fileSearchTerm != null) {
-                searchTermArray = getTermAndTermList(fileSearchTerm, useAlias,true);
-                searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+                if(fileSearchTerm.trim().endsWith(")") && fileSearchTerm.trim().startsWith("(")){
+                expr=true;
+                 String[] termName = new String[1];
+                termName[0]=fileSearchTerm.trim();
+
+                int startIndex=1;
+                int phraseIndex=fileSearchTerm.trim().indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    ArrayList termInfo = getTermAndTermList(fileSearchTerm.trim().substring(startIndex,phraseIndex),true,false);
+                    searchTermArray.add((String[])termInfo.get(1));
+                    startIndex=fileSearchTerm.trim().indexOf("(",phraseIndex) + 1;
+                    phraseIndex=fileSearchTerm.trim().indexOf(")",startIndex);
+                }
+
+                    searchTermArray.add(0,termName);  //first element should be the term name
+                 searchTermCount = getTermCountExpr(server, searchTermArray, filterGrayList, keepGrayList);
+            }
+            else{
+                ArrayList termInfo = getTermAndTermList(fileSearchTerm.trim(), useAlias,false);
+                String[] termName = new String[1];
+                termName[0] = (String)termInfo.get(0);
+                searchTermArray.add(0,termName);
+                searchTermArray.add(1,(String[])termInfo.get(1));
+                 searchTermCount = getTermCount(server, SingleCountMap, searchTermArray, filterGrayList, keepGrayList);
+
+            }
                 secondTime = new Date();
                 for (String secondTerm : term2List) {
                     ArrayList secondTermArray = getTermAndTermList(secondTerm, useAlias,false);
                     long secondTermCount = getTermCount(server, SingleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                    Callable<NGDItem> callable = new SolrCallable((String) searchTermArray.get(0), (String[]) searchTermArray.get(1), (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                    Callable<NGDItem> callable = new SolrCallable(searchTermArray, (String) secondTermArray.get(0), (String[]) secondTermArray.get(1), searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList, expr);
                     Future<NGDItem> future = pool.submit(callable);
                     set.add(future);
                 }
@@ -433,7 +522,7 @@ public class Pubcrawl {
             }
 
 
-            query.addFilterQuery("+pub_date_year:[2009 TO 2011] +text:(" + term1 + ")");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1 + ")");
             query.setParam("fl", "pmid");
             try {
                 QueryResponse rsp = server.query(query);
@@ -448,6 +537,57 @@ public class Pubcrawl {
         }
         return searchTermCount;
     }
+
+    private static long getTermCountExpr(SolrServer server, ArrayList searchTermArray, HashMap<String, String> filterGrayList,
+                                        HashMap<String, String> keepGrayList) {
+
+           long searchTermCount = 0;
+               SolrQuery query = new SolrQuery();
+               query.setQuery("+text:(*:*)");
+        query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+
+        for ( int i=1; i< searchTermArray.size(); i++){
+               String[] termArray = (String[]) searchTermArray.get(i);
+               String term1 = "";
+               for (String aTermArray : termArray) {
+                   if (filterGrayList.containsKey(aTermArray.toLowerCase())) {
+                       String filterTerms = filterGrayList.get(aTermArray.toLowerCase());
+                       String[] splitFilterTerms = filterTerms.split(",");
+
+                       term1 = term1 + "(+\"" + aTermArray + "\" -(";
+                       for (String splitFilterTerm : splitFilterTerms) {
+                           term1 = term1 + "\"" + splitFilterTerm + "\" ";
+                       }
+                       term1 = term1 + ")) ";
+                   } else if (keepGrayList.containsKey(aTermArray.toLowerCase())) {
+                       String keepTerms = keepGrayList.get(aTermArray.toLowerCase());
+                       String[] splitKeepTerms = keepTerms.split(",");
+
+                       term1 = term1 + "(+\"" + aTermArray + "\" +(";
+                       for (String splitKeepTerm : splitKeepTerms) {
+                           term1 = term1 + "\"" + splitKeepTerm + "\" ";
+                       }
+                       term1 = term1 + ")) ";
+                   } else {
+                       term1 = term1 + "\"" + aTermArray + "\" ";
+                   }
+               }
+               query.addFilterQuery("+text:(" + term1 + ")");
+        }
+
+
+               query.setParam("fl", "pmid");
+               try {
+                   QueryResponse rsp = server.query(query);
+                   searchTermCount = rsp.getResults().getNumFound();
+               } catch (SolrServerException e) {
+                   //exit out if there is an error
+                   System.out.println("Error retrieving result from Solr.");
+                   System.exit(1);
+               }
+
+           return searchTermCount;
+       }
 
     public static ArrayList getTermAndTermList(String searchTerm, boolean useAlias,boolean tabDelimited) {
 

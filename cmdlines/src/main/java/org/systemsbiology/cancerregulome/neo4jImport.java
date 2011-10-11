@@ -22,7 +22,7 @@ public class neo4jImport {
 
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624, DRUG_NGD
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, GBM_1006_MASK, DRUG_NGD
     }
 
     public static void main(String[] args) throws Exception {
@@ -39,7 +39,7 @@ public class neo4jImport {
     }
 
     private static void insertGenes() {
-        BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+        BatchInserter inserter = new BatchInserterImpl("/local/graphdb/neo4j-community-1.5.M01/data/pubcrawl.db");
         BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
         BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx", MapUtil.stringMap("type", "exact"));
         genes.setCacheCapacity("name", 40000);
@@ -50,7 +50,7 @@ public class neo4jImport {
             System.out.println("Now loading genes");
             while ((vertexLine = vertexFile.readLine()) != null) {
                 String[] vertexInfo = vertexLine.split("\t");
-                Map<String, Object> properties = MapUtil.map("name", vertexInfo[0].toLowerCase(), "aliases", vertexInfo[1], "termcount", new Integer(vertexInfo[2]), "termcount_alias", new Integer(vertexInfo[3]), "tf", new Integer(vertexInfo[4]), "somatic", new Integer(vertexInfo[5]), "germline", new Integer(vertexInfo[6]),
+                Map<String, Object> properties = MapUtil.map("name", vertexInfo[0].toLowerCase(), "aliases", vertexInfo[1], "termcount", new Integer(vertexInfo[2]), "termcount_alias", new Integer(vertexInfo[3]), "tf", new Integer(vertexInfo[4]), "somatic", new Integer(vertexInfo[5]), "germline", new Integer(vertexInfo[6]),"mutCount", new Integer(vertexInfo[7]),
                         "nodeType", "gene");
                 long node = inserter.createNode(properties);
                 genes.add(node, properties);
@@ -143,7 +143,7 @@ public class neo4jImport {
     }
 
     private static void insertDrugs() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/graphdb/neo4j-community-1.5.M01/data/pubcrawl.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
            BatchInserterIndex drugs = indexProvider.nodeIndex("drugIdx", MapUtil.stringMap("type", "exact"));
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
@@ -221,28 +221,28 @@ public class neo4jImport {
        }
 
         private static void insertRFACE() {
-           BatchInserter inserter = new BatchInserterImpl("/local/neo4j-server/neo4j-community-1.4.M06/data/pubcrawl2.db");
+           BatchInserter inserter = new BatchInserterImpl("/local/graphdb/neo4j-community-1.5.M01/data/pubcrawl.db");
            BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
             BatchInserterIndex genes = indexProvider.nodeIndex("geneIdx",MapUtil.stringMap("type","exact"));
             BatchInserterIndex features = indexProvider.nodeIndex("featureIdx",MapUtil.stringMap("type","exact"));
          BatchInserterIndex relidx = indexProvider.relationshipIndex("RFACERelIdx", MapUtil.stringMap("type", "exact"));
 
            try {
-        //       BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
-        //                 String vertexLine = null;
-        //                 System.out.println("Now loading features");
-        //                 while ((vertexLine = vertexFile.readLine()) != null) {
-        //                     String[] vertexInfo = vertexLine.split("\t");
-        //                     if (vertexInfo[2].toLowerCase().equals("clin")) {
-        //                      Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
-        //                         long node = inserter.createNode(properties);
-        //                         features.add(node, properties);
+               BufferedReader vertexFile = new BufferedReader(new FileReader("featureInfo.txt"));
+                        String vertexLine = null;
+                         System.out.println("Now loading features");
+                         while ((vertexLine = vertexFile.readLine()) != null) {
+                             String[] vertexInfo = vertexLine.split("\t");
+                             if (vertexInfo[2].toLowerCase().equals("clin")) {
+                              Map<String, Object> properties = MapUtil.map("featureid",vertexInfo[0],"type", vertexInfo[1],"source",vertexInfo[2],"name", vertexInfo[3]);;
+                                 long node = inserter.createNode(properties);
+                                 features.add(node, properties);
 
-        //                     }
-        //                 }
+                             }
+                        }
 
-       //                  features.flush();
-       //                  System.out.println("loaded clinical features");
+                         features.flush();
+                         System.out.println("loaded clinical features");
                          //now load up the feature relationships
                          BufferedReader featureFile = new BufferedReader(new FileReader("featureAssociations.txt"));
                          String assocLine = null;
@@ -269,9 +269,9 @@ public class neo4jImport {
                                       int index = feature1[2].indexOf("_");
 
                                      if (index == -1) {
-                                         gene1 = feature1[2];
+                                         gene1 = feature1[2].toLowerCase();
                                      } else {
-                                         gene1 = feature1[2].substring(0, index);
+                                         gene1 = feature1[2].substring(0, index).toLowerCase();
                                      }
                                  }
 
@@ -282,9 +282,9 @@ public class neo4jImport {
                                       int index = feature2[2].indexOf("_");
 
                                      if (index == -1) {
-                                         gene2 = feature2[2];
+                                         gene2 = feature2[2].toLowerCase();
                                      } else {
-                                         gene2 = feature2[2].substring(0, index);
+                                         gene2 = feature2[2].substring(0, index).toLowerCase();
                                      }
                                  }
 
@@ -354,7 +354,7 @@ public class neo4jImport {
 
                    }
                     Map<String,Object> properties = MapUtil.map("featureDetails",rfaceArray);
-                    long rel = inserter.createRelationship(sourceId, targetId, MyRelationshipTypes.RFACE_COADREAD_0624, properties);
+                    long rel = inserter.createRelationship(sourceId, targetId, MyRelationshipTypes.GBM_1006_MASK, properties);
                     relidx.add(rel, properties);
 
                }

@@ -482,10 +482,14 @@ function getVisualStyle(){
 
      return tooltip;
  };
+    var colorMap = d3.scale.linear()
+        .domain([pv.min(model_def["mutCounts"]),pv.max(model_def["mutCounts"])])
+        .range(["#F97BA2","#790663"]);
 
     vis["customNodeColor"] = function(data){
-        if(data.somatic || data.germline){
-            return "#FC4EE8";
+        if(data.mutCount > 0){
+           
+            return colorMap(data.mutCount);
         }
         else if(data.drug){
             return "#58C0D2";
@@ -582,6 +586,7 @@ function getModelDef(){
                 {name: "drug", type: "boolean"},
                 {name: "somatic", type: "boolean"},
                 {name: "germline", type: "boolean"},
+                {name: "mutCount", type: "number"},
                 {name: "aliases", type: "string"},
                 {name: "termcount", type: "double"},
                 {name: "searchtermcount", type: "double"}

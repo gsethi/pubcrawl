@@ -75,6 +75,17 @@
             <artifactId>neo4j</artifactId>
             <version>1.4.M06</version>
         </dependency>
+        <dependency>
+            <groupId>org.neo4j.app</groupId>
+            <artifactId>neo4j-server</artifactId>
+            <version>1.4.M06</version>
+        </dependency>
+                <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr-runtime</artifactId>
+            <version>3.3</version>
+        </dependency>
+        
     </dependencies>
 
 </project>

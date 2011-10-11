@@ -99,7 +99,12 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
                     Ext.getCmp('nodeFilterPanel').enable();
                     Ext.getCmp('edgeFilterPanel').enable();
-
+                     model_def['mutCounts'] = json.nodes.map(function(node){
+                        if(node.mutCount == undefined)
+                            return 0;
+                         else
+                            return node.mutCount;
+                    });
                     filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
                             Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
                     query_window.hide();
@@ -166,6 +171,8 @@ function populateData(allnodes){
     var edgeNGDSummary={};
     var edgeCCSummary={};
     var graphNodes={};
+
+
     for (var nIndex=0; nIndex < model_def['nodes'].length; nIndex++){
         graphNodes[model_def['nodes'][nIndex].label.toUpperCase()]="";
     }

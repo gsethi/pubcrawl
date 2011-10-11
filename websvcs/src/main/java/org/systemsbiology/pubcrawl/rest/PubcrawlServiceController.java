@@ -1,5 +1,7 @@
 package org.systemsbiology.pubcrawl.rest;
 
+import antlr.RecognitionException;
+import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,6 +17,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.systemsbiology.addama.commons.web.views.JsonItemsView;
 import org.systemsbiology.pubcrawl.pojos.PubcrawlNetworkBean;
+import org.antlr.runtime.*;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
@@ -37,7 +40,7 @@ public class PubcrawlServiceController implements InitializingBean {
     private GraphDatabaseService graphDB;
 
     enum MyRelationshipTypes implements RelationshipType {
-        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS, RFACE_COADREAD_0624,DRUG_NGD
+        NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS,GBM_1006_MASK,DRUG_NGD
     }
 
     public void afterPropertiesSet() throws Exception {
@@ -56,6 +59,17 @@ public class PubcrawlServiceController implements InitializingBean {
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
+    @RequestMapping(value= "/node/**", method=RequestMethod.DELETE)
+    protected ModelAndView handleNodeDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        log.info("request.getMethod: " + request.getMethod());
+        JSONObject json = deleteNode(bean);
+        return new ModelAndView(new JsonItemsView()).addObject("json",json);
+    }
+
     @RequestMapping(value= "/node_alias/**",method= RequestMethod.GET)
     protected ModelAndView handleGraphAliasRetrieval(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String requestUri = request.getRequestURI();
@@ -64,6 +78,18 @@ public class PubcrawlServiceController implements InitializingBean {
         PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
         log.info("request.getMethod: " + request.getMethod());
         JSONObject json = getGraph(bean);
+        json.put("node", bean.getNode());
+        return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
+
+     @RequestMapping(value= "/rface_node/**",method= RequestMethod.GET)
+    protected ModelAndView handleRFACEGraphRetrieval(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
+
+        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        log.info("request.getMethod: " + request.getMethod());
+        JSONObject json = getRFACEClusterGraph(bean);
         json.put("node", bean.getNode());
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
@@ -234,6 +260,35 @@ public class PubcrawlServiceController implements InitializingBean {
         return null;
     }
 
+    protected JSONObject deleteNode(PubcrawlNetworkBean bean){
+        JSONObject json = new JSONObject();
+        try{
+            IndexManager indexMgr = graphDB.index();
+            Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+            Node deleteNode = nodeIdx.get("name", bean.getNode()).getSingle();
+
+            log.info("got the delete node: " + deleteNode.getProperty("id"));
+            if(deleteNode != null){
+            for (Relationship relConnection : deleteNode.getRelationships()) {
+                if(relConnection != null){
+                    relConnection.delete();
+                log.info("delete relationship");
+                }
+
+            }
+            }
+
+            log.info("deleted the relationships");
+            deleteNode.delete();
+            json.put("success","true");
+        }
+        catch (Exception e) {
+            log.info("exception occured: " + e.getMessage());
+            return new JSONObject();
+        }
+        return json;
+    }
+    
     protected JSONObject getGraph(PubcrawlNetworkBean bean) {
         JSONObject json = new JSONObject();
         try {
@@ -263,6 +318,7 @@ public class PubcrawlServiceController implements InitializingBean {
             searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
             searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
             searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
+            searchNodeJson.put("mutCount", (Integer) searchNode.getProperty("mutCount",0));
             searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
             searchNodeJson.put("label", (String) searchNode.getProperty("name"));
             searchNodeJson.put("ngd", 0);
@@ -274,7 +330,7 @@ public class PubcrawlServiceController implements InitializingBean {
             //geneArray will hold the returned list of nodes for the graph
             geneArray.put(searchNodeJson);
             //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
-            geneMap.put((String) searchNode.getProperty("name"), searchNode);
+            geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
 
             //get nodes that are related to the search node thru ngd values
             MyRelationshipTypes relType = MyRelationshipTypes.NGD;
@@ -312,6 +368,7 @@ public class PubcrawlServiceController implements InitializingBean {
                 geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
                 geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
                 geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
+                  geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
                 geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
                 geneJson.put("label", gene.getProperty("name"));
                 geneJson.put("ngd", ngdRelationship.getProperty("value"));
@@ -410,7 +467,7 @@ public class PubcrawlServiceController implements InitializingBean {
                             edgeListArray.put(edgeListItem);
 
                         }
-                        else if(item.isType(MyRelationshipTypes.RFACE_COADREAD_0624)){
+                        else if(item.isType(MyRelationshipTypes.GBM_1006_MASK)){
                             String startName=((String)item.getStartNode().getProperty("name")).toUpperCase();
                             String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
                             if(first){
@@ -498,6 +555,266 @@ public class PubcrawlServiceController implements InitializingBean {
         return json;
     }
 
+    protected JSONObject getRFACEClusterGraph(PubcrawlNetworkBean bean) {
+          JSONObject json = new JSONObject();
+          try {
+              IndexManager indexMgr = graphDB.index();
+              Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+              Node searchNode = nodeIdx.get("name", bean.getNode()).getSingle();
+
+
+              ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
+              ArrayList<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
+              HashMap<String, Node> geneMap = new HashMap<String, Node>();
+              HashMap<String, String> processedMap = new HashMap<String, String>();
+              HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
+              HashMap<String, Node> drugMap = new HashMap<String, Node>();
+              JSONArray geneArray = new JSONArray();
+
+              ArrayList<Relationship> relList = new ArrayList<Relationship>();
+
+              log.info("node: " + bean.getNode() + " alias: " + bean.getAlias());
+              //got all nodes, now sort and go thru the first 200
+
+
+              JSONObject searchNodeJson = new JSONObject();
+              if(bean.getAlias()){
+                  searchNodeJson.put("aliases", (String) searchNode.getProperty("aliases", ""));
+              }
+              searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
+              searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
+              searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
+              searchNodeJson.put("mutCount", (Integer) searchNode.getProperty("mutCount",0));
+              searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
+              searchNodeJson.put("label", (String) searchNode.getProperty("name"));
+                       searchNodeJson.put("importance", 0);
+                  searchNodeJson.put("pvalue", 0);
+                   searchNodeJson.put("coorelation", 0);
+              searchNodeJson.put("termcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+              searchNodeJson.put("searchterm", bean.getNode());
+              searchNodeJson.put("searchtermcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+
+              //geneArray will hold the returned list of nodes for the graph
+              geneArray.put(searchNodeJson);
+              //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
+              geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
+
+              //get nodes that are related to the search node thru rface values
+              MyRelationshipTypes relType = MyRelationshipTypes.GBM_1006_MASK;
+
+
+                  for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.GBM_1006_MASK, Direction.OUTGOING)) {
+                      sortedNGDList.add(ngdConnection);
+                  }
+
+              //got all nodes, now sort and go thru the first 175
+              Collections.sort(sortedNGDList, new Comparator() {
+                  public int compare(Object a, Object b) {
+                      return ((Double) ((Relationship) a).getProperty("importance")).compareTo((Double) ((Relationship) b).getProperty("importance"));
+                  }
+              });
+
+               int count=0;
+               for(int i=0; i< sortedNGDList.size() && i<175; i++){
+                  Relationship ngdRelationship = sortedNGDList.get(i);
+                  Node gene = (ngdRelationship).getEndNode();
+
+                  JSONObject geneJson = new JSONObject();
+                  Node searchGene = ngdRelationship.getStartNode();
+                   if(bean.getAlias()){
+                  geneJson.put("aliases", gene.getProperty("aliases", ""));
+                   }
+                  geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
+                  geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
+                  geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
+                    geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
+                  geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
+                  geneJson.put("label", gene.getProperty("name"));
+                  geneJson.put("importance", ngdRelationship.getProperty("importance"));
+                  geneJson.put("pvalue", ngdRelationship.getProperty("pvalue"));
+                   geneJson.put("coorelation", ngdRelationship.getProperty("coorelation"));
+                  geneJson.put("termcount", bean.getAlias() ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
+                  geneJson.put("searchtermcount", bean.getAlias() ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
+                  geneJson.put("searchterm", bean.getNode());
+
+                  //geneArray will hold the returned list of nodes for the graph
+                  geneArray.put(geneJson);
+
+                   //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
+                  geneMap.put(((String) gene.getProperty("name")).toUpperCase(), gene);
+
+
+              }
+
+
+              //Done getting the correct nodes, now find all the edges
+
+              JSONArray edgeArray = new JSONArray();
+             MyRelationshipTypes drugType = bean.getAlias() ? MyRelationshipTypes.DRUG_NGD_ALIAS : MyRelationshipTypes.DRUG_NGD;
+
+              //now get the edges between all graph nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
+              for (Node gene : geneMap.values()) {
+                  boolean domineType = false;
+                  String geneName = ((String) gene.getProperty("name")).toUpperCase();
+                  for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
+                      Node endNode = connection.getEndNode();
+                      String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
+                      if(connection.isType(MyRelationshipTypes.DRUG_NGD_ALIAS) || connection.isType(MyRelationshipTypes.DRUG_NGD) ){
+                          if(connection.isType(drugType)){
+                          sortedDrugNGDList.add(connection);
+                          }
+                      }
+                      else{
+                      //do this relationship if the end node is in our list and it hasn't already been processed
+                          if (geneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)) {
+                              //keep this relationship
+                              String key = geneName + "_" + nodeName;
+                              if (relMap.containsKey(key)) {
+                                  relList = relMap.get(key);
+                                  relList.add(connection);
+                                  relMap.put(key, relList);
+                              } else {
+                                  relList = new ArrayList<Relationship>();
+                                  relList.add(connection);
+                                  relMap.put(key, relList);
+                              }
+
+                          }
+                      }
+                  }
+
+                  processedMap.put(geneName, geneName);
+              }
+
+              //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
+                  JSONObject edgeJson = new JSONObject();
+                  boolean first = true;
+                  JSONArray edgeListArray = new JSONArray();
+                  for (ArrayList<Relationship> itemList : relMap.values()) {
+                      for (Relationship item : itemList) {
+                          if ((item.isType(MyRelationshipTypes.NGD) && !bean.getAlias()) ||
+                                  (item.isType(MyRelationshipTypes.NGD_ALIAS) && bean.getAlias())) {
+                              edgeJson.put("ngd",  item.getProperty("value"));
+                              edgeJson.put("cc", item.getProperty("combocount"));
+                          } else if (item.isType(MyRelationshipTypes.DOMINE)) {
+                                  String hgnc1=((String)item.getStartNode().getProperty("name")).toUpperCase();
+                                  String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+                                 if(first){
+                                  edgeJson.put("source", hgnc1);
+                                  edgeJson.put("target", hgnc2);
+                                  edgeJson.put("id", hgnc1 + hgnc2);
+                                  edgeJson.put("label", hgnc1 + "to" + hgnc2);
+                                  first = false;
+                              }
+
+                               if(!edgeJson.has("connType") || edgeJson.get("connType").equals("")){
+                                  edgeJson.put("connType","domine");
+                              }
+                              else{
+                                  edgeJson.remove("connType");
+                                  edgeJson.put("connType","combo");
+                              }
+
+                              JSONObject edgeListItem = new JSONObject();
+                              edgeListItem.put("pf1", item.getProperty("pf1"));
+                              edgeListItem.put("pf2", item.getProperty("pf2"));
+                              edgeListItem.put("uni1",  item.getProperty("uni1"));
+                              edgeListItem.put("uni2", item.getProperty("uni2"));
+                              edgeListItem.put("type", item.getProperty("domine_type"));
+                              edgeListItem.put("pf1_count", item.getProperty("pf1_count"));
+                              edgeListItem.put("pf2_count", item.getProperty("pf2_count"));
+
+                              edgeListArray.put(edgeListItem);
+
+                          }
+                          else if(item.isType(MyRelationshipTypes.GBM_1006_MASK)){
+                              String startName=((String)item.getStartNode().getProperty("name")).toUpperCase();
+                              String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+                              if(first){
+                                  edgeJson.put("source",startName);
+                                  edgeJson.put("target", endName);
+                                  edgeJson.put("id", startName+endName);
+                                  edgeJson.put("label", startName + "to" + endName);
+                                  first=false;
+                              }
+                               edgeJson.put("directed", true);
+
+                             // rfaceEdgeJson.put("details",item.getProperty("featureDetails"));
+                              if(!edgeJson.has("connType") || edgeJson.get("connType").equals("")){
+                                  edgeJson.put("connType","rface");
+                              }
+                              else{
+                                  edgeJson.remove("connType");
+                                  edgeJson.put("connType","combo");
+                              }
+                          }
+
+                      }
+
+                      if (edgeJson.has("id")) {
+                          edgeJson.put("edgeList", edgeListArray);
+                          if (!edgeJson.has("directed")) {
+                              edgeJson.put("directed", false);
+                          }
+                          edgeArray.put(edgeJson);
+                      }
+                      edgeJson = new JSONObject();
+                      edgeListArray = new JSONArray();
+                      first = true;
+                  }
+
+
+              //go thru drugMap and put into node array
+               Collections.sort(sortedDrugNGDList, new Comparator() {
+                  public int compare(Object a, Object b) {
+                      return ((Double) ((Relationship) a).getProperty("value")).compareTo((Double) ((Relationship) b).getProperty("value"));
+                  }
+              });
+
+                for(int i=0; i< sortedDrugNGDList.size() && i < 100; i++){
+                    edgeJson = new JSONObject();
+                    Relationship rel = sortedDrugNGDList.get(i);
+                           String startName=((String)rel.getStartNode().getProperty("name")).toUpperCase();
+                                  String endName = ((String) rel.getEndNode().getProperty("name")).toUpperCase();
+                               edgeJson.put("directed", false);
+                               edgeJson.put("source",startName);
+                               edgeJson.put("target",endName);
+                              edgeJson.put("ngd", (Double) rel.getProperty("value"));
+                    edgeJson.put("connType","drugNGD");
+                              edgeJson.put("id",startName + endName);
+                    edgeArray.put(edgeJson);
+                    drugMap.put((String)rel.getEndNode().getProperty("name"),rel.getEndNode());
+                }
+              for(Node drug: drugMap.values()){
+                  JSONObject drugJson = new JSONObject();
+                  drugJson.put("aliases","");
+                  drugJson.put("label",  drug.getProperty("name"));
+                  drugJson.put("termcount", 0);
+                  drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
+                   drugJson.put("drug", true);
+                  geneArray.put(drugJson);
+              }
+
+              log.info("done getting graph edges");
+               //now get all domine edges between all nodes
+
+              json.put("nodes", geneArray);
+              json.put("edges", edgeArray);
+
+              JSONArray nodesArray = getNGDNodes(bean.getNode(),bean.getAlias());
+              for(int i=0; i< nodesArray.length(); i++){
+                  nodesArray.getJSONObject(i).put("graph",geneMap.containsKey((nodesArray.getJSONObject(i).get("label").toString()).toUpperCase()) ? 1 : 0);
+              }
+              json.put("allnodes",nodesArray);
+
+
+          } catch (Exception e) {
+              log.info("exception occured: " + e.getMessage());
+              return new JSONObject();
+          }
+          return json;
+      }
+
     protected JSONObject getDomineEdges(String node){
         JSONObject  json=new JSONObject();
 
@@ -552,6 +869,7 @@ public class PubcrawlServiceController implements InitializingBean {
                 relJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
                 relJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
                 relJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
+                relJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
                 relJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
                 relJson.put("label", (String) gene.getProperty("name"));
                 relJson.put("ngd", (Double) rel.getProperty("value"));
