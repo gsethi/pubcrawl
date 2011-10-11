@@ -23,58 +23,65 @@ import java.util.concurrent.Future;
 public class SingleCountCrawl {
      public static class SolrCallable implements Callable {
         private String term1;
-        private String[] term1Array;
+        private ArrayList<String[]> term1Array;
         private SolrServer server;
         private boolean useAlias;
+         private boolean expr;
          private HashMap<String,String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
          private HashMap<String,String> keepGrayList;    //only keep the keys if the values occur with them
 
-        public SolrCallable(String term1, String[] term1Array,  SolrServer server,boolean useAlias,
-                            HashMap<String,String> filterGrayList,HashMap<String,String> keepGrayList){
-            this.term1=term1;
+        public SolrCallable(ArrayList<String[]>  term1Array,  SolrServer server,boolean useAlias,
+                            HashMap<String,String> filterGrayList,HashMap<String,String> keepGrayList,boolean expr){
+            this.term1=term1Array.get(0)[0];
             this.server=server;
             this.term1Array=term1Array;
             this.useAlias=useAlias;
             this.filterGrayList=filterGrayList;
             this.keepGrayList=keepGrayList;
+            this.expr=expr;
         }
 
         public SingleCountItem call(){
             SingleCountItem totalResults = null;
             SolrQuery query = new SolrQuery();
-
-            String term1Combined = "";
-            for(int i=0; i< term1Array.length; i++){
-               if(filterGrayList.containsKey(term1Array[i].toLowerCase())){
-                   String filterTerms = filterGrayList.get(term1Array[i].toLowerCase());
+            query.setQuery("*:*");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");       
+             for ( int i=1; i< term1Array.size(); i++){
+               String[] termArray = (String[]) term1Array.get(i);
+               String term1Combined = "";
+             for (String aTermArray : termArray){
+               if(filterGrayList.containsKey(aTermArray.toLowerCase())){
+                   String filterTerms = filterGrayList.get(aTermArray.toLowerCase());
                      String[] splitFilterTerms = filterTerms.split(",");
 
-                    term1Combined=term1Combined + "(+\"" + term1Array[i]+"\" -(";
+                    term1Combined=term1Combined + "(+\"" + aTermArray+"\" -(";
                     for(int j=0; j< splitFilterTerms.length; j++){
                         term1Combined=term1Combined + "\""+ splitFilterTerms[j] + "\" ";
                     }
                     term1Combined=term1Combined + ")) ";
                }
-                else if(keepGrayList.containsKey(term1Array[i].toLowerCase())){
-                   String keepTerms = keepGrayList.get(term1Array[i].toLowerCase());
+                else if(keepGrayList.containsKey(aTermArray.toLowerCase())){
+                   String keepTerms = keepGrayList.get(aTermArray.toLowerCase());
                      String[] splitKeepTerms = keepTerms.split(",");
 
-                    term1Combined=term1Combined + "(+\"" + term1Array[i]+"\" +(";
+                    term1Combined=term1Combined + "(+\"" + aTermArray+"\" +(";
                     for(int j=0; j< splitKeepTerms.length; j++){
                         term1Combined=term1Combined + "\""+ splitKeepTerms[j] + "\" ";
                     }
                     term1Combined=term1Combined + ")) ";
                 }
                 else{
-                  term1Combined=term1Combined + "\"" + term1Array[i]+"\" ";
+                  term1Combined=term1Combined + "\"" + aTermArray+"\" ";
                 }
             }
-            query.setQuery("*:*");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1Combined + ")");
+
+                 query.addFilterQuery("+text:(" + term1Combined + ")");
+             }
+
             query.setParam("fl","pmid");
             try{
                 QueryResponse rsp = this.server.query(query);
-                totalResults = new SingleCountItem(rsp.getResults().getNumFound(),this.term1,this.term1Array,useAlias);
+                totalResults = new SingleCountItem(rsp.getResults().getNumFound(),this.term1,this.term1Array,useAlias,this.expr);
             }
             catch(SolrServerException e){
                  System.out.println("Error retrieving results from Solr.");
@@ -87,20 +94,25 @@ public class SingleCountCrawl {
     public static class SingleCountItem{
         private long term1count;
         private String term1;
-        private String[] term1Array;
+        private ArrayList<String[]> term1Array;
         private boolean useAlias;
+        private boolean expr;
 
-        public SingleCountItem(long term1count, String term1,String[] term1Array, boolean useAlias){
+        public SingleCountItem(long term1count, String term1,ArrayList<String[]> term1Array, boolean useAlias, boolean expr){
             this.term1count = term1count;
             this.term1 = term1;
             this.term1Array=term1Array;
             this.useAlias=useAlias;
+            this.expr=expr;
 
         }
 
         public String printItem(){
              if(this.useAlias){
-                 return this.term1 + "\t" + StringUtils.join(this.term1Array,",") + "\t" + this.term1count + "\n";
+                 if(!expr)
+                    return this.term1 + "\t" + StringUtils.join(this.term1Array.get(1),",") + "\t" + this.term1count + "\n";
+                 else
+                     return this.term1 + "\t" + this.term1 + "\t" + this.term1count + "\n";
              }
              else{
                  return this.term1 + "\t" + this.term1count + "\n";
@@ -191,6 +203,7 @@ public class SingleCountCrawl {
              solrServerHost=solrServer;
          }
 
+         boolean expr=false;
          System.out.println("checking input filename");
          ArrayList termList = new ArrayList();
          if(inputFileName.equals("") && searchTerm.equals("")){
@@ -261,9 +274,33 @@ public class SingleCountCrawl {
          System.out.println("created threadpool");
          Date firstTime = new Date();
          for(int i=0; i< termList.size(); i++){
-             ArrayList searchTermArray = getTermAndTermList((String)termList.get(i),useAlias);
-                Callable<SingleCountItem> callable = new SolrCallable((String)searchTermArray.get(0),(String[])searchTermArray.get(1),
-                        server,useAlias,filterGrayList,keepGrayList);
+             ArrayList searchTermArray = new ArrayList();
+              String termListItem=((String)termList.get(i)).trim();
+              if(termListItem.endsWith(")") && termListItem.startsWith("(")){
+                expr=true;
+                 String[] termName = new String[1];
+                termName[0]=termListItem;
+
+                int startIndex=1;
+                int phraseIndex=termListItem.indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    ArrayList termInfo = getTermAndTermList(termListItem.substring(startIndex,phraseIndex),true);
+                    searchTermArray.add((String[])termInfo.get(1));
+                    startIndex=termListItem.indexOf("(",phraseIndex) + 1;
+                    phraseIndex=termListItem.indexOf(")",startIndex);
+                }
+                 searchTermArray.add(0,termName);  //first element should be the term name
+            }
+            else{
+                ArrayList termInfo = getTermAndTermList(termListItem, useAlias);
+                String[] termName = new String[1];
+                termName[0] = (String)termInfo.get(0);
+                searchTermArray.add(0,termName);
+                searchTermArray.add(1,(String[])termInfo.get(1));
+
+            }
+                Callable<SingleCountItem> callable = new SolrCallable(searchTermArray,
+                        server,useAlias,filterGrayList,keepGrayList,expr);
                 Future<SingleCountItem> future = pool.submit(callable);
                 set.add(future);
 
