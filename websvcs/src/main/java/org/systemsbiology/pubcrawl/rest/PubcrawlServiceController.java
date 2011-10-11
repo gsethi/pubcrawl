@@ -82,17 +82,6 @@ public class PubcrawlServiceController implements InitializingBean {
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
-     @RequestMapping(value= "/rface_node/**",method= RequestMethod.GET)
-    protected ModelAndView handleRFACEGraphRetrieval(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String requestUri = request.getRequestURI();
-        log.info(requestUri);
-
-        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
-        log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = getRFACEClusterGraph(bean);
-        json.put("node", bean.getNode());
-        return new ModelAndView(new JsonItemsView()).addObject("json", json);
-    }
 
     @RequestMapping(value= "/relationships/**",method= RequestMethod.GET)
     protected ModelAndView handleDomineRelationships(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -300,7 +289,7 @@ public class PubcrawlServiceController implements InitializingBean {
             ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
             ArrayList<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
             HashMap<String, Node> geneMap = new HashMap<String, Node>();
-            HashMap<String, String> processedMap = new HashMap<String, String>();
+            HashMap<String, Integer> processedMap = new HashMap<String, Integer>();
             HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
             HashMap<String, Node> drugMap = new HashMap<String, Node>();
             JSONArray geneArray = new JSONArray();
@@ -395,6 +384,7 @@ public class PubcrawlServiceController implements InitializingBean {
             //now get the edges between all graph nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
             for (Node gene : geneMap.values()) {
                 boolean domineType = false;
+                int edgeCount=0;
                 String geneName = ((String) gene.getProperty("name")).toUpperCase();
                 for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
                     Node endNode = connection.getEndNode();
@@ -405,10 +395,15 @@ public class PubcrawlServiceController implements InitializingBean {
                         }
                     }
                     else{
+
                     //do this relationship if the end node is in our list and it hasn't already been processed
-                        if (geneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)) {
+                        if (geneMap.containsKey(nodeName)){
+                            if(connection.isType(MyRelationshipTypes.DOMINE) || connection.isType(MyRelationshipTypes.GBM_1006_MASK))
+                                edgeCount=edgeCount+1;
+                        if (!processedMap.containsKey(nodeName)) {
                             //keep this relationship
                             String key = geneName + "_" + nodeName;
+
                             if (relMap.containsKey(key)) {
                                 relList = relMap.get(key);
                                 relList.add(connection);
@@ -420,10 +415,11 @@ public class PubcrawlServiceController implements InitializingBean {
                             }
 
                         }
+                        }
                     }
                 }
 
-                processedMap.put(geneName, geneName);
+                processedMap.put(geneName, edgeCount);
             }
 
             //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
@@ -538,6 +534,36 @@ public class PubcrawlServiceController implements InitializingBean {
             log.info("done getting graph edges");
              //now get all domine edges between all nodes
 
+            if(processedMap.get(((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase()) == 0 ){
+                //no edges for our first item in the array, set the first item to be something with edges (needed for correct layout in cytoscape web)
+                int maxCount=0;
+                String maxNode=((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase();
+                for(String nodeName: processedMap.keySet()){
+                    Integer edgeCount=processedMap.get(nodeName);
+                      if(edgeCount > maxCount){
+                          maxCount=edgeCount;
+                          maxNode=nodeName.toUpperCase();
+                      }
+                }
+
+                //found maxNode, now get it from geneArray and put it in the front
+                JSONArray geneArray2 = new JSONArray();
+                JSONObject topObj = null;
+                for(int i=0; i< geneArray.length(); i++){
+                    if(((JSONObject)geneArray.get(i)).get("label").toString().toUpperCase().equals(maxNode)){
+                        topObj = (JSONObject)geneArray.get(i);
+
+                    }
+                    else
+                        geneArray2.put(geneArray.get(i));
+
+                }
+
+                if(topObj != null){
+                    geneArray2.put(0,topObj);
+                }
+                geneArray=geneArray2;
+            }
             json.put("nodes", geneArray);
             json.put("edges", edgeArray);
 
@@ -555,265 +581,6 @@ public class PubcrawlServiceController implements InitializingBean {
         return json;
     }
 
-    protected JSONObject getRFACEClusterGraph(PubcrawlNetworkBean bean) {
-          JSONObject json = new JSONObject();
-          try {
-              IndexManager indexMgr = graphDB.index();
-              Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
-              Node searchNode = nodeIdx.get("name", bean.getNode()).getSingle();
-
-
-              ArrayList<Relationship> sortedNGDList = new ArrayList<Relationship>();
-              ArrayList<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
-              HashMap<String, Node> geneMap = new HashMap<String, Node>();
-              HashMap<String, String> processedMap = new HashMap<String, String>();
-              HashMap<String, ArrayList<Relationship>> relMap = new HashMap<String, ArrayList<Relationship>>();
-              HashMap<String, Node> drugMap = new HashMap<String, Node>();
-              JSONArray geneArray = new JSONArray();
-
-              ArrayList<Relationship> relList = new ArrayList<Relationship>();
-
-              log.info("node: " + bean.getNode() + " alias: " + bean.getAlias());
-              //got all nodes, now sort and go thru the first 200
-
-
-              JSONObject searchNodeJson = new JSONObject();
-              if(bean.getAlias()){
-                  searchNodeJson.put("aliases", (String) searchNode.getProperty("aliases", ""));
-              }
-              searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
-              searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
-              searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
-              searchNodeJson.put("mutCount", (Integer) searchNode.getProperty("mutCount",0));
-              searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
-              searchNodeJson.put("label", (String) searchNode.getProperty("name"));
-                       searchNodeJson.put("importance", 0);
-                  searchNodeJson.put("pvalue", 0);
-                   searchNodeJson.put("coorelation", 0);
-              searchNodeJson.put("termcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-              searchNodeJson.put("searchterm", bean.getNode());
-              searchNodeJson.put("searchtermcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-
-              //geneArray will hold the returned list of nodes for the graph
-              geneArray.put(searchNodeJson);
-              //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
-              geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
-
-              //get nodes that are related to the search node thru rface values
-              MyRelationshipTypes relType = MyRelationshipTypes.GBM_1006_MASK;
-
-
-                  for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.GBM_1006_MASK, Direction.OUTGOING)) {
-                      sortedNGDList.add(ngdConnection);
-                  }
-
-              //got all nodes, now sort and go thru the first 175
-              Collections.sort(sortedNGDList, new Comparator() {
-                  public int compare(Object a, Object b) {
-                      return ((Double) ((Relationship) a).getProperty("importance")).compareTo((Double) ((Relationship) b).getProperty("importance"));
-                  }
-              });
-
-               int count=0;
-               for(int i=0; i< sortedNGDList.size() && i<175; i++){
-                  Relationship ngdRelationship = sortedNGDList.get(i);
-                  Node gene = (ngdRelationship).getEndNode();
-
-                  JSONObject geneJson = new JSONObject();
-                  Node searchGene = ngdRelationship.getStartNode();
-                   if(bean.getAlias()){
-                  geneJson.put("aliases", gene.getProperty("aliases", ""));
-                   }
-                  geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
-                  geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
-                  geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
-                    geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
-                  geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
-                  geneJson.put("label", gene.getProperty("name"));
-                  geneJson.put("importance", ngdRelationship.getProperty("importance"));
-                  geneJson.put("pvalue", ngdRelationship.getProperty("pvalue"));
-                   geneJson.put("coorelation", ngdRelationship.getProperty("coorelation"));
-                  geneJson.put("termcount", bean.getAlias() ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
-                  geneJson.put("searchtermcount", bean.getAlias() ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
-                  geneJson.put("searchterm", bean.getNode());
-
-                  //geneArray will hold the returned list of nodes for the graph
-                  geneArray.put(geneJson);
-
-                   //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
-                  geneMap.put(((String) gene.getProperty("name")).toUpperCase(), gene);
-
-
-              }
-
-
-              //Done getting the correct nodes, now find all the edges
-
-              JSONArray edgeArray = new JSONArray();
-             MyRelationshipTypes drugType = bean.getAlias() ? MyRelationshipTypes.DRUG_NGD_ALIAS : MyRelationshipTypes.DRUG_NGD;
-
-              //now get the edges between all graph nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
-              for (Node gene : geneMap.values()) {
-                  boolean domineType = false;
-                  String geneName = ((String) gene.getProperty("name")).toUpperCase();
-                  for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
-                      Node endNode = connection.getEndNode();
-                      String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
-                      if(connection.isType(MyRelationshipTypes.DRUG_NGD_ALIAS) || connection.isType(MyRelationshipTypes.DRUG_NGD) ){
-                          if(connection.isType(drugType)){
-                          sortedDrugNGDList.add(connection);
-                          }
-                      }
-                      else{
-                      //do this relationship if the end node is in our list and it hasn't already been processed
-                          if (geneMap.containsKey(nodeName) && !processedMap.containsKey(nodeName)) {
-                              //keep this relationship
-                              String key = geneName + "_" + nodeName;
-                              if (relMap.containsKey(key)) {
-                                  relList = relMap.get(key);
-                                  relList.add(connection);
-                                  relMap.put(key, relList);
-                              } else {
-                                  relList = new ArrayList<Relationship>();
-                                  relList.add(connection);
-                                  relMap.put(key, relList);
-                              }
-
-                          }
-                      }
-                  }
-
-                  processedMap.put(geneName, geneName);
-              }
-
-              //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
-                  JSONObject edgeJson = new JSONObject();
-                  boolean first = true;
-                  JSONArray edgeListArray = new JSONArray();
-                  for (ArrayList<Relationship> itemList : relMap.values()) {
-                      for (Relationship item : itemList) {
-                          if ((item.isType(MyRelationshipTypes.NGD) && !bean.getAlias()) ||
-                                  (item.isType(MyRelationshipTypes.NGD_ALIAS) && bean.getAlias())) {
-                              edgeJson.put("ngd",  item.getProperty("value"));
-                              edgeJson.put("cc", item.getProperty("combocount"));
-                          } else if (item.isType(MyRelationshipTypes.DOMINE)) {
-                                  String hgnc1=((String)item.getStartNode().getProperty("name")).toUpperCase();
-                                  String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
-                                 if(first){
-                                  edgeJson.put("source", hgnc1);
-                                  edgeJson.put("target", hgnc2);
-                                  edgeJson.put("id", hgnc1 + hgnc2);
-                                  edgeJson.put("label", hgnc1 + "to" + hgnc2);
-                                  first = false;
-                              }
-
-                               if(!edgeJson.has("connType") || edgeJson.get("connType").equals("")){
-                                  edgeJson.put("connType","domine");
-                              }
-                              else{
-                                  edgeJson.remove("connType");
-                                  edgeJson.put("connType","combo");
-                              }
-
-                              JSONObject edgeListItem = new JSONObject();
-                              edgeListItem.put("pf1", item.getProperty("pf1"));
-                              edgeListItem.put("pf2", item.getProperty("pf2"));
-                              edgeListItem.put("uni1",  item.getProperty("uni1"));
-                              edgeListItem.put("uni2", item.getProperty("uni2"));
-                              edgeListItem.put("type", item.getProperty("domine_type"));
-                              edgeListItem.put("pf1_count", item.getProperty("pf1_count"));
-                              edgeListItem.put("pf2_count", item.getProperty("pf2_count"));
-
-                              edgeListArray.put(edgeListItem);
-
-                          }
-                          else if(item.isType(MyRelationshipTypes.GBM_1006_MASK)){
-                              String startName=((String)item.getStartNode().getProperty("name")).toUpperCase();
-                              String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
-                              if(first){
-                                  edgeJson.put("source",startName);
-                                  edgeJson.put("target", endName);
-                                  edgeJson.put("id", startName+endName);
-                                  edgeJson.put("label", startName + "to" + endName);
-                                  first=false;
-                              }
-                               edgeJson.put("directed", true);
-
-                             // rfaceEdgeJson.put("details",item.getProperty("featureDetails"));
-                              if(!edgeJson.has("connType") || edgeJson.get("connType").equals("")){
-                                  edgeJson.put("connType","rface");
-                              }
-                              else{
-                                  edgeJson.remove("connType");
-                                  edgeJson.put("connType","combo");
-                              }
-                          }
-
-                      }
-
-                      if (edgeJson.has("id")) {
-                          edgeJson.put("edgeList", edgeListArray);
-                          if (!edgeJson.has("directed")) {
-                              edgeJson.put("directed", false);
-                          }
-                          edgeArray.put(edgeJson);
-                      }
-                      edgeJson = new JSONObject();
-                      edgeListArray = new JSONArray();
-                      first = true;
-                  }
-
-
-              //go thru drugMap and put into node array
-               Collections.sort(sortedDrugNGDList, new Comparator() {
-                  public int compare(Object a, Object b) {
-                      return ((Double) ((Relationship) a).getProperty("value")).compareTo((Double) ((Relationship) b).getProperty("value"));
-                  }
-              });
-
-                for(int i=0; i< sortedDrugNGDList.size() && i < 100; i++){
-                    edgeJson = new JSONObject();
-                    Relationship rel = sortedDrugNGDList.get(i);
-                           String startName=((String)rel.getStartNode().getProperty("name")).toUpperCase();
-                                  String endName = ((String) rel.getEndNode().getProperty("name")).toUpperCase();
-                               edgeJson.put("directed", false);
-                               edgeJson.put("source",startName);
-                               edgeJson.put("target",endName);
-                              edgeJson.put("ngd", (Double) rel.getProperty("value"));
-                    edgeJson.put("connType","drugNGD");
-                              edgeJson.put("id",startName + endName);
-                    edgeArray.put(edgeJson);
-                    drugMap.put((String)rel.getEndNode().getProperty("name"),rel.getEndNode());
-                }
-              for(Node drug: drugMap.values()){
-                  JSONObject drugJson = new JSONObject();
-                  drugJson.put("aliases","");
-                  drugJson.put("label",  drug.getProperty("name"));
-                  drugJson.put("termcount", 0);
-                  drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
-                   drugJson.put("drug", true);
-                  geneArray.put(drugJson);
-              }
-
-              log.info("done getting graph edges");
-               //now get all domine edges between all nodes
-
-              json.put("nodes", geneArray);
-              json.put("edges", edgeArray);
-
-              JSONArray nodesArray = getNGDNodes(bean.getNode(),bean.getAlias());
-              for(int i=0; i< nodesArray.length(); i++){
-                  nodesArray.getJSONObject(i).put("graph",geneMap.containsKey((nodesArray.getJSONObject(i).get("label").toString()).toUpperCase()) ? 1 : 0);
-              }
-              json.put("allnodes",nodesArray);
-
-
-          } catch (Exception e) {
-              log.info("exception occured: " + e.getMessage());
-              return new JSONObject();
-          }
-          return json;
-      }
 
     protected JSONObject getDomineEdges(String node){
         JSONObject  json=new JSONObject();
