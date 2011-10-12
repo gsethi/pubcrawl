@@ -449,6 +449,10 @@ function visReady(){
        retrieveMedlineDocuments(term1,term2);
     });
 
+    vis.addContextMenuItem("Remove Node", "nodes", function(evt){
+        vis.removeNode(evt.target.data.id);
+    });
+
 }
 
 function getVisualStyle(){

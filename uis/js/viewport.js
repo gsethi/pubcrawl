@@ -800,7 +800,7 @@ Ext.onReady(function() {
                   menu:[{
                     text: 'Node Legend',
                     menu:[{text: 'Gene or DeNovo Term', iconCls:'normalNode'},
-                        {text: 'Cosmic Mutations', iconCls:'mutation'},
+                        {text: 'GBM Mutations', iconCls:'mutation'},
                         {text: 'Drug', iconCls:'drug'}]
                     },{
                     text: 'Edge Legend',
