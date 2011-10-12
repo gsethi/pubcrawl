@@ -105,8 +105,16 @@ function loadModel(term1, alias,deNovo, callback) {
                          else
                             return node.mutCount;
                     });
+                    Ext.getCmp('domainOnly-cb').setValue(true);
+                    Ext.getCmp('domainOnly-cb').enable();
+                    Ext.getCmp('rfaceOnly-cb').enable();
+                    Ext.getCmp('rfaceOnly-cb').setValue(true);
+                    Ext.getCmp('showDrugs-cb').enable();
+                    Ext.getCmp('showDrugs-cb').setValue(true);
+                    Ext.getCmp('standalone-cb').enable();
+                    Ext.getCmp('standalone-cb').setValue(true);
                     filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
-                            Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
+                    Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
                     query_window.hide();
                     denovo_window.hide();
                     populateData(json.allnodes);
@@ -305,7 +313,19 @@ function retrieveMedlineDocuments(term1,term2){
      Ext.StoreMgr.get('dataDocument_grid_store').on({
          beforeload:{
              fn: function(store,options){
-                 store.proxy.setUrl('/solr/select/?q=%2Btext%3A(' + term1 + ') %2Btext%3A(' + term2 + ')&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
+                 termString = '%2Btext%3A(' + term1 + ')';
+                 if(term1.indexOf("(") == 0 && term1.lastIndexOf(")") == (term1.length-1)){
+                     termString = '';
+                      var startIndex=1;
+                      var phraseIndex=term1.indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    var tempterm=term1.substring(startIndex,phraseIndex);
+                    termString=termString+' %2Btext%3A(' + tempterm.replace(","," " ) + ')';
+                    startIndex=term1.indexOf("(",phraseIndex) + 1;
+                    phraseIndex=term1.indexOf(")",startIndex);
+                }
+                 }
+                 store.proxy.setUrl('/solr/select/?q='+termString+' %2Btext%3A(' + term2 + ')&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
                 '&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true');
              }
          }
