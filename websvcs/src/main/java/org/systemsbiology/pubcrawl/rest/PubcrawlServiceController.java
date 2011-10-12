@@ -560,7 +560,9 @@ public class PubcrawlServiceController implements InitializingBean {
                 }
 
                 if(topObj != null){
+                    JSONObject firstObj = (JSONObject)geneArray2.get(0);
                     geneArray2.put(0,topObj);
+                    geneArray2.put(firstObj);
                 }
                 geneArray=geneArray2;
             }
