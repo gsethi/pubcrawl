@@ -6,6 +6,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.jaxen.expr.Expr;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
 
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang.StringUtils.replace;
 import static org.apache.commons.lang.StringUtils.strip;
 import static org.systemsbiology.cancerregulome.DbUtils.getJdbcTemplate;
 import static org.systemsbiology.cancerregulome.DbUtils.getSolrServer;
@@ -38,28 +40,33 @@ public class SingleCountCrawl {
 
     public static class SolrCallable implements Callable {
         private String term1;
-        private String[] term1Array;
+        private List<String[]> term1Array;
         private SolrServer server;
         private boolean useAlias;
-        private HashMap<String, String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
-        private HashMap<String, String> keepGrayList;    //only keep the keys if the values occur with them
+        private Map<String, String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
+        private Map<String, String> keepGrayList;    //only keep the keys if the values occur with them
 
         public SolrCallable(SearchTermAndList stal, SolrServer server, boolean useAlias,
-                            HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList) {
+                            Map<String, String> filterGrayList, Map<String, String> keepGrayList) {
             this.term1 = stal.getTerm();
             this.server = server;
-            this.term1Array = stal.asArray();
+            this.term1Array = stal.asListArray();
             this.useAlias = useAlias;
             this.filterGrayList = filterGrayList;
             this.keepGrayList = keepGrayList;
+
         }
 
         public SingleCountItem call() {
             SingleCountItem totalResults = null;
             SolrQuery query = new SolrQuery();
+            query.setQuery("*:*");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            query.setParam("fl", "pmid");
 
+            for(int i=0; i< term1Array.size(); i++){
             String term1Combined = "";
-            for (String aTerm1Array : term1Array) {
+            for (String aTerm1Array : term1Array.get(i)) {
                 if (filterGrayList.containsKey(aTerm1Array.toLowerCase())) {
                     String filterTerms = filterGrayList.get(aTerm1Array.toLowerCase());
                     String[] splitFilterTerms = filterTerms.split(",");
@@ -82,9 +89,9 @@ public class SingleCountCrawl {
                     term1Combined = term1Combined + "\"" + aTerm1Array + "\" ";
                 }
             }
-            query.setQuery("*:*");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1Combined + ")");
-            query.setParam("fl", "pmid");
+                   query.addFilterQuery("+text:(" + term1Combined + ")");
+            }
+
             try {
                 QueryResponse rsp = this.server.query(query);
                 totalResults = new SingleCountItem(rsp.getResults().getNumFound(), this.term1, this.term1Array, useAlias);
@@ -99,10 +106,10 @@ public class SingleCountCrawl {
     public static class SingleCountItem {
         private long term1count;
         private String term1;
-        private String[] term1Array;
+        private List<String[]> term1Array;
         private boolean useAlias;
 
-        public SingleCountItem(long term1count, String term1, String[] term1Array, boolean useAlias) {
+        public SingleCountItem(long term1count, String term1, List<String[]> term1Array, boolean useAlias) {
             this.term1count = term1count;
             this.term1 = term1;
             this.term1Array = term1Array;
@@ -112,7 +119,10 @@ public class SingleCountCrawl {
 
         public String printItem() {
             if (this.useAlias) {
-                return this.term1 + "\t" + StringUtils.join(this.term1Array, ",") + "\t" + this.term1count + "\n";
+                if(term1Array.size() == 1)
+                    return this.term1 + "\t" + StringUtils.join(this.term1Array.get(0), ",") + "\t" + this.term1count + "\n";
+                else
+                   return this.term1 + "\t" + this.term1 + "\t" + this.term1count + "\n";
             } else {
                 return this.term1 + "\t" + this.term1count + "\n";
             }
@@ -126,8 +136,8 @@ public class SingleCountCrawl {
         String filterListFileName = "";
         String solrServerHost = "";
         String searchTerm = "";
-        HashMap<String, String> keepGrayList = new HashMap<String, String>();
-        HashMap<String, String> filterGrayList = new HashMap<String, String>();
+        Map<String, String> keepGrayList = new HashMap<String, String>();
+        Map<String, String> filterGrayList = new HashMap<String, String>();
         boolean useAlias = false;
 
         log.info("about to parse CLI");
@@ -318,21 +328,45 @@ public class SingleCountCrawl {
 
     }
 
+
     public static SearchTermAndList getTermAndTermList(String searchTerm, boolean useAlias) {
+         SearchTermAndList terms;
+        //first see if the item is an expression term or regular term
+         if(searchTerm.trim().endsWith(")") && searchTerm.trim().startsWith("(")){
+                //this is an expression, so need to parse string
+             terms = new SearchTermAndList(searchTerm.trim());
+
+                int startIndex=1;
+                int phraseIndex=searchTerm.trim().indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    String[] termInfo = getTermAliasList(searchTerm.trim().substring(startIndex, phraseIndex));
+                    terms.addItems(termInfo);
+                    startIndex=searchTerm.trim().indexOf("(",phraseIndex) + 1;
+                    phraseIndex=searchTerm.trim().indexOf(")",startIndex);
+                }
+
+         }
+        else{    //regular term with possible aliases
+             String[] finalItems = getTermAliasList(searchTerm);
+             terms = new SearchTermAndList(finalItems[0]);
+
+            if (useAlias) {
+                terms.addItems(finalItems);
+            } else {
+                terms.addItems(finalItems[0]);
+            }
+         }
+        return terms;
+    }
+
+    private static String[] getTermAliasList(String searchTerm) {
         String[] termItems = searchTerm.trim().split(",");
         String[] finalItems = new String[termItems.length];
 
         for (int i = 0; i < termItems.length; i++) {
-            finalItems[i] = strip(termItems[i], "\"").toLowerCase();
+            finalItems[i] = replace(termItems[i], "\"", "\\\"").toLowerCase();
         }
-
-        SearchTermAndList stal = new SearchTermAndList(finalItems[0]);
-        if (useAlias) {
-            stal.addItems(finalItems);
-        } else {
-            stal.addItems(finalItems[0]);
-        }
-        return stal;
+        return finalItems;
     }
 
     public static Options createCLIOptions() {

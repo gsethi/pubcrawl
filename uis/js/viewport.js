@@ -1,58 +1,8 @@
 Ext.onReady(loadDeNovoSearches);
 
 Ext.onReady(function() {
-    var searchPanel = new Ext.Panel({
-        id:'search',
-        title : 'Search',
-        autoScroll: true,
-        height : 130,
-        autoWidth: true,
-        collapsible: true,
-        items :[
-            { xtype:'form',
-                id :'search_panel',
-                name :'search_panel',
-                defaults:{anchor:'100%'},
-                border : false,
-                labelAlign : 'right',
-                labelWidth: 75,
-                defaultType:'textfield',
-                monitorValid: true,
-                items : [{xtype:'fieldset',
-                        defaults:{anchor:'100%',border: false},
-                        labelSeparator : '',
-                        defaultType:'textfield',
-                        autoHeight:true,
-                        border: false,
-                        items: [ {name: 'f1_term_value',
-                                id: 'f1_term_value',
-                                emptyText: 'Input Term...',
-                                tabIndex: 1,
-                                selectOnFocus:true,
-                                fieldLabel: 'Term'
-                                },{
-                                fieldLabel: 'Use Alias',
-                                xtype: 'checkbox',
-                                name: 'f2_alias_value',
-                                id: 'f2_alias_value'
-                        }],
-                        buttons:[{ text: 'Search',
-                                formBind: true,
-                                id: 'search_button',
-                                name: 'search_button',
-                                listeners: {
-                                    click: function(button, e) {
-                                      var term = Ext.getCmp('f1_term_value').getValue();
-                                      var alias = Ext.getCmp('f2_alias_value').getValue();
-                                      generateNetworkRequest(term,alias,false);
-                                    }
-                                }
-                            }]
-                    }]
-            }]
-    });
 
-    var ngdValueFields = new Ext.Panel({
+    var nodeNgdValueFields = new Ext.Panel({
             // column layout with 2 columns
              layout:'column',
              border: false
@@ -66,8 +16,8 @@ Ext.onReady(function() {
             ,items:[{
                  defaults:{anchor:'100%'}
                 ,items:[{xtype: 'numberfield',
-                                    id: 'f1_ngd_start',
-                                    name: 'f1_ngd_start',
+                                    id: 'node_ngd_start',
+                                    name: 'node_ngd_start',
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
@@ -82,8 +32,8 @@ Ext.onReady(function() {
             },{
                  defaults:{anchor:'100%'}
                 ,items:[{xtype: 'numberfield',
-                                    id: 'f1_ngd_end',
-                                    name: 'f1_ngd_end',
+                                    id: 'node_ngd_end',
+                                    name: 'node_ngd_end',
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
@@ -98,7 +48,54 @@ Ext.onReady(function() {
             }]
         });
 
-    var comboCountValueFields = new Ext.Panel({
+
+      var edgeNgdValueFields = new Ext.Panel({
+            // column layout with 2 columns
+             layout:'column',
+             border: false
+            ,defaults:{
+                 columnWidth:0.5
+                ,layout:'form'
+                ,border:false
+                ,xtype:'panel'
+                ,bodyStyle:'padding:0 50px 0 50px'
+            }
+            ,items:[{
+                 defaults:{anchor:'100%'}
+                ,items:[{xtype: 'numberfield',
+                                    id: 'edge_ngd_start',
+                                    name: 'edge_ngd_start',
+                                    allowNegative: false,
+                                    decimalPrecision: 0,
+                                    invalidText: 'This value is not valid.',
+                                    maxValue: 99999999,
+                                    minValue: 0,
+                                    tabIndex: 2,
+                                    validateOnBlur: true,
+                                    allowDecimals: false,
+                                    value:'',
+                                    hideLabel: true
+                                }]
+            },{
+                 defaults:{anchor:'100%'}
+                ,items:[{xtype: 'numberfield',
+                                    id: 'edge_ngd_end',
+                                    name: 'edge_ngd_end',
+                                    allowNegative: false,
+                                    decimalPrecision: 0,
+                                    invalidText: 'This value is not valid.',
+                                    maxValue: 99999999,
+                                    minValue: 0,
+                                    tabIndex: 2,
+                                    validateOnBlur: true,
+                                    allowDecimals: false,
+                                    value:'',
+                                    hideLabel: true
+                                }]
+            }]
+        });
+
+    var nodeCCValueFields = new Ext.Panel({
                 // column layout with 2 columns
                  layout:'column',
                 border:false,
@@ -112,8 +109,8 @@ Ext.onReady(function() {
                 ,items:[{
                      defaults:{anchor:'100%'}
                     ,items:[{xtype: 'numberfield',
-                                        id: 'f1_cc_start',
-                                        name: 'f1_cc_start',
+                                        id: 'node_cc_start',
+                                        name: 'node_cc_start',
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
@@ -128,8 +125,8 @@ Ext.onReady(function() {
                 },{
                      defaults:{anchor:'100%'}
                     ,items:[{xtype: 'numberfield',
-                                        id: 'f1_cc_end',
-                                        name: 'f1_cc_end',
+                                        id: 'node_cc_end',
+                                        name: 'node_cc_end',
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
@@ -143,6 +140,53 @@ Ext.onReady(function() {
                                     }]
                 }]
             });
+
+
+    var edgeCCValueFields = new Ext.Panel({
+                   layout:'column',
+                  border:false,
+                  defaults:{
+                       columnWidth:0.5
+                      ,layout:'form'
+                      ,border:false
+                      ,xtype:'panel'
+                      ,bodyStyle:'padding:0 50px 0 50px'
+                  }
+                  ,items:[{
+                       defaults:{anchor:'100%'}
+                      ,items:[{xtype: 'numberfield',
+                                          id: 'edge_cc_start',
+                                          name: 'edge_cc_start',
+                                          allowNegative: false,
+                                          decimalPrecision: 0,
+                                          invalidText: 'This value is not valid.',
+                                          maxValue: 99999999,
+                                          minValue: 0,
+                                          tabIndex: 2,
+                                          validateOnBlur: true,
+                                          allowDecimals: false,
+                                          value:'',
+                                          hideLabel:true
+                                      }]
+                  },{
+                       defaults:{anchor:'100%'}
+                      ,items:[{xtype: 'numberfield',
+                                          id: 'edge_cc_end',
+                                          name: 'edge_cc_end',
+                                          allowNegative: false,
+                                          decimalPrecision: 0,
+                                          invalidText: 'This value is not valid.',
+                                          maxValue: 99999999,
+                                          minValue: 0,
+                                          tabIndex: 2,
+                                          validateOnBlur: true,
+                                          allowDecimals: false,
+                                          value:'',
+                                          hideLabel:true
+                                      }]
+                  }]
+              });
+
 
     var DomainCountValueFields = new Ext.Panel({
             // column layout with 2 columns
@@ -190,22 +234,21 @@ Ext.onReady(function() {
             }]
         });
 
-    var filterPanel = new Ext.Panel({
-        id:'filterPanel',
-        name:'filterPanel',
-        title: 'Filtering',
+    var nodeFilterPanel = new Ext.Panel({
+        id:'nodeFilterPanel',
+        name:'nodeFilterPanel',
+        title: 'Node Filter',
         autoScroll: true,
         height:600,
-        collapsible: true,
-        collapsed: true,
         autoWidth: true,
-        items: [{ xtype:'panel', id:'filters',
+        disabled: true,
+        items: [{ xtype:'panel', id:'nodefilters',
                 autoScroll: true,
                 autoHeight: true,
                 border: false,
                 items:[{ xtype: 'panel',
-                        id: 'filter_panel',
-                        name: 'filter_panel',
+                        id: 'node_filter_panel',
+                        name: 'node_filter_panel',
                         bodyStyle: 'padding:5px 5px 5px 5px',
                         defaults:{anchor:'100%'},
                         border:false,
@@ -221,12 +264,8 @@ Ext.onReady(function() {
                                 defaultType: 'textfield',
                                 autoHeight:true,
                                 title: 'NGD',
-                                items:[ngdValueFields,
-                                    {xtype: 'panel', id: 'linear-ngd',
-                                       // width:380,
-                                        x:20,
-                                        y:20
-                                    }
+                                items:[nodeNgdValueFields,
+                                    {xtype: 'panel', id: 'node-ngd',x:20, y:20}
                                 ]
                             }, { xtype: 'fieldset',
                                 defaults: {anchor: '100%'},
@@ -234,30 +273,45 @@ Ext.onReady(function() {
                                 defaultType: 'textfield',
                                 autoHeight: true,
                                 title: 'Combo Count',
-                                items:[ comboCountValueFields,
-                                    { xtype: 'panel', id: 'linear-cc',
-                                    //    width:380,
-                                        x:20,
-                                        y:20
-                                    }]
-                            },{
+                                items:[ nodeCCValueFields,
+                                    { xtype: 'panel', id: 'node-cc',x:20, y:20}
+                                ]
+                            }]
+                }]
+        }]
+    });
+
+        var edgeFilterPanel = new Ext.Panel({
+        id:'edgeFilterPanel',
+        name:'edgeFilterPanel',
+        title: 'Edge Filter',
+        autoScroll: true,
+        height:600,
+        autoWidth: true,
+            disabled: true,
+        items: [{ xtype:'panel', id:'edgefilters',
+                autoScroll: true,
+                autoHeight: true,
+                border: false,
+                items:[{ xtype: 'panel',
+                        id: 'edge_filter_panel',
+                        name: 'edge_filter_panel',
+                        bodyStyle: 'padding:5px 5px 5px 5px',
+                        defaults:{anchor:'100%'},
+                        border:false,
+                        labelAlign: 'right',
+                        labelWidth: 100,
+                        labelSeparator:'',
+                        defaultType:'textfield',
+                        monitorValid: true,
+                        bodypadding: 10,
+                        items:[{
                             xtype: 'fieldset',
                             defaults: {anchor: '100%'},
                             labelSeparator: '',
                             autoHeight: true,
                             title: 'Domain',
                             items:[{
-            fieldLabel: 'Incl. Domain Only Edges',
-              xtype: 'checkbox',
-              checked:true,
-              name: 'domainOnlyCheckbox',
-              id: 'domainOnly-cb',
-                            listeners:{
-                                    check: function(cb,checked){
-                                            filterVis();
-                                    }
-                                }
-              },{
                                 xtype: 'checkboxgroup',
                                 fieldLabel: 'Type:',
                                 columns: 2,
@@ -267,85 +321,102 @@ Ext.onReady(function() {
                                 listeners:{
                                     change: function(combo,items){
                                         filterVis();
-                                    }
-                                }
-                            }, DomainCountValueFields,{ xtype: 'panel', id: 'linear-dc',
-                                  //      width:380,
-                                        x:20,
-                                        y:20
-                                    }]
+                                }}
+                            },DomainCountValueFields,
+                                { xtype: 'panel', id: 'linear-dc',x:20,y:20
+                            }]
+                        },{
+                            xtype: 'fieldset',
+                            defaults:{anchor:'100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight:true,
+                            title: 'NGD',
+                            items:[edgeNgdValueFields,
+                                {xtype: 'panel', id: 'edge-ngd', x:20, y:20}
+                            ]
+                         },{
+                            xtype: 'fieldset',
+                            defaults: {anchor: '100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight: true,
+                            title: 'Combo Count',
+                            items:[ edgeCCValueFields,
+                                { xtype: 'panel', id: 'edge-cc', x:20, y:20}
+                            ]
                         }]
-                    }]
-            }]
+                }]
+        }]
     });
 
      var configPanel = new Ext.Panel({
         id:'configPanel',
         name:'configPanel',
         autoScroll: true,
-        height:150,
+        height:600,
+        autoWidth: true,
         title: 'Configuration',
-        collapsible: true,
         border: false,
-        collapsed: true,
         items: [{ xtype:'panel', id:'config',
                 autoScroll: true,
-                height: 100,
+                autoHeight: true,
+                border: false,
+                layout: 'form',
                 items:[{xtype:'fieldset',
                         defaults:{anchor:'100%'},
                         labelSeparator : '',
                         defaultType:'textfield',
                         autoHeight:true,
                         border: false,
-                        items: [ {
-                            xtype: 'combo',
-                            id: 'layout-config',
-                            name: 'layout-config',
-                            fieldLabel: 'Network Layout:',
-                            editable: false,
-                            mode: 'local',
-                            triggerAction:  'all',
-                            displayField: 'name',
-                            valueField: 'value',
-                            value: 'radial',
-                            forceSelection: true,
-                            store: new Ext.data.JsonStore({
-                                fields: ['name','value'],
-                                data: [
+                       labelWidth: 150,
+                        items: [ {xtype: 'displayfield',
+                                  id: 'currentTerm-dfield',
+                                name:'currentTerm-dfield',
+                            fieldLabel: 'Current Search Terms:'},{
+                            xtype: 'displayfield',
+                            id: 'alias-dfield',
+                            name: 'alias-dfield',
+                            fieldLabel: 'Use Alias:'},
+                            {
+                                xtype: 'combo',
+                                id: 'layout-config',
+                                name: 'layout-config',
+                                fieldLabel: 'Network Layout:',
+                                editable: false,
+                                mode: 'local',
+                                triggerAction:  'all',
+                                displayField: 'name',
+                                valueField: 'value',
+                                value: 'radial',
+                                forceSelection: true,
+                                store: new Ext.data.JsonStore({
+                                    fields: ['name','value'],
+                                    data: [
                                         {name: 'Circle', value: 'circle'},
                                         {name: 'Tree', value: 'tree'},
                                         {name: 'Radial', value: 'radial'},
                                         {name: 'Force Directed', value: 'fd'}
-                                ]
-                            }),
-                            listeners:{
-                                select: function(combo, record,index) {
-                                    var vislayout = getVisLayout(record.data.value);
-                                    vis.removeFilter();
-                                    vis.layout(vislayout);
-                                }
-                            }
-                    },{
-            fieldLabel: 'Incl. Standalone Nodes',
-              xtype: 'checkbox',
-              checked:true,
-              name: 'standaloneCheckbox',
-              id: 'standaloneCheckbox',
-                            listeners:{
-                                    check: function(cb,checked){
-                                        if(cb.checked){
-
-                                            filterStandaloneNodes(false);
-                                             renderModel();
-                                        }
-                                        else{
-
-                                            filterStandaloneNodes(true);
-                                            renderModel();
-                                        }
+                                    ]
+                                }),
+                                listeners:{
+                                    select: function(combo, record,index) {
+                                        var vislayout = getVisLayout(record.data.value);
+                                        vis.removeFilter();
+                                        vis.layout(vislayout);
                                     }
                                 }
-              }]
+                            },{
+            fieldLabel: 'Include Nodes',
+              xtype: 'checkboxgroup',
+                items:[{boxLabel: 'Standalone',name: 'standalone-cb', id: 'standalone-cb', checked: true},
+                    {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: true}]
+              },{
+            fieldLabel: 'Include Edges',
+              xtype: 'checkboxgroup',
+              items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: true},
+                  {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true }]
+               }]
                 }]
             }]
     });
@@ -540,7 +611,7 @@ Ext.onReady(function() {
      var deNovoSearchTablePanel = new Ext.Panel({
                     id:'deNovoTerms-panel',
                     name : 'deNovoTerms-panel',
-                    title : 'Completed Search Terms',
+                    title : 'Completed Denovo Search Terms',
                     monitorResize : true,
                     autoScroll : false,
                     flex: 4,
@@ -553,6 +624,7 @@ Ext.onReady(function() {
                             autoScroll:true,
                             monitorResize: true,
                             autoWidth : true,
+                            height: 500,
                             viewConfig: {
                                         forceFit : true
                             },
@@ -575,8 +647,6 @@ Ext.onReady(function() {
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    Ext.getCmp('center-panel').layout.setActiveItem('networkviz-panel');
-                                    Ext.getCmp('nav-region').collapse();
                                     Ext.getCmp('f1_term_value').setValue(record.get('term_value'));
                                     var aliasString = record.get('alias');
                                     var alias=true;
@@ -592,39 +662,52 @@ Ext.onReady(function() {
     var deNovoPanel = new Ext.Panel({
       id:'deNovo-panel',
       name:'deNovo-panel',
+      height: 600,
+      padding: 5,
       layout:{
         type: 'vbox',
-        padding: '5',
         align: 'stretch'
         },
       iconCls: 'home',
       defaults:{
         animFloat: false,
-        floatable: false
+        floatable: false,
+          border: false,
+          anchor:'100%'
         },
       items:[{
       xtype: 'form',
           id: 'searchPanel',
           name: 'searchPanel',
-          frame: true,
           flex: .5,
-          title: 'DeNovo Search',
           layout: 'column',
+          defaults:{
+                border: false,
+                anchor:'100%'
+          },
           items:[{
             columnWidth: .6,
             layout: 'form',
+            defaults:{
+                border: false,
+                anchor:'100%'
+          },
           items:[{
             fieldLabel: 'Search Term',
             xtype:'textfield',
             id:'jobSearchTerm',
             name:'jobSearchTerm',
             allowBlank: false,
-            width: 450
+            width: 350
             }]
             },{
             columnWidth: .2,
             layout: 'form',
             labelWidth: 75,
+            defaults:{
+                border: false,
+                anchor:'100%'
+          },
             items:[{
             fieldLabel: 'Use Alias',
               xtype: 'checkbox',
@@ -635,16 +718,40 @@ Ext.onReady(function() {
             columnWidth: .2,
             layout: 'form',
             align: 'left',
+           defaults:{          
+                border: false,
+                anchor:'100%'
+          },
             items:[{
               xtype: 'button',
               width: 100,
-              text: 'Submit Job',
-              handler: searchHandler}]}]
+              text: '<font color="black">Submit</font>',
+              handler: function(){var term = Ext.getCmp('jobSearchTerm').getValue();
+                  var alias = Ext.getCmp('aliasJobCheckbox').getValue();
+                  generateNetworkRequest(term,alias,false);}}]}]
               },deNovoSearchTablePanel]
       });
 
+    var toolTabPanel = new Ext.TabPanel({
+                region: 'east',
+                activeTab: 0,
+                defaults:{autoScroll: true},
+                floatable: true,
+                autoHide:false,
+                split: true,
+                width: 500,
+                height: 900,
+                autoScroll: true,
+                collapsible: true,
+                deferredRender: false,
+                tbar:[ '->',{text: 'Redraw',width:40, ctCls:'rightBtn',handler: function(){ redraw();}},{xtype: 'tbspacer'},
+                    {text: 'Reset', width:40, ctCls: 'rightBtn',handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
+              ],
+                items:[configPanel, nodeFilterPanel,edgeFilterPanel]
+            });
 
     var networkvizPanel = new Ext.Panel({
+        region: 'center',
         id:'networkviz-panel',
         name:'networkviz-panel',
         layout : 'border',
@@ -654,7 +761,75 @@ Ext.onReady(function() {
             animFloat: false,
             floatable: false
         },
-        items:[{region: 'center',
+        items:[{region: 'north',
+                id: 'north-toolbar',
+                cls: 'x-panel-header-noborder',
+                border: false,
+                tbar:[{
+                id:'visDataMenu',
+                    text:'Export',
+                    labelStyle: 'font-weight:bold;',
+                    menu: [{
+                        text: 'Graph',
+                        menu:[
+                '<b class="menu-title">Choose a Data Format</b>',
+                    {
+                        text: 'png',
+                        value: 'png',
+                        group: 'theme',
+                        handler: exportVisData
+                    },{
+                        text: 'svg',
+                        group: 'theme',
+                        value: 'svg',
+                        handler: exportVisData}]
+                  },{
+                        text: 'Nodes',
+                        menu:[
+                '<b class="menu-title">Choose a Data Format</b>',
+                    {
+                        text: 'csv',
+                        value: 'csv',
+                        group: 'theme',
+                        handler: exportNodeData
+                    }]
+                  }]
+              },{xtype: 'tbspacer'},{ id: 'legendMenu',
+                  text: 'Legend',
+                  labelStyle: 'font-weight:bold;',
+                  menu:[{
+                    text: 'Node Legend',
+                    menu:[{text: 'Gene or DeNovo Term', iconCls:'normalNode'},
+                        {text: 'GBM Mutations', iconCls:'mutation'},
+                        {text: 'Drug', iconCls:'drug'}]
+                    },{
+                    text: 'Edge Legend',
+                   menu:[{text:'Domine', iconCls:'domine'},
+                       {text:'RF-ACE', iconCls:'normalNode'},
+                       {text: 'Drug', iconCls: 'drug'},
+                       {text: 'RF-ACE & Domine', iconCls: 'combo'}]
+                    }]},'->',{name: 'f1_search_value',
+                                id: 'f1_search_value',
+                                emptyText: 'Input Search Term...',
+                                tabIndex: 1,
+                                selectOnFocus:true,
+                                xtype:'textfield',
+                                width: 350
+                                },{name:'f1_search_btn',
+                                      id: 'f1_search_btn',
+                                      tabIndex:2,
+                                      iconCls:'gene_select',
+                                        listeners: {
+                                    click: function(button, e) {
+                                      var term = Ext.getCmp('f1_search_value').getValue();
+                                      generateNetworkRequest(term,false,false);
+                                    }
+                                }},
+                    {xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'},
+                    {html:'<p style="text-decoration:underline;">Advanced</p>', style:{color:'white'},listeners:{click: function(){launchDenovoWindow();}}},
+                    {xtype:'tbspacer', xtype:'tbspacer'},{xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'},{xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'}]
+            },
+            {region: 'center',
             id: 'networkviz-acc',
             name: 'networkviz-acc',
             layout: 'accordion',
@@ -668,46 +843,15 @@ Ext.onReady(function() {
                 layout : 'absolute',
                 height: 900,
                 width:1050,
-                title: 'Visualization',
+                title:'Visualization',
                 contentEl: 'cytoscapeweb',
-                tbar:[{
-                    id:'visDataMenu',
-                    text:'Data',
-                    labelStyle: 'font-weight:bold;',
-                    menu: [{
-                        text: 'Export Options',
-                        menu:[
-                '<b class="menu-title">Choose a Data Format</b>',
-                    {
-                        text: 'png',
-                        value: 'png',
-                        group: 'theme',
-                        handler: exportVisData
-                    },{
-                        text: 'svg',
-                        group: 'theme',
-                        value: 'svg',
-                        handler: exportVisData
-                    }]
-            }]
-        }],
                 listeners: {
                     render: function() {
                         renderNetworkViz();
                     }
                 }
 
-            },dataNodeTablePanel]},{region: 'east',
-                collapsible: true,
-                floatable: true,
-                autoHide:false,
-                split: true,
-                width: 500,
-                height: 900,
-                title: 'Tools',
-                autoScroll: true,
-                items:[searchPanel, configPanel, filterPanel]
-            }]
+            },dataNodeTablePanel]},toolTabPanel]
     });
 
 
@@ -722,90 +866,16 @@ Ext.onReady(function() {
         items: [ {region: 'north', id:'toolbar-region',
                 collapsible: false,
                 border : false,
-                title: 'Pubcrawl',
                 split: false,
+                headerCfg:{
+                  tag:'center',
+                  html:'Pubcrawl',
+                  cls: 'x-panel-header my-title-header'
+                },
                 height: 27,
                 layout : 'fit'
-            },{region: 'west',
-                id:'nav-region',
-                collapsible: true,
-                expanded: true,
-                width: 200,
-                layout: {
-                    type: 'vbox',
-                    padding: '5,5,5,5',
-                    align: 'stretch'
-                },
-                defaults : {
-                    padding : '0, 0, 5, 0'
-                },
-                items : [{xtype:'treepanel',
-                        title: 'Navigation',
-                        iconCls: 'navigation',
-                        rootVisible: false,
-                        lines: false,
-                        singleExpand: true,
-                        useArrows: true,
-                        height : 380,
-                        padding: '5',
-                        autoScroll: true,
-                        loader: new Ext.tree.TreeLoader(),
-                        root: new Ext.tree.AsyncTreeNode({
-                            expanded: true,
-                            children: [{text: 'Home Page',
-                                    iconCls: 'home',
-                                    leaf: true,
-                                    id: 'homepage'
-                                },{text: 'Network Visualization',
-                                    leaf: false,
-                                    iconCls : 'network_visualization',
-                                    id: 'networkviz',
-                                    leaf: true
-                                    },{text:'DeNovo Search',
-                                    iconCls: 'deNovoSearch',
-                                    leaf: true,
-                                    id: 'jobsubmittal'}
-                                  ]
-                        }),
-                        listeners : {
-                            click : function(selected_node) {
-                                switch (selected_node.id) {
-                                    case('networkviz'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('networkviz-panel');
-                                        Ext.getCmp('nav-region').collapse();
-                                        break;
-                                    case('homepage'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('homepage-panel');
-                                        break;
-                                    case('jobsubmittal'):
-                                        Ext.getCmp('center-panel').layout.setActiveItem('deNovo-panel');
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }]
-            },{ region:'center',
-                id:'center-panel', name:'center-panel',
-                layout:'card',
-                border:false,
-                closable:false,
-                activeItem:0,
-                height: 800,
-                margins: '0 5 5 0',
-                items:[{id:'homepage-panel',
-                        iconCls:'home',
-                        layout: 'fit',
-                        autoScroll : true,
-                        autoLoad : {
-                            url : 'home_tab.html'
-                        },
-                        title: 'Home'
-                    },
-                    networkvizPanel,deNovoPanel
-                ]
-            }],
+            },networkvizPanel
+            ],
         renderTo:Ext.getBody()
     });
 
@@ -828,6 +898,86 @@ Ext.onReady(function() {
             });
     dataTable_window.hide();
 
+    query_window =
+          new Ext.Window({
+              id: 'query-window',
+              renderTo: 'networkviz-acc',
+              modal: false,
+              width: 600,
+              closeAction: 'hide',
+              title: "Search",
+              closable: true,
+              layoutConfig:{
+                animate: true
+              },
+              maximizable: false,
+                      items :[
+            { xtype:'form',
+                id :'search_panel',
+                name :'search_panel',
+                defaults:{anchor:'100%'},
+                border : false,
+                labelAlign : 'right',
+                labelWidth: 75,
+                defaultType:'textfield',
+                monitorValid: true,
+                items : [{xtype:'fieldset',
+                        defaults:{anchor:'100%',border: false},
+                        border: false,
+                        labelSeparator : '',
+                        defaultType:'textfield',
+                        autoHeight:true,
+                        items: [ {name: 'f1_term_value',
+                                id: 'f1_term_value',
+                                emptyText: 'Input Term...',
+                                tabIndex: 1,
+                                selectOnFocus:true,
+                                fieldLabel: 'Term'
+                                },{
+                                fieldLabel: 'Use Alias',
+                                xtype: 'checkbox',
+                                name: 'f2_alias_value',
+                                id: 'f2_alias_value'
+                        }],
+                        buttons:[{ text: '<font color="black">Search</font>',
+                                formBind: true,
+                                id: 'search_button',
+                                name: 'search_button',
+                                listeners: {
+                                    click: function(button, e) {
+                                      var term = Ext.getCmp('f1_term_value').getValue();
+                                      var alias = Ext.getCmp('f2_alias_value').getValue();
+                                      generateNetworkRequest(term,alias,false);
+                                    }
+                                }
+                            }]
+                    }]
+            }]
+
+
+    });
+    query_window.hide();
+
+    denovo_window = 
+          new Ext.Window({
+              id: 'denovo-window',
+              renderTo: 'networkviz-acc',
+              modal: false,
+              width: 800,
+              height: 600,
+              closeAction: 'hide',
+              closable: true,
+              title: "Search",
+              layoutConfig: {
+                animate: true
+              },
+              maximizable: false,
+              items:[deNovoPanel]
+                
+
+    });
+    denovo_window.hide();
+
     documentTable_window =
             new Ext.Window({
                 id          : 'documenttable-window',
@@ -835,8 +985,8 @@ Ext.onReady(function() {
                 modal       : false,
                 closeAction : 'hide',
                 layout      : 'anchor',
-                width       : 700,
-                height      : 300,
+                autoWidth       : true,
+                autoHeight      : true,
                 title       : "Medline Documents",
                 closable    : true,
                 layoutConfig : {
