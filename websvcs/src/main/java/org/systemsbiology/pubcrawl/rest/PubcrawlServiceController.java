@@ -313,7 +313,7 @@ public class PubcrawlServiceController implements InitializingBean {
             searchNodeJson.put("ngd", 0);
             searchNodeJson.put("cc", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
             searchNodeJson.put("termcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-            searchNodeJson.put("searchterm", bean.getNode());
+            searchNodeJson.put("searchterm", bean.getNode().toUpperCase());
             searchNodeJson.put("searchtermcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
 
             //geneArray will hold the returned list of nodes for the graph
@@ -364,7 +364,7 @@ public class PubcrawlServiceController implements InitializingBean {
                 geneJson.put("cc", ngdRelationship.getProperty("combocount"));
                 geneJson.put("termcount", bean.getAlias() ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
                 geneJson.put("searchtermcount", bean.getAlias() ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
-                geneJson.put("searchterm", bean.getNode());
+                geneJson.put("searchterm", bean.getNode().toUpperCase());
 
                 //geneArray will hold the returned list of nodes for the graph
                 geneArray.put(geneJson);
@@ -645,7 +645,7 @@ public class PubcrawlServiceController implements InitializingBean {
                 relJson.put("cc", (Integer) rel.getProperty("combocount"));
                 relJson.put("termcount", alias ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
                 relJson.put("searchtermcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount", 0));
-                relJson.put("searchterm", node);
+                relJson.put("searchterm", node.toUpperCase());
 
                 nodeArray.put(relJson);
 
