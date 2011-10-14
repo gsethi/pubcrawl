@@ -19,6 +19,11 @@ var base_query_url = '',
         pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
         current_data = {};
 
+var nodeCCScroll;
+var nodeNGDScroll;
+var edgeDCScroll;
+var edgeCCScroll;
+var edgeNGDScroll;
 var model_def;
 var ngdPlotData;
 var edgeNGDPlotData;
@@ -103,7 +108,7 @@ function loadModel(term1, alias,deNovo, callback) {
                         if(node.mutCount == undefined)
                             return 0;
                          else
-                            return node.mutCount;
+                            return node.mutCount;                                   
                     });
                     Ext.getCmp('domainOnly-cb').setValue(true);
                     Ext.getCmp('domainOnly-cb').enable();
@@ -220,7 +225,7 @@ function populateData(allnodes){
         histNgd.push(ngdSummary[ngdItem]);
     }
     ngdPlotData['data'] =  histNgd;
-    renderNGDHistogramData();
+    renderNodeNGDHistogramData(-1,-1);
 
     ccPlotData={data:null};
     var histCC=[];
@@ -228,7 +233,7 @@ function populateData(allnodes){
         histCC.push(comboCounts[ccItem]);
     }
     ccPlotData['data']=histCC;
-    renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange);
+    renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,nodeCCScroll,2,-1);
 
 
     var domainCounts = {};
@@ -291,7 +296,7 @@ function populateData(allnodes){
         histedgeNGD.push(edgeNGDSummary[edgengdItem]);
     }
     edgeNGDPlotData['data'] =  histedgeNGD;
-    renderEdgeNGDHistogramData();
+    renderEdgeNGDHistogramData(-1,-1);
 
     edgeCCPlotData={data:null};
     var histedgeCC=[];
@@ -299,11 +304,11 @@ function populateData(allnodes){
         histedgeCC.push(edgeCCSummary[ccItem]);
     }
     edgeCCPlotData['data']=histedgeCC;
-    renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange);
+    renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,edgeCCScroll,2,-1);
 
     domainCountData={data:null};
     domainCountData['data']=histData;
-    renderDCHistogramData(histData);
+    renderDCHistogramData(histData,edgeDCScroll,-1,60);
 
     
     Ext.StoreMgr.get('dataNode_grid_store').loadData(completeData['nodes']);
@@ -313,19 +318,41 @@ function retrieveMedlineDocuments(term1,term2){
      Ext.StoreMgr.get('dataDocument_grid_store').on({
          beforeload:{
              fn: function(store,options){
-                 termString = '%2Btext%3A(' + term1 + ')';
-                 if(term1.indexOf("(") == 0 && term1.lastIndexOf(")") == (term1.length-1)){
+                 if(model_def["alias"]){
+                 termString = '%2Btext%3A(\"' + term1.replace(/,/g,"\" \"" ) + '\")';
+                 }
+                 else{
+                    termString = '%2Btext%3A(\"' + term1 + '\")';
+                 }
+                 if(term1.indexOf("(") == 0 && (term1.lastIndexOf(")") == (term1.length-1))){
                      termString = '';
                       var startIndex=1;
                       var phraseIndex=term1.indexOf(")");
-                while(startIndex > 0 && phraseIndex > 0){
-                    var tempterm=term1.substring(startIndex,phraseIndex);
-                    termString=termString+' %2Btext%3A(' + tempterm.replace(","," " ) + ')';
-                    startIndex=term1.indexOf("(",phraseIndex) + 1;
-                    phraseIndex=term1.indexOf(")",startIndex);
-                }
+                    while(startIndex > 0 && phraseIndex > 0){
+                        var tempterm=term1.substring(startIndex,phraseIndex);
+                        termString=termString+' %2Btext%3A(\"' + tempterm.replace(/,/g,"\" \"" ) + '\")';
+                        startIndex=term1.indexOf("(",phraseIndex) + 1;
+                        phraseIndex=term1.indexOf(")",startIndex);
+                    }
                  }
-                 store.proxy.setUrl('/solr/select/?q='+termString+' %2Btext%3A(' + term2 + ')&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
+                  if(model_def["alias"]){
+                 termString2 = '%2Btext%3A(\"' + term2.replace(/,/g,"\" \"" ) + '\")';
+                 }
+                 else{
+                    termString2 = '%2Btext%3A(\"' + term2 + '\")';
+                 }
+                 if(term2.indexOf("(") == 0 && (term2.lastIndexOf(")") == (term2.length-1))){
+                     termString2 = '';
+                      var startIndex=1;
+                      var phraseIndex=term2.indexOf(")");
+                    while(startIndex > 0 && phraseIndex > 0){
+                        var tempterm=term2.substring(startIndex,phraseIndex);
+                        termString2=termString2+' %2Btext%3A(\"' + tempterm.replace(/,/g,"\" \"" ) + '\")';
+                        startIndex=term2.indexOf("(",phraseIndex) + 1;
+                        phraseIndex=term2.indexOf(")",startIndex);
+                    }
+                 }
+                 store.proxy.setUrl('/solr/select/?q='+termString+termString2+'&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
                 '&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true');
              }
          }

@@ -171,7 +171,7 @@ function getAvg(valueArray,countArray){
   return sum/count;
 }
 
-function renderNGDHistogramData(){
+function renderNodeNGDHistogramData(istart,iend){
 
 
       var ngdArray = ngdPlotData['data'].map(function(node){return node.count;});
@@ -197,14 +197,17 @@ function renderNGDHistogramData(){
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  nodeNGDScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  nodeNGDScroll.draw(flexscroll_data);
+        var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    nodeNGDScroll.set_position(start, end);
+  return nodeNGDScroll;
 
 }
 
-function renderEdgeNGDHistogramData(){
+function renderEdgeNGDHistogramData(istart,iend){
 
 
       var ngdArray = edgeNGDPlotData['data'].map(function(node){return node.count;});
@@ -230,14 +233,17 @@ function renderEdgeNGDHistogramData(){
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  edgeNGDScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  edgeNGDScroll.draw(flexscroll_data);
+       var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    edgeNGDScroll.set_position(start, end);
+  return edgeNGDScroll;
 
 }
 
-function renderDCHistogramData(dcPlotData){
+function renderDCHistogramData(dcPlotData,dcScroll,istart,iend){
 
 
       var dcArray = domainCountData['data'].map(function(node){return node.count;});
@@ -263,14 +269,17 @@ function renderDCHistogramData(dcPlotData){
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  dcScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  dcScroll.draw(flexscroll_data);
+        var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    dcScroll.set_position(start, end);
+  return dcScroll;
 
 }
 
-function renderCCLinearBrowserData(ccData,elementId,notifyCall){
+function renderCCLinearBrowserData(ccData,elementId,notifyCall,ccScroll,istart,iend){
 
   var ccArray = ccData.map(function(node){ return node.count;});
   var maxPosY = pv.max(ccArray)+1;
@@ -295,10 +304,13 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall){
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  ccScroll.draw(flexscroll_data);
+    var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    ccScroll.set_position(start, end);
+  return ccScroll;
 
 }
 
@@ -410,12 +422,11 @@ function collapseSuperNodes(){
 
 function getSolrCombinedTerm(node){
     var fullTerm=node.data.id;
+    if(model_def["alias"]){
     if(node.data.aliases != undefined && node.data.aliases != ""){
-        var alias_array = node.data.aliases.split(",");
-        fullTerm="";
-        for(var i=0; i< alias_array.length; i++){
-            fullTerm = fullTerm + " \"" + alias_array[i] + "\" ";
-        }
+        fullTerm=node.data.aliases;
+
+    }
     }
 
     return fullTerm;
@@ -433,20 +444,45 @@ function visReady(){
        var sourceNode=vis.node(source);
        var targetNode=vis.node(target);
 
-       var fullTerm1=getSolrCombinedTerm(sourceNode);
-       var fullTerm2=getSolrCombinedTerm(targetNode);
+        var fullTerm1='';
+        var fullTerm2='';
+        if(source.indexOf("(") == 0 && (source.lastIndexOf(")") == (source.length-1))){
+            fullTerm1=source;
+        }
+        else{
+           fullTerm1=getSolrCombinedTerm(sourceNode);
+        }
+        if(target.indexOf("(") == 0 && (target.lastIndexOf(")") == (target.length-1))){
+            fullTerm2=target;
+        }
+        else{
+            fullTerm2=getSolrCombinedTerm(targetNode);
+        }
        retrieveMedlineDocuments(fullTerm1,fullTerm2);
     });
         vis.addContextMenuItem("Medline Documents","nodes",function(evt){
 
        var term1 = evt.target.data.id;
        var term2= evt.target.data.searchterm;
-    //   var term1Node = vis.node(term1);
-    //   var term2Node = vis.node(term2);
+       var term1Node = vis.node(term1);
+       var term2Node = vis.node(term2);
 
-    //   var fullTerm1 = getSolrCombinedTerm(term1Node);
-    //   var fullTerm2 = getSolrCombinedTerm(term2Node);
-       retrieveMedlineDocuments(term1,term2);
+        var fullTerm1='';
+        var fullTerm2='';
+        if(term1.indexOf("(") == 0 && (term1.lastIndexOf(")") == (term1.length-1))){
+            fullTerm1=term1;
+        }
+        else{
+           fullTerm1=getSolrCombinedTerm(term1Node);
+        }
+        if(term2.indexOf("(") == 0 && (term2.lastIndexOf(")") == (term2.length-1))){
+            fullTerm2=term2;
+        }
+        else{
+            fullTerm2=getSolrCombinedTerm(term2Node);
+        }
+
+       retrieveMedlineDocuments(fullTerm1,fullTerm2);
     });
 
     vis.addContextMenuItem("Remove Node", "nodes", function(evt){

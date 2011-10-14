@@ -985,8 +985,8 @@ Ext.onReady(function() {
                 modal       : false,
                 closeAction : 'hide',
                 layout      : 'anchor',
-                width       : 700,
-                height      : 300,
+                autoWidth       : true,
+                autoHeight      : true,
                 title       : "Medline Documents",
                 closable    : true,
                 layoutConfig : {
