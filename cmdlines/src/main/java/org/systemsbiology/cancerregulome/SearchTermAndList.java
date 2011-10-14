@@ -10,7 +10,7 @@ import static scala.actors.threadpool.Arrays.asList;
  */
 public class SearchTermAndList {
     private final String term;
-    private final List<String> items = new ArrayList<String>();
+    private final List<String[]> items = new ArrayList<String[]>();
 
     public SearchTermAndList(String term) {
         this.term = term;
@@ -21,10 +21,13 @@ public class SearchTermAndList {
     }
 
     public void addItems(String... items) {
-        this.items.addAll(asList(items));
+        List terms = new ArrayList<String>();
+        terms.addAll(asList(items));
+        terms.toArray(new String[terms.size()]);
+        this.items.add((String[])terms.toArray(new String[terms.size()]));
     }
 
-    public String[] asArray() {
-        return items.toArray(new String[items.size()]);
+    public List<String[]> asListArray() {
+        return items;
     }
 }

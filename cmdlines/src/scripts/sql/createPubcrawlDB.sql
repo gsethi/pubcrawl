@@ -12,6 +12,12 @@ CREATE TABLE `cmGenes` (
   PRIMARY KEY  (`geneName`)
 );
 
+CREATE TABLE `mutGenes` (
+  `geneName` varchar(50) NOT NULL default '',
+  `mutCount` int(11) NOT NULL default 0,
+  PRIMARY KEY  (`geneName`)
+);
+
 
 CREATE TABLE `tfGenes` (
   `geneName` varchar(50) NOT NULL default '',

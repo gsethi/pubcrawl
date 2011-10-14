@@ -1,26 +1,38 @@
 
 function updateCCRange(start,width){
-      Ext.getCmp('f1_cc_start').setValue(new Number(start).toFixed());
-      Ext.getCmp('f1_cc_end').setValue(new Number(start+width).toFixed());
+      Ext.getCmp('node_cc_start').setValue(new Number(start).toFixed());
+      Ext.getCmp('node_cc_end').setValue(new Number(start+width).toFixed());
     if(vis_ready){
     filterVis();
     }
-    else{
-        model_def['ccstart']= parseFloat(Ext.getCmp('f1_cc_start').getValue());
-        model_def['ccend'] = parseFloat(Ext.getCmp('f1_cc_end').getValue());
-    }
+
 }
 
 function updateNGDRange(start,width){
-      Ext.getCmp('f1_ngd_start').setValue(start);
-      Ext.getCmp('f1_ngd_end').setValue(new Number(start+width).toPrecision(2));
+      Ext.getCmp('node_ngd_start').setValue(start);
+      Ext.getCmp('node_ngd_end').setValue(new Number(start+width).toPrecision(2));
     if(vis_ready){
     filterVis();
     }
-    else{
-       model_def['ngdstart']= parseFloat(Ext.getCmp('f1_ngd_start').getValue());
-       model_def['ngdend']= parseFloat(Ext.getCmp('f1_ngd_end').getValue());
+
+}
+
+function updateEdgeNGDRange(start,width){
+      Ext.getCmp('edge_ngd_start').setValue(start);
+      Ext.getCmp('edge_ngd_end').setValue(new Number(start+width).toPrecision(2));
+    if(vis_ready){
+    filterVis();
     }
+
+}
+
+function updateEdgeCCRange(start,width){
+      Ext.getCmp('edge_cc_start').setValue(new Number(start).toFixed());
+      Ext.getCmp('edge_cc_end').setValue(new Number(start+width).toFixed());
+    if(vis_ready){
+    filterVis();
+    }
+
 }
 
 function updateDCRange(start,width){
@@ -38,11 +50,12 @@ function filterVis(){
         if(node.data.label.toUpperCase() == model_def['term']){
             return true;
         }
-            var ngdstart = parseFloat(Ext.getCmp('f1_ngd_start').getValue());
-            var ngdend = parseFloat(Ext.getCmp('f1_ngd_end').getValue());
-            var ccstart = parseFloat(Ext.getCmp('f1_cc_start').getValue());
-            var ccend = parseFloat(Ext.getCmp('f1_cc_end').getValue());
-        if(!node.data.drug){
+            var ngdstart = parseFloat(Ext.getCmp('node_ngd_start').getValue());
+            var ngdend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+            var ccstart = parseFloat(Ext.getCmp('node_cc_start').getValue());
+            var ccend = parseFloat(Ext.getCmp('node_cc_end').getValue());
+
+        if(node.data.ngd != null){
         return ((node.data.ngd >= ngdstart && node.data.ngd <= ngdend) &&
                 (node.data.cc >= ccstart && node.data.cc <= ccend));
         }
@@ -54,26 +67,97 @@ function filterVis(){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
             var hcChecked = Ext.getCmp('hc-cb').getValue();
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
+            var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
+            var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+            var ngdstart = parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+            var ngdend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+            var ccstart = parseFloat(Ext.getCmp('edge_cc_start').getValue());
+            var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+
+        if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
+         return false;
+    }
+    if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
+        return false;
+    }
+    if(!drugChecked && edge.data.connType == 'drugNGD'){
+         return false;
+    }
+        
             if(edge.data.edgeList != undefined && edge.data.edgeList.length > 0){
-            for(var i=0; i< edge.data.edgeList.length; i++){
-              if(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
-                edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
-                edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend){
-                  if(!domainOnlyChecked && edge.data.ngd == null){
-                      return false;
-                  }
-                  else
+                for(var i=0; i< edge.data.edgeList.length; i++){
+                    if(!(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
+                        edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
+                        edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend)){
+
+                        return false;
+                    }
+                }
+                if(edge.data.ngd != null){
+                    return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
+                    (edge.data.cc >= ccstart && edge.data.cc <= ccend));
+                }
+                else
                     return true;
-              }
+
+            }else{
+                   if(edge.data.ngd != null){
+                    return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
+                    (edge.data.cc >= ccstart && edge.data.cc <= ccend));
+                }
+                else
+                    return true;
             }
-            }
-            else{
-                return true;
-            }
+
             return false;
     });
+
+}
+
+function trimModel(){
+    var inclStandalone= Ext.getCmp('standalone-cb').getValue();
+    var nodeModel=[];
+    var edgeModel=[];
+    var inclDrug=Ext.getCmp('showDrugs-cb').getValue();
+    //first go thru edges and filter out - make not visible ones that don't meet the criteria
+  //  var visEdges=vis.edges();
+  //  for(var e=0; e< visEdges.length; e++){
+  //      if(!inclDomainOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'domine'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //      if(!inclRFAceOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'rface'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //      if(!inclDrug && visEdges[e].data.connType == 'drugNGD'){
+  //          vis.edges[e].visible=false;
+  //      }
+  //  }
+
+    filterVis();
+
+    var visNodes=vis.nodes();
+    for(var n=0; n < visNodes.length; n++){
+        if(visNodes[n].visible){
+            if(!inclStandalone && vis.firstNeighbors([visNodes[n].data.id],true).neighbors.length == 0){
+                continue;
+            }
+            else if(!inclDrug && visNodes[n].data.drug){
+                continue;
+            }
+            nodeModel.push(visNodes[n].data);
+        }
+    }
+
+    var visEdges=vis.edges();
+    for(var e=0; e< visEdges.length; e++){
+        if(visEdges[e].visible){
+            edgeModel.push(visEdges[e].data);
+        }
+    }
+    model_def['nodes']=nodeModel;
+    model_def['edges']=edgeModel;
 
 }
 
@@ -87,10 +171,46 @@ function getAvg(valueArray,countArray){
   return sum/count;
 }
 
-function renderNGDHistogramData(){
+function renderNodeNGDHistogramData(istart,iend){
 
 
       var ngdArray = ngdPlotData['data'].map(function(node){return node.count;});
+
+  var maxPosY = pv.max(ngdArray)+1;
+  var ngdValueArray = ngdPlotData['data'].map(function(node){return node.ngd;});
+  var maxPosValueX = parseFloat(pv.max(ngdValueArray))+.1;
+
+    var data_obj = function(){ return {
+        PLOT: {
+            height: 100,
+            width: 400,
+            min_position:0,
+            max_position: maxPosValueX,
+            vertical_padding: 10,
+            horizontal_padding:10,
+            container: document.getElementById('node-ngd'),
+            data_array: ngdPlotData['data'],
+            interval: maxPosValueX,
+            fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
+        },
+        notifier: updateNGDRange,
+        callback_always: true
+    }};
+
+  nodeNGDScroll = new vq.FlexScrollBar();
+  var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
+  nodeNGDScroll.draw(flexscroll_data);
+        var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    nodeNGDScroll.set_position(start, end);
+  return nodeNGDScroll;
+
+}
+
+function renderEdgeNGDHistogramData(istart,iend){
+
+
+      var ngdArray = edgeNGDPlotData['data'].map(function(node){return node.count;});
 
   var maxPosY = pv.max(ngdArray)+1;
   var ngdValueArray = ngdPlotData['data'].map(function(node){return node.ngd;});
@@ -104,23 +224,26 @@ function renderNGDHistogramData(){
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
-            container: document.getElementById('linear-ngd'),
-            data_array: ngdPlotData['data'],
+            container: document.getElementById('edge-ngd'),
+            data_array: edgeNGDPlotData['data'],
             interval: maxPosValueX,
             fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
-        notifier: updateNGDRange,
+        notifier: updateEdgeNGDRange,
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  edgeNGDScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  edgeNGDScroll.draw(flexscroll_data);
+       var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    edgeNGDScroll.set_position(start, end);
+  return edgeNGDScroll;
 
 }
 
-function renderDCHistogramData(dcPlotData){
+function renderDCHistogramData(dcPlotData,dcScroll,istart,iend){
 
 
       var dcArray = domainCountData['data'].map(function(node){return node.count;});
@@ -146,18 +269,21 @@ function renderDCHistogramData(dcPlotData){
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  dcScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  dcScroll.draw(flexscroll_data);
+        var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    dcScroll.set_position(start, end);
+  return dcScroll;
 
 }
 
-function renderCCLinearBrowserData(){
+function renderCCLinearBrowserData(ccData,elementId,notifyCall,ccScroll,istart,iend){
 
-  var ccArray = ccPlotData['data'].map(function(node){ return node.count;});
+  var ccArray = ccData.map(function(node){ return node.count;});
   var maxPosY = pv.max(ccArray)+1;
-  var ngdValueArray = ccPlotData['data'].map(function(node){return node.ngd;});
+  var ngdValueArray = ccData.map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(ngdValueArray)+ 1;
 
 
@@ -169,19 +295,22 @@ function renderCCLinearBrowserData(){
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
-            container: document.getElementById('linear-cc'),
-            data_array: ccPlotData['data'],
+            container: document.getElementById(elementId),
+            data_array: ccData,
             interval: maxPosValueX
 
         },
-        notifier: updateCCRange,
+        notifier: notifyCall,
         callback_always: true
     }};
 
-  var flexscroll_browser = new vq.FlexScrollBar();
+  ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  flexscroll_browser.draw(flexscroll_data);
-  return flexscroll_browser;
+  ccScroll.draw(flexscroll_data);
+    var start = istart == -1 ? 0 : istart;
+    var end = iend == -1 ? maxPosValueX-start : iend-start;
+    ccScroll.set_position(start, end);
+  return ccScroll;
 
 }
 
@@ -291,24 +420,75 @@ function collapseSuperNodes(){
 
 }
 
+function getSolrCombinedTerm(node){
+    var fullTerm=node.data.id;
+    if(model_def["alias"]){
+    if(node.data.aliases != undefined && node.data.aliases != ""){
+        fullTerm=node.data.aliases;
+
+    }
+    }
+
+    return fullTerm;
+
+}
 function visReady(){
     vis.addListener("layout", function(evt){
                filterVis();
     });
-    filterVis();
     vis_ready = true;
+    filterVis();
     vis.addContextMenuItem("Medline Documents","edges",function(evt){
-       var term1 = evt.target.data.source;
-       var term2= evt.target.data.target;
-       retrieveMedlineDocuments(term1,term2);
+       var source = evt.target.data.source;
+       var target = evt.target.data.target;
+       var sourceNode=vis.node(source);
+       var targetNode=vis.node(target);
+
+        var fullTerm1='';
+        var fullTerm2='';
+        if(source.indexOf("(") == 0 && (source.lastIndexOf(")") == (source.length-1))){
+            fullTerm1=source;
+        }
+        else{
+           fullTerm1=getSolrCombinedTerm(sourceNode);
+        }
+        if(target.indexOf("(") == 0 && (target.lastIndexOf(")") == (target.length-1))){
+            fullTerm2=target;
+        }
+        else{
+            fullTerm2=getSolrCombinedTerm(targetNode);
+        }
+       retrieveMedlineDocuments(fullTerm1,fullTerm2);
     });
         vis.addContextMenuItem("Medline Documents","nodes",function(evt){
+
        var term1 = evt.target.data.id;
        var term2= evt.target.data.searchterm;
-       retrieveMedlineDocuments(term1,term2);
+       var term1Node = vis.node(term1);
+       var term2Node = vis.node(term2);
+
+        var fullTerm1='';
+        var fullTerm2='';
+        if(term1.indexOf("(") == 0 && (term1.lastIndexOf(")") == (term1.length-1))){
+            fullTerm1=term1;
+        }
+        else{
+           fullTerm1=getSolrCombinedTerm(term1Node);
+        }
+        if(term2.indexOf("(") == 0 && (term2.lastIndexOf(")") == (term2.length-1))){
+            fullTerm2=term2;
+        }
+        else{
+            fullTerm2=getSolrCombinedTerm(term2Node);
+        }
+
+       retrieveMedlineDocuments(fullTerm1,fullTerm2);
     });
 
- //   collapseSuperNodes();
+    vis.addContextMenuItem("Remove Node", "nodes", function(evt){
+        vis.removeNode(evt.target.data.id);
+    });
+
 }
 
 function getVisualStyle(){
@@ -342,19 +522,17 @@ function getVisualStyle(){
 
      return tooltip;
  };
+    var colorMap = d3.scale.linear()
+        .domain([pv.min(model_def["mutCounts"]),pv.max(model_def["mutCounts"])])
+        .range(["#F97BA2","#790663"]);
 
     vis["customNodeColor"] = function(data){
-        if(data.somatic && data.germline){
-            return "#FC4EE8";
-        }
-        else if(data.somatic){
-            return "#9D7FFF";
-        }
-        else if(data.germline){
-            return "#FC4E4E"
+        if(data.mutCount > 0){
+           
+            return colorMap(data.mutCount);
         }
         else if(data.drug){
-            return "#518985";
+            return "#58C0D2";
         }
         else
             return "#10B622";
@@ -362,10 +540,10 @@ function getVisualStyle(){
 
         vis["customEdgeColor"] = function(data){
         if(data.connType == "drugNGD"){
-            return "#39485F";
+            return "#58C0D2";//"#7ED8D2";
         }
         else if(data.connType == "rface"){
-            return "#6BAB46";
+            return "#10B622";//"#0F8C06"; //39485F";
         }
         else if(data.connType == "combo"){
               return "#CC00CC";
@@ -448,6 +626,7 @@ function getModelDef(){
                 {name: "drug", type: "boolean"},
                 {name: "somatic", type: "boolean"},
                 {name: "germline", type: "boolean"},
+                {name: "mutCount", type: "number"},
                 {name: "aliases", type: "string"},
                 {name: "termcount", type: "double"},
                 {name: "searchtermcount", type: "double"}
@@ -456,6 +635,7 @@ function getModelDef(){
                 { name: "label", type: "string"},
                 {name: "ngd", type:"double"},
                 {name: "connType", type: "string"},
+                    {name: "cc", type: "double"},
               //  {name: "details", type:"object"},
                 {name: "edgeList", type:"object"}
             ]
@@ -533,6 +713,16 @@ function renderEdgeTable(data){
 
 }
 
+function launchQueryWindow(){
+    query_window.show();
+
+}
+
+function launchDenovoWindow(){
+    denovo_window.show();
+    loadDeNovoSearches();
+}
+
 function renderDocumentTable(documentData){
     documentTable_window.show();
 
@@ -541,9 +731,28 @@ function renderDocumentTable(documentData){
 
 function generateNetworkRequest(term,alias,deNovo){
         vis_ready=false;
-        model_def= {nodes: null,edges: null,ccstart:null,ccend:null,ngdstart:null,ngdend:null};
+        model_def= {nodes: null,edges: null};
         loadModel(term,alias,deNovo, renderModel);
 
 
+}
+
+function redraw(){
+    trimModel();
+
+    if(!Ext.getCmp('domainOnly-cb').getValue()){
+        Ext.getCmp('domainOnly-cb').disable();
+    }
+
+    if(!Ext.getCmp('rfaceOnly-cb').getValue()){
+        Ext.getCmp('rfaceOnly-cb').disable();
+    }
+
+    if(!Ext.getCmp('showDrugs-cb').getValue()){
+        Ext.getCmp('showDrugs-cb').disable();
+    }
+
+    populateData(completeData['nodes']);
+    renderModel();
 }
 

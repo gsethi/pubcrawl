@@ -39,12 +39,12 @@ public class Pubcrawl {
         private String term2;
         private long term1count;
         private long term2count;
-        private String[] term1Array;
-        private String[] term2Array;
+        private List<String[]> term1Array;
+        private List<String[]> term2Array;
         private SolrServer server;
         private boolean useAlias;
-        private HashMap<String, String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
-        private HashMap<String, String> keepGrayList;    //only keep the keys if the values occur with them
+        private Map<String, String> filterGrayList;  //items in this list represent items where if the values occur with the key then remove those from the search
+        private Map<String, String> keepGrayList;    //only keep the keys if the values occur with them
 
         public SolrCallable(SearchTermAndList stal1, SearchTermAndList stal2, long term1count, long term2count, SolrServer server, boolean useAlias,
                             HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList) {
@@ -53,8 +53,8 @@ public class Pubcrawl {
             this.term1count = term1count;
             this.term2count = term2count;
             this.server = server;
-            this.term1Array = stal1.asArray();
-            this.term2Array = stal2.asArray();
+            this.term1Array = stal1.asListArray();
+            this.term2Array = stal2.asListArray();
             this.useAlias = useAlias;
             this.filterGrayList = filterGrayList;
             this.keepGrayList = keepGrayList;
@@ -64,12 +64,18 @@ public class Pubcrawl {
             NGDItem totalResults = null;
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
-            String term1Combined = createCombinedTerm(term1Array);
-            String term2Combined = createCombinedTerm(term2Array);
-
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1Combined + ")");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term2Combined + ")");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
             query.setParam("fl", "pmid");
+
+            for(int i=0; i< term1Array.size(); i++){
+                String term1Combined = createCombinedTerm(term1Array.get(i));
+                query.addFilterQuery("+text:(" + term1Combined + ")");
+            }
+            for(int j=0; j< term2Array.size(); j++){
+                String term2Combined = createCombinedTerm(term2Array.get(j));
+                query.addFilterQuery("+text:(" + term2Combined + ")");
+            }
+
             try {
                 QueryResponse rsp = this.server.query(query);
                 totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
@@ -118,11 +124,11 @@ public class Pubcrawl {
         private String term1;
         private String term2;
         private long combocount;
-        private String[] term1Array;
-        private String[] term2Array;
+        private List<String[]> term1Array;
+        private List<String[]> term2Array;
         private boolean useAlias;
 
-        public NGDItem(long term1count, long term2count, String term1, String term2, String[] term1Array, String[] term2Array, long combocount, boolean useAlias) {
+        public NGDItem(long term1count, long term2count, String term1, String term2, List<String[]> term1Array, List<String[]> term2Array, long combocount, boolean useAlias) {
             this.term1count = term1count;
             this.term2count = term2count;
             this.term1 = term1;
@@ -146,7 +152,9 @@ public class Pubcrawl {
 
         public String printItem() {
             if (this.useAlias) {
-                return this.term1 + "\t" + join(this.term1Array, ",") + "\t" + this.term2 + "\t" + join(this.term2Array, ",") + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
+                String term1Alias = term1Array.size() == 1 ? join(this.term1Array.get(0), ",") : this.term1;
+                String term2Alias = term2Array.size() == 1 ? join(this.term2Array.get(0), ",") : this.term2;
+                return this.term1 + "\t" + term1Alias + "\t" + this.term2 + "\t" + term2Alias + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
             } else {
                 return this.term1 + "\t" + this.term2 + "\t" + this.term1count + "\t" + this.term2count + "\t" + this.combocount + "\t" + this.ngd + "\n";
             }
@@ -377,42 +385,45 @@ public class Pubcrawl {
 
     private static long getTermCount(SolrServer server, Map<String, Integer> singleCountMap, SearchTermAndList searchTermAndList, Map<String, String> filterGrayList,
                                      Map<String, String> keepGrayList) {
-        String[] searchTerms = searchTermAndList.asArray();
-        Integer searchTermCountObject = singleCountMap.get(join(searchTerms, ","));
+        List<String[]> searchTerms = searchTermAndList.asListArray();
+        Integer searchTermCountObject = searchTerms.size() != 1 ? null : singleCountMap.get(join(searchTerms.get(0), ","));
         long searchTermCount = 0;
         if (searchTermCountObject == null) {
             //didn't find it in map, so need to go get count
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
+            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            query.setParam("fl", "pmid");
 
-            String term1 = "";
-            for (String aTermArray : searchTerms) {
-                if (filterGrayList.containsKey(aTermArray.toLowerCase())) {
-                    String filterTerms = filterGrayList.get(aTermArray.toLowerCase());
-                    String[] splitFilterTerms = filterTerms.split(",");
+            for(int i=0; i< searchTerms.size(); i++){
+                String term1 = "";
+                for (String aTermArray : searchTerms.get(i)) {
+                    if (filterGrayList.containsKey(aTermArray.toLowerCase())) {
+                        String filterTerms = filterGrayList.get(aTermArray.toLowerCase());
+                        String[] splitFilterTerms = filterTerms.split(",");
+                        term1 = term1 + "(+\"" + aTermArray + "\" -(";
 
-                    term1 = term1 + "(+\"" + aTermArray + "\" -(";
-                    for (String splitFilterTerm : splitFilterTerms) {
-                        term1 = term1 + "\"" + splitFilterTerm + "\" ";
+                        for (String splitFilterTerm : splitFilterTerms) {
+                            term1 = term1 + "\"" + splitFilterTerm + "\" ";
+                        }
+                        term1 = term1 + ")) ";
+                    } else if (keepGrayList.containsKey(aTermArray.toLowerCase())) {
+                        String keepTerms = keepGrayList.get(aTermArray.toLowerCase());
+                        String[] splitKeepTerms = keepTerms.split(",");
+                        term1 = term1 + "(+\"" + aTermArray + "\" +(";
+
+                        for (String splitKeepTerm : splitKeepTerms) {
+                            term1 = term1 + "\"" + splitKeepTerm + "\" ";
+                        }
+                        term1 = term1 + ")) ";
+                    } else {
+                        term1 = term1 + "\"" + aTermArray + "\" ";
                     }
-                    term1 = term1 + ")) ";
-                } else if (keepGrayList.containsKey(aTermArray.toLowerCase())) {
-                    String keepTerms = keepGrayList.get(aTermArray.toLowerCase());
-                    String[] splitKeepTerms = keepTerms.split(",");
-
-                    term1 = term1 + "(+\"" + aTermArray + "\" +(";
-                    for (String splitKeepTerm : splitKeepTerms) {
-                        term1 = term1 + "\"" + splitKeepTerm + "\" ";
-                    }
-                    term1 = term1 + ")) ";
-                } else {
-                    term1 = term1 + "\"" + aTermArray + "\" ";
                 }
+
+                query.addFilterQuery("+text:(" + term1 + ")");
             }
 
-
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011] +text:(" + term1 + ")");
-            query.setParam("fl", "pmid");
             try {
                 QueryResponse rsp = server.query(query);
                 searchTermCount = rsp.getResults().getNumFound();
@@ -428,6 +439,36 @@ public class Pubcrawl {
     }
 
     public static SearchTermAndList getTermAndTermList(String searchTerm, boolean useAlias, boolean tabDelimited) {
+         SearchTermAndList terms;
+        //first see if the item is an expression term or regular term
+         if(searchTerm.trim().endsWith(")") && searchTerm.trim().startsWith("(")){
+                //this is an expression, so need to parse string
+             terms = new SearchTermAndList(searchTerm.trim());
+
+                int startIndex=1;
+                int phraseIndex=searchTerm.trim().indexOf(")");
+                while(startIndex > 0 && phraseIndex > 0){
+                    String[] termInfo = getTermAliasList(searchTerm.trim().substring(startIndex, phraseIndex),false);
+                    terms.addItems(termInfo);
+                    startIndex=searchTerm.trim().indexOf("(",phraseIndex) + 1;
+                    phraseIndex=searchTerm.trim().indexOf(")",startIndex);
+                }
+
+         }
+        else{    //regular term with possible aliases
+             String[] finalItems = getTermAliasList(searchTerm, tabDelimited);
+             terms = new SearchTermAndList(finalItems[0]);
+
+            if (useAlias) {
+                terms.addItems(finalItems);
+            } else {
+                terms.addItems(finalItems[0]);
+            }
+         }
+        return terms;
+    }
+
+    private static String[] getTermAliasList(String searchTerm, boolean tabDelimited) {
         String[] termItems;
         if (tabDelimited) {
             termItems = searchTerm.trim().split("\t");
@@ -439,14 +480,7 @@ public class Pubcrawl {
         for (int i = 0; i < termItems.length; i++) {
             finalItems[i] = replace(termItems[i], "\"", "\\\"").toLowerCase();
         }
-
-        SearchTermAndList terms = new SearchTermAndList(finalItems[0]);
-        if (useAlias) {
-            terms.addItems(finalItems);
-        } else {
-            terms.addItems(finalItems[0]);
-        }
-        return terms;
+        return finalItems;
     }
 
     public static Options createCLIOptions() {

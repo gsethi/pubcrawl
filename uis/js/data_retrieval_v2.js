@@ -19,11 +19,19 @@ var base_query_url = '',
         pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
         current_data = {};
 
+var nodeCCScroll;
+var nodeNGDScroll;
+var edgeDCScroll;
+var edgeCCScroll;
+var edgeNGDScroll;
 var model_def;
 var ngdPlotData;
+var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
-var saNodes;
+var saNodes=[];
+var saDomainEdges=[];
+var saRFACEEdges=[];
 
 
 selectModel = function(set_label) {
@@ -75,20 +83,45 @@ function loadModel(term1, alias,deNovo, callback) {
                 if(json.nodes == undefined || json.nodes.length == 0){
 
                         Ext.MessageBox.show({
-                            msg: 'No terms were found.  Please go to DeNovo Search and submit a job.',
-                            width:300
+                            title:'Submit DeNovo Search?',
+                            msg: 'No matching term was found.  Would you like to run a denovo search for the term: ' + model_def['term'] + ' ?',
+                            width:400,
+                            height: 200,
+                            buttons: Ext.Msg.OKCANCEL,
+                            style:{color:'black'},
+                            fn: function(id){
+                                if(id == 'ok'){
+                                    searchHandler();
+                                }
+                                
+                            }
                         });
                     vis_mask.hide();
                    
                 }
                 else{
-                    model_def['nodes']=json.nodes;
-                    if(!Ext.getCmp('standaloneCheckbox').getValue()){
-
-                        filterStandaloneNodes(true);
-
-                    }
-                    model_def['edges']=json.edges;
+                    Ext.getCmp('currentTerm-dfield').setValue(model_def['term']);
+                    Ext.getCmp('alias-dfield').setValue(model_def['alias']);
+                    Ext.getCmp('nodeFilterPanel').enable();
+                    Ext.getCmp('edgeFilterPanel').enable();
+                     model_def['mutCounts'] = json.nodes.map(function(node){
+                        if(node.mutCount == undefined)
+                            return 0;
+                         else
+                            return node.mutCount;                                   
+                    });
+                    Ext.getCmp('domainOnly-cb').setValue(true);
+                    Ext.getCmp('domainOnly-cb').enable();
+                    Ext.getCmp('rfaceOnly-cb').enable();
+                    Ext.getCmp('rfaceOnly-cb').setValue(true);
+                    Ext.getCmp('showDrugs-cb').enable();
+                    Ext.getCmp('showDrugs-cb').setValue(true);
+                    Ext.getCmp('standalone-cb').enable();
+                    Ext.getCmp('standalone-cb').setValue(true);
+                    filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
+                    Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
+                    query_window.hide();
+                    denovo_window.hide();
                     populateData(json.allnodes);
                 }
 
@@ -101,55 +134,68 @@ function loadModel(term1, alias,deNovo, callback) {
 
 }
 
-function filterStandaloneNodes(filterOut){
+function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChecked,nodes,edges){
+
+    var tempModelEdges=[];
     var nodeList={};
-         if(filterOut){
+    for(var index=0; index < edges.length; index++){
+        if(!drugChecked && edges[index].connType == 'drugNGD'){
+             continue;
+        }
+        if(!rfaceOnlyChecked && edges[index].ngd == null && edges[index].connType == 'rface'){
+            continue;
+        }
+        if(!domainOnlyChecked && edges[index].ngd == null && edges[index].connType == 'domine'){
+            continue;
+        }
 
-             var tempModelNodes=[];
-             saNodes=[];
-             //go thru edges and figure out which nodes are standalone and put into temp node area
-             for (var index=0; index < model_def['edges'].length; index++){
-                      nodeList[model_def['edges'][index].source.toUpperCase()] = 1;
-                      nodeList[model_def['edges'][index].target.toUpperCase()] = 1;
-             }
+        tempModelEdges.push(edges[index]);
 
-             for (var index=0; index < model_def['nodes'].length; index++){
-                 if(nodeList[model_def['nodes'][index].id] == undefined){
-                     //wasn't found in edges - and filtering out - so put into saNodes;
-                     saNodes.push(model_def['nodes'][index]);
-                 }
-                 else{
-                    tempModelNodes.push(model_def['nodes'][index]);
-                 }
-             }
+        //figure out which nodes are standalone
+        nodeList[edges[index].source.toUpperCase()] = 1;
+        nodeList[edges[index].target.toUpperCase()] = 1;
+    }
 
-             //done going thru nodes - now clear out model_def and put new temp nodes in there
-             model_def['nodes']=tempModelNodes;
-             tempModelNodes=[];
+    model_def['edges'] = tempModelEdges;
 
-         }
-    else{
-             //we aren't filtering out - we are putting in....so take what is in sanodes and put into model_def['nodes']
-             for(var index=0; index < saNodes.length; index++){
-                 model_def['nodes'].push(saNodes[index]);
-             }
+    var tempModelNodes=[];
+    for(var nIndex=0; nIndex < nodes.length; nIndex++){
+        if(!drugChecked && nodes[nIndex].drug){
+            continue;
+        }
 
-         }
+        if(!standaloneChecked && nodeList[nodes[nIndex].id] == undefined){
+                     continue;     //standalone node, so filter out
+        }
+        tempModelNodes.push(nodes[nIndex]);
+    }
+
+    model_def['nodes'] = tempModelNodes;
 }
+
 
 function populateData(allnodes){
     completeData={nodes:null,edges:null};
     ngdPlotData = {data:null};
+    edgeNGDPlotData = {data:null};
     var nodeArray=[];
     var comboCounts={};
      var ngdSummary={};
+    var edgeNGDSummary={};
+    var edgeCCSummary={};
+    var graphNodes={};
+
+
+    for (var nIndex=0; nIndex < model_def['nodes'].length; nIndex++){
+        graphNodes[model_def['nodes'][nIndex].label.toUpperCase()]="";
+    }
     for (var index=0; index < allnodes.length; index++){
         var node = allnodes[index];
         nodeArray.push({term1: node.label.toUpperCase(),alias1: node.aliases,term1count:node.termcount,combocount:node.cc,
-                    ngd:node.ngd});
+                    ngd:node.ngd, label: node.label, cc: node.cc});
 
         if(node.label.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
-            if(node.graph == 1){
+            if(graphNodes[node.label.toUpperCase()] != undefined){
             if(comboCounts[node.cc] == undefined){
                 comboCounts[node.cc] = {start:node.cc - .5, end: node.cc + .5, label: 1, ngd: node.cc, count: 1};
             }
@@ -161,12 +207,12 @@ function populateData(allnodes){
 
             var ngdtrunc = Math.round(node.ngd * 100)/100;
             if (ngdSummary[ngdtrunc] == undefined){
-                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:node.graph};
+                ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph: graphNodes[node.label.toUpperCase()] == undefined ? 0:1};
             }
             else{
                 ngdSummary[ngdtrunc].count = ngdSummary[ngdtrunc].count+1;
                 ngdSummary[ngdtrunc].value = ngdSummary[ngdtrunc].value +1;
-                ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+node.graph;
+                ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+  (graphNodes[node.label.toUpperCase()] == undefined ? 0:1);
             }
         }
 
@@ -179,7 +225,7 @@ function populateData(allnodes){
         histNgd.push(ngdSummary[ngdItem]);
     }
     ngdPlotData['data'] =  histNgd;
-    renderNGDHistogramData();
+    renderNodeNGDHistogramData(-1,-1);
 
     ccPlotData={data:null};
     var histCC=[];
@@ -187,7 +233,7 @@ function populateData(allnodes){
         histCC.push(comboCounts[ccItem]);
     }
     ccPlotData['data']=histCC;
-    renderCCLinearBrowserData();
+    renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,nodeCCScroll,2,-1);
 
 
     var domainCounts = {};
@@ -217,6 +263,27 @@ function populateData(allnodes){
 
         }
         }
+
+        if(edge.ngd != undefined){
+            ngdtrunc = Math.round(edge.ngd * 100)/100;
+            if (edgeNGDSummary[ngdtrunc] == undefined){
+                edgeNGDSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:1};
+            }
+            else{
+                edgeNGDSummary[ngdtrunc].count = edgeNGDSummary[ngdtrunc].count+1;
+                edgeNGDSummary[ngdtrunc].value = edgeNGDSummary[ngdtrunc].value +1;
+            }
+        }
+
+        if(edge.cc != undefined){
+            if(edgeCCSummary[edge.cc] == undefined){
+                edgeCCSummary[edge.cc] = {start:edge.cc - .5, end: edge.cc + .5, label: 1, ngd: edge.cc, count: 1};
+            }
+            else{
+                edgeCCSummary[edge.cc].count= edgeCCSummary[edge.cc].count+1;
+                edgeCCSummary[edge.cc].label=edgeCCSummary[edge.cc].count;
+            }
+        }
     }
 
     var histData=[];
@@ -224,9 +291,24 @@ function populateData(allnodes){
         histData.push(domainCounts[domainItem]);
     }
 
+    var histedgeNGD=[];
+    for(var edgengdItem in edgeNGDSummary){
+        histedgeNGD.push(edgeNGDSummary[edgengdItem]);
+    }
+    edgeNGDPlotData['data'] =  histedgeNGD;
+    renderEdgeNGDHistogramData(-1,-1);
+
+    edgeCCPlotData={data:null};
+    var histedgeCC=[];
+    for(var ccItem in edgeCCSummary){
+        histedgeCC.push(edgeCCSummary[ccItem]);
+    }
+    edgeCCPlotData['data']=histedgeCC;
+    renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,edgeCCScroll,2,-1);
+
     domainCountData={data:null};
     domainCountData['data']=histData;
-    renderDCHistogramData(histData);
+    renderDCHistogramData(histData,edgeDCScroll,-1,60);
 
     
     Ext.StoreMgr.get('dataNode_grid_store').loadData(completeData['nodes']);
@@ -236,7 +318,41 @@ function retrieveMedlineDocuments(term1,term2){
      Ext.StoreMgr.get('dataDocument_grid_store').on({
          beforeload:{
              fn: function(store,options){
-                 store.proxy.setUrl('/solr/select/?q=%2Btext%3A\"' + term1 + '\" %2Btext%3A\"' + term2 + '\"&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
+                 if(model_def["alias"]){
+                 termString = '%2Btext%3A(\"' + term1.replace(/,/g,"\" \"" ) + '\")';
+                 }
+                 else{
+                    termString = '%2Btext%3A(\"' + term1 + '\")';
+                 }
+                 if(term1.indexOf("(") == 0 && (term1.lastIndexOf(")") == (term1.length-1))){
+                     termString = '';
+                      var startIndex=1;
+                      var phraseIndex=term1.indexOf(")");
+                    while(startIndex > 0 && phraseIndex > 0){
+                        var tempterm=term1.substring(startIndex,phraseIndex);
+                        termString=termString+' %2Btext%3A(\"' + tempterm.replace(/,/g,"\" \"" ) + '\")';
+                        startIndex=term1.indexOf("(",phraseIndex) + 1;
+                        phraseIndex=term1.indexOf(")",startIndex);
+                    }
+                 }
+                  if(model_def["alias"]){
+                 termString2 = '%2Btext%3A(\"' + term2.replace(/,/g,"\" \"" ) + '\")';
+                 }
+                 else{
+                    termString2 = '%2Btext%3A(\"' + term2 + '\")';
+                 }
+                 if(term2.indexOf("(") == 0 && (term2.lastIndexOf(")") == (term2.length-1))){
+                     termString2 = '';
+                      var startIndex=1;
+                      var phraseIndex=term2.indexOf(")");
+                    while(startIndex > 0 && phraseIndex > 0){
+                        var tempterm=term2.substring(startIndex,phraseIndex);
+                        termString2=termString2+' %2Btext%3A(\"' + tempterm.replace(/,/g,"\" \"" ) + '\")';
+                        startIndex=term2.indexOf("(",phraseIndex) + 1;
+                        phraseIndex=term2.indexOf(")",startIndex);
+                    }
+                 }
+                 store.proxy.setUrl('/solr/select/?q='+termString+termString2+'&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
                 '&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true');
              }
          }
@@ -256,8 +372,8 @@ function searchHandler(){
             }
         });
 
-        var jobSearchTerm = Ext.getDom("jobSearchTerm").value;
-        var alias = Ext.getDom("aliasJobCheckbox").checked;
+        var jobSearchTerm = model_def['term'];
+        var alias = model_def['alias'];
 
         Ext.Ajax.request({
             method:"POST",
@@ -269,8 +385,8 @@ function searchHandler(){
             },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
-                setTimeout("Ext.MessageBox.hide();", 1000);
-                setTimeout("loadDeNovoSearches();", 3000);
+                setTimeout("Ext.MessageBox.hide();", 12000);
+                setTimeout("loadDeNovoSearches();", 12000);
             },
             failure: function(o) {
                 Ext.MessageBox.alert('Error Submitting Job', o.statusText);
@@ -279,5 +395,11 @@ function searchHandler(){
 }
 
 function exportVisData(){
-   vis.exportNetwork(this.value, 'pubcrawl_svc/export?type='+this.value);
+   vis.exportNetwork(this.value, 'pubcrawl_svc/exportGraph?type='+this.value);
 }
+
+function exportNodeData(){
+    document.getElementById('frame').src='http://' + window.location.host + encodeURI('/pubcrawl_svc/exportNodes/'+model_def['term'].toLowerCase()+'?alias='+model_def['alias']+'&type=csv');
+
+}
+
