@@ -29,9 +29,9 @@ var ngdPlotData;
 var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
-var saNodes=[];
-var saDomainEdges=[];
-var saRFACEEdges=[];
+var nodeNGDScrollUpdate;
+var edgeNGDScrollUpdate;
+
 
 
 selectModel = function(set_label) {
@@ -225,7 +225,11 @@ function populateData(allnodes){
         histNgd.push(ngdSummary[ngdItem]);
     }
     ngdPlotData['data'] =  histNgd;
-    renderNodeNGDHistogramData(-1,-1);
+    nodeNGDScroll=renderNodeNGDHistogramData(-1,-1);
+    Ext.getCmp('node_ngd_start').setMinValue(nodeNGDScroll.min_position());
+    Ext.getCmp('node_ngd_start').setMaxValue(nodeNGDScroll.max_position());
+    Ext.getCmp('node_ngd_end').setMinValue(nodeNGDScroll.min_position());
+    Ext.getCmp('node_ngd_end').setMaxValue(nodeNGDScroll.max_position());
 
     ccPlotData={data:null};
     var histCC=[];
@@ -233,7 +237,7 @@ function populateData(allnodes){
         histCC.push(comboCounts[ccItem]);
     }
     ccPlotData['data']=histCC;
-    renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,nodeCCScroll,2,-1);
+    nodeCCScroll=renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,2,-1);
 
 
     var domainCounts = {};
@@ -296,7 +300,11 @@ function populateData(allnodes){
         histedgeNGD.push(edgeNGDSummary[edgengdItem]);
     }
     edgeNGDPlotData['data'] =  histedgeNGD;
-    renderEdgeNGDHistogramData(-1,-1);
+    edgeNGDScroll=renderEdgeNGDHistogramData(-1,-1);
+    Ext.getCmp('edge_ngd_start').setMinValue(edgeNGDScroll.min_position());
+    Ext.getCmp('edge_ngd_start').setMaxValue(edgeNGDScroll.max_position());
+    Ext.getCmp('edge_ngd_end').setMinValue(edgeNGDScroll.min_position());
+    Ext.getCmp('edge_ngd_end').setMaxValue(edgeNGDScroll.max_position());
 
     edgeCCPlotData={data:null};
     var histedgeCC=[];
@@ -304,11 +312,11 @@ function populateData(allnodes){
         histedgeCC.push(edgeCCSummary[ccItem]);
     }
     edgeCCPlotData['data']=histedgeCC;
-    renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,edgeCCScroll,2,-1);
+    edgeCCScroll=renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,2,-1);
 
     domainCountData={data:null};
     domainCountData['data']=histData;
-    renderDCHistogramData(histData,edgeDCScroll,-1,60);
+    edgeDCScroll=renderDCHistogramData(histData,-1,60);
 
     
     Ext.StoreMgr.get('dataNode_grid_store').loadData(completeData['nodes']);

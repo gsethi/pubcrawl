@@ -19,15 +19,32 @@ Ext.onReady(function() {
                                     id: 'node_ngd_start',
                                     name: 'node_ngd_start',
                                     allowNegative: false,
-                                    decimalPrecision: 0,
+                                    decimalPrecision: 2,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
-                                    allowDecimals: false,
+                                    allowDecimals: true,
                                     value:'',
-                                    hideLabel: true
+                                    hideLabel: true,
+                                    validator: function(){
+                                       istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+                                        if(iend < istart){
+                                            return false;
+                                        }
+                                        else
+                                            return true;
+                                    },
+                                     listeners:{
+                                    valid: function(field){
+                                        if(nodeNGDScroll != undefined){
+                                        nodeNGDScrollUpdate=true;
+                                        istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+                                        var end = iend-istart;
+                                        nodeNGDScroll.set_position(istart, end);
+                                        }
+                                }}
                                 }]
             },{
                  defaults:{anchor:'100%'}
@@ -35,15 +52,32 @@ Ext.onReady(function() {
                                     id: 'node_ngd_end',
                                     name: 'node_ngd_end',
                                     allowNegative: false,
-                                    decimalPrecision: 0,
+                                    decimalPrecision: 2,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
-                                    allowDecimals: false,
+                                    allowDecimals: true,
                                     value:'',
-                                    hideLabel: true
+                                    hideLabel: true,
+                                    validator: function(){
+                                       istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+                                        if(iend < istart){
+                                            return false;
+                                        }
+                                        else
+                                            return true;
+                                    },
+                                     listeners:{
+                                    valid: function(field){
+                                        if(nodeNGDScroll != undefined){
+                                        nodeNGDScrollUpdate=true;
+                                        istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
+                                        var end = iend-istart;
+                                        nodeNGDScroll.set_position(istart, end);
+                                        }
+                                }}
                                 }]
             }]
         });
@@ -66,15 +100,32 @@ Ext.onReady(function() {
                                     id: 'edge_ngd_start',
                                     name: 'edge_ngd_start',
                                     allowNegative: false,
-                                    decimalPrecision: 0,
+                                    decimalPrecision: 2,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
-                                    allowDecimals: false,
+                                    allowDecimals: true,
                                     value:'',
-                                    hideLabel: true
+                                    hideLabel: true,
+                   validator: function(){
+                                       istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+                                        if(iend < istart){
+                                            return false;
+                                        }
+                                        else
+                                            return true;
+                                    },
+                                     listeners:{
+                                    valid: function(field){
+                                        if(edgeNGDScroll != undefined){
+                                        edgeNGDScrollUpdate=true;
+                                        istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+                                        var end = iend-istart;
+                                        edgeNGDScroll.set_position(istart, end);
+                                        }
+                                }}
                                 }]
             },{
                  defaults:{anchor:'100%'}
@@ -82,15 +133,32 @@ Ext.onReady(function() {
                                     id: 'edge_ngd_end',
                                     name: 'edge_ngd_end',
                                     allowNegative: false,
-                                    decimalPrecision: 0,
+                                    decimalPrecision: 2,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
-                                    allowDecimals: false,
+                                    allowDecimals: true,
                                     value:'',
-                                    hideLabel: true
+                                    hideLabel: true,
+                   validator: function(){
+                                       istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+                                        if(iend < istart){
+                                            return false;
+                                        }
+                                        else
+                                            return true;
+                                    },
+                                     listeners:{
+                                    valid: function(field){
+                                        if(edgeNGDScroll != undefined){
+                                        edgeNGDScrollUpdate=true;
+                                        istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
+                                        iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
+                                        var end = iend-istart;
+                                        edgeNGDScroll.set_position(istart, end);
+                                        }
+                                }}
                                 }]
             }]
         });
@@ -998,9 +1066,10 @@ Ext.onReady(function() {
     documentTable_window.hide();
 
     function renderNetworkViz() {
+
         vis = new org.cytoscapeweb.Visualization("cytoscapeweb", {
-            swfPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/CytoscapeWeb",
-            flashInstallerPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/playerProductInstall"
+            swfPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/CytoscapeWeb",
+            flashInstallerPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/playerProductInstall"
         });
     }
 });
