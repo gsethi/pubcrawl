@@ -9,8 +9,13 @@ function updateCCRange(start,width){
 }
 
 function updateNGDRange(start,width){
+    if(!nodeNGDScrollUpdate){
       Ext.getCmp('node_ngd_start').setValue(start);
-      Ext.getCmp('node_ngd_end').setValue(new Number(start+width).toPrecision(2));
+      Ext.getCmp('node_ngd_end').setValue(new Number(start+width).toFixed(2));
+    }
+    else{
+        nodeNGDScrollUpdate=false;
+    }
     if(vis_ready){
     filterVis();
     }
@@ -18,8 +23,14 @@ function updateNGDRange(start,width){
 }
 
 function updateEdgeNGDRange(start,width){
+    if(!edgeNGDScrollUpdate){
       Ext.getCmp('edge_ngd_start').setValue(start);
-      Ext.getCmp('edge_ngd_end').setValue(new Number(start+width).toPrecision(2));
+      Ext.getCmp('edge_ngd_end').setValue(new Number(start+width).toFixed(2));
+    }
+    else{
+        edgeNGDScrollUpdate=false;
+
+    }
     if(vis_ready){
     filterVis();
     }
@@ -121,19 +132,6 @@ function trimModel(){
     var nodeModel=[];
     var edgeModel=[];
     var inclDrug=Ext.getCmp('showDrugs-cb').getValue();
-    //first go thru edges and filter out - make not visible ones that don't meet the criteria
-  //  var visEdges=vis.edges();
-  //  for(var e=0; e< visEdges.length; e++){
-  //      if(!inclDomainOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'domine'){
-  //          vis.edges[e].visible=false;
-  //      }
-  //      if(!inclRFAceOnly && visEdges[e].data.ngd == null && visEdges[e].data.connType == 'rface'){
-  //          vis.edges[e].visible=false;
-  //      }
-  //      if(!inclDrug && visEdges[e].data.connType == 'drugNGD'){
-  //          vis.edges[e].visible=false;
-  //      }
-  //  }
 
     filterVis();
 
@@ -173,7 +171,7 @@ function getAvg(valueArray,countArray){
 
 function renderNodeNGDHistogramData(istart,iend){
 
-
+      nodeNGDScrollUpdate=false;
       var ngdArray = ngdPlotData['data'].map(function(node){return node.count;});
 
   var maxPosY = pv.max(ngdArray)+1;
@@ -197,18 +195,18 @@ function renderNodeNGDHistogramData(istart,iend){
         callback_always: true
     }};
 
-  nodeNGDScroll = new vq.FlexScrollBar();
+  var nodeScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  nodeNGDScroll.draw(flexscroll_data);
+  nodeScroll.draw(flexscroll_data);
         var start = istart == -1 ? 0 : istart;
     var end = iend == -1 ? maxPosValueX-start : iend-start;
-    nodeNGDScroll.set_position(start, end);
-  return nodeNGDScroll;
+    nodeScroll.set_position(start, end);
+  return nodeScroll;
 
 }
 
 function renderEdgeNGDHistogramData(istart,iend){
-
+      edgeNGDScrollUpdate = false;
 
       var ngdArray = edgeNGDPlotData['data'].map(function(node){return node.count;});
 
@@ -233,17 +231,17 @@ function renderEdgeNGDHistogramData(istart,iend){
         callback_always: true
     }};
 
-  edgeNGDScroll = new vq.FlexScrollBar();
+  var edgeScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
-  edgeNGDScroll.draw(flexscroll_data);
+  edgeScroll.draw(flexscroll_data);
        var start = istart == -1 ? 0 : istart;
     var end = iend == -1 ? maxPosValueX-start : iend-start;
-    edgeNGDScroll.set_position(start, end);
-  return edgeNGDScroll;
+    edgeScroll.set_position(start, end);
+  return edgeScroll;
 
 }
 
-function renderDCHistogramData(dcPlotData,dcScroll,istart,iend){
+function renderDCHistogramData(dcPlotData,istart,iend){
 
 
       var dcArray = domainCountData['data'].map(function(node){return node.count;});
@@ -269,7 +267,7 @@ function renderDCHistogramData(dcPlotData,dcScroll,istart,iend){
         callback_always: true
     }};
 
-  dcScroll = new vq.FlexScrollBar();
+  var dcScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
   dcScroll.draw(flexscroll_data);
         var start = istart == -1 ? 0 : istart;
@@ -279,7 +277,7 @@ function renderDCHistogramData(dcPlotData,dcScroll,istart,iend){
 
 }
 
-function renderCCLinearBrowserData(ccData,elementId,notifyCall,ccScroll,istart,iend){
+function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
 
   var ccArray = ccData.map(function(node){ return node.count;});
   var maxPosY = pv.max(ccArray)+1;
@@ -304,7 +302,7 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,ccScroll,istart,i
         callback_always: true
     }};
 
-  ccScroll = new vq.FlexScrollBar();
+  var ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
   ccScroll.draw(flexscroll_data);
     var start = istart == -1 ? 0 : istart;
@@ -373,51 +371,6 @@ function getVisLayout(layout){
     }
 
     return layoutConfig;
-}
-
-function collapseSuperNodes(){
-  var nodes = vis.nodes();
-  var nodeHash = {};
-  var superNodes = {};
-  for(var index=0; index < nodes.length; index++){
-      if(nodes[index].visible){
-        var neighborInfo = vis.firstNeighbors([nodes[index]],true);
-        var edgeString="";
-        for(var i=0; i<neighborInfo.edges.length; i++){
-            edgeString=edgeString+neighborInfo.edges[i].data.source;
-        }
-        if(edgeString != ""){
-        if(nodeHash[edgeString] == undefined){
-          nodeHash[edgeString]=nodes[index];
-        }
-        else{
-          if(superNodes[edgeString] == undefined){
-            superNodes[edgeString]=[nodeHash[edgeString],nodes[index]];
-          }
-          else{
-            superNodes[edgeString].push(nodes[index]);
-          }
-        }
-      }
-      }
-  }
-
-  for(var sNodes in superNodes){
-    var neighbor = vis.firstNeighbors([superNodes[sNodes][0]],true);
-    var edges = neighbor.edges;
-    for(var j=0; j<superNodes[sNodes].length; j++){
-      vis.removeNode(superNodes[sNodes][j]);
-    }
-    var node = superNodes[sNodes][0];
-    node.data.id="super_"+node.data.id;
-    vis.addNode(node.x,node.y,node.data);
-    for(var e=0; e < edges.length; e++){
-      edges[e].data.target=node.data.id;
-      vis.addEdge(edges[e].data);
-    }
-  }
-
-
 }
 
 function getSolrCombinedTerm(node){
