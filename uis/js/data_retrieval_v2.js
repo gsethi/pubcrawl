@@ -31,6 +31,9 @@ var ccPlotData;
 var domainCountData;
 var nodeNGDScrollUpdate;
 var edgeNGDScrollUpdate;
+var nodeCCScrollUpdate;
+var edgeCCScrollUpdate;
+var edgeDCScrollUpdate;
 
 
 

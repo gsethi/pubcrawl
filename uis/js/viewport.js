@@ -29,7 +29,7 @@ Ext.onReady(function() {
                                     validator: function(){
                                        istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
-                                        if(iend < istart){
+                                       if(isNaN(istart) || isNaN(iend) || iend < istart){
                                             return false;
                                         }
                                         else
@@ -62,7 +62,7 @@ Ext.onReady(function() {
                                     validator: function(){
                                        istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
-                                        if(iend < istart){
+                                        if(isNaN(istart) || isNaN(iend) || iend < istart){
                                             return false;
                                         }
                                         else
@@ -110,7 +110,7 @@ Ext.onReady(function() {
                    validator: function(){
                                        istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
-                                        if(iend < istart){
+                                        if(isNaN(istart) || isNaN(iend) || iend < istart){
                                             return false;
                                         }
                                         else
@@ -143,7 +143,7 @@ Ext.onReady(function() {
                    validator: function(){
                                        istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
-                                        if(iend < istart){
+                                        if(isNaN(istart) || isNaN(iend) || iend < istart){
                                             return false;
                                         }
                                         else
@@ -182,13 +182,30 @@ Ext.onReady(function() {
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
-                                        maxValue: 99999999,
-                                        minValue: 0,
                                         tabIndex: 2,
                                         validateOnBlur: true,
                                         allowDecimals: false,
                                         value:'',
-                                        hideLabel:true
+                                        hideLabel:true,
+                                        validator: function(){
+                                            istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                        },
+                                        listeners:{
+                                            valid: function(field){
+                                                if(nodeCCScroll != undefined){
+                                                    nodeCCScrollUpdate=true;
+                                                    istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
+                                                    iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
+                                                    var end = iend-istart;
+                                                    nodeCCScroll.set_position(istart, end);
+                                                }
+                                        }}
                                     }]
                 },{
                      defaults:{anchor:'100%'}
@@ -198,13 +215,30 @@ Ext.onReady(function() {
                                         allowNegative: false,
                                         decimalPrecision: 0,
                                         invalidText: 'This value is not valid.',
-                                        maxValue: 99999999,
-                                        minValue: 0,
                                         tabIndex: 2,
                                         validateOnBlur: true,
                                         allowDecimals: false,
                                         value:'',
-                                        hideLabel:true
+                                        hideLabel:true,
+                                        validator: function(){
+                                            istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                        },
+                                        listeners:{
+                                            valid: function(field){
+                                                if(nodeCCScroll != undefined){
+                                                    nodeCCScrollUpdate=true;
+                                                    istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
+                                                    iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
+                                                    var end = iend-istart;
+                                                    nodeCCScroll.set_position(istart, end);
+                                                }
+                                        }}
                                     }]
                 }]
             });
@@ -228,13 +262,30 @@ Ext.onReady(function() {
                                           allowNegative: false,
                                           decimalPrecision: 0,
                                           invalidText: 'This value is not valid.',
-                                          maxValue: 99999999,
-                                          minValue: 0,
                                           tabIndex: 2,
                                           validateOnBlur: true,
                                           allowDecimals: false,
                                           value:'',
-                                          hideLabel:true
+                                          hideLabel:true,
+                                          validator: function(){
+                                            istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                        },
+                                        listeners:{
+                                            valid: function(field){
+                                                if(edgeCCScroll != undefined){
+                                                    edgeCCScrollUpdate=true;
+                                                    istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
+                                                    iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+                                                    var end = iend-istart;
+                                                    edgeCCScroll.set_position(istart, end);
+                                                }
+                                        }}
                                       }]
                   },{
                        defaults:{anchor:'100%'}
@@ -244,13 +295,30 @@ Ext.onReady(function() {
                                           allowNegative: false,
                                           decimalPrecision: 0,
                                           invalidText: 'This value is not valid.',
-                                          maxValue: 99999999,
-                                          minValue: 0,
                                           tabIndex: 2,
                                           validateOnBlur: true,
                                           allowDecimals: false,
                                           value:'',
-                                          hideLabel:true
+                                          hideLabel:true,
+                                          validator: function(){
+                                            istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                            },
+                                            listeners:{
+                                                valid: function(field){
+                                                    if(edgeCCScroll != undefined){
+                                                        edgeCCScrollUpdate=true;
+                                                        istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
+                                                        iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+                                                        var end = iend-istart;
+                                                        edgeCCScroll.set_position(istart, end);
+                                                    }
+                                            }}
                                       }]
                   }]
               });
@@ -275,13 +343,30 @@ Ext.onReady(function() {
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
                                     allowDecimals: false,
                                     value:'',
-                                    hideLabel:true
+                                    hideLabel:true,
+                                    validator: function(){
+                                            istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                            },
+                                    listeners:{
+                                                valid: function(field){
+                                                    if(edgeDCScroll != undefined){
+                                                        edgeDCScrollUpdate=true;
+                                                        istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
+                                                        iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+                                                        var end = iend-istart;
+                                                        edgeDCScroll.set_position(istart, end);
+                                                    }
+                                            }}
                                 }]
             },{
                  defaults:{anchor:'100%'}
@@ -291,13 +376,30 @@ Ext.onReady(function() {
                                     allowNegative: false,
                                     decimalPrecision: 0,
                                     invalidText: 'This value is not valid.',
-                                    maxValue: 99999999,
-                                    minValue: 0,
                                     tabIndex: 2,
                                     validateOnBlur: true,
                                     allowDecimals: false,
                                     value:'',
-                                    hideLabel:true
+                                    hideLabel:true,
+                                    validator: function(){
+                                            istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
+                                            iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+                                            if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                                return false;
+                                            }
+                                            else
+                                                return true;
+                                            },
+                                    listeners:{
+                                                valid: function(field){
+                                                    if(edgeDCScroll != undefined){
+                                                        edgeDCScrollUpdate=true;
+                                                        istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
+                                                        iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
+                                                        var end = iend-istart;
+                                                        edgeDCScroll.set_position(istart, end);
+                                                    }
+                                            }}
                                 }]
             }]
         });
