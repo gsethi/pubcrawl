@@ -1,7 +1,12 @@
 
 function updateCCRange(start,width){
+    if(!nodeCCScrollUpdate){
       Ext.getCmp('node_cc_start').setValue(new Number(start).toFixed());
       Ext.getCmp('node_cc_end').setValue(new Number(start+width).toFixed());
+    }
+    else{
+        nodeCCScrollUpdate=false;
+    }
     if(vis_ready){
     filterVis();
     }
@@ -38,8 +43,14 @@ function updateEdgeNGDRange(start,width){
 }
 
 function updateEdgeCCRange(start,width){
+    if(!edgeCCScrollUpdate){
       Ext.getCmp('edge_cc_start').setValue(new Number(start).toFixed());
       Ext.getCmp('edge_cc_end').setValue(new Number(start+width).toFixed());
+    }
+    else{
+        edgeCCScrollUpdate=false;
+    }
+
     if(vis_ready){
     filterVis();
     }
@@ -47,10 +58,15 @@ function updateEdgeCCRange(start,width){
 }
 
 function updateDCRange(start,width){
+    if(!edgeDCScrollUpdate){
     var starta=Math.round(start);
     var enda = Math.round(width)+starta;
     Ext.getCmp('f1_dc_start').setValue(starta);
       Ext.getCmp('f1_dc_end').setValue(enda);
+    }
+    else{
+        edgeDCScrollUpdate=false;
+    }
     if(vis_ready){
     filterVis();
     }
