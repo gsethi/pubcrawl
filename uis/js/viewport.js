@@ -635,7 +635,7 @@ Ext.onReady(function() {
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    renderEdgeTable(record.get('term1'));
+                                    renderDetailsWindow(record.get('term1'),model_def['term']);
                                 }
                             }
                         }]
@@ -645,6 +645,7 @@ Ext.onReady(function() {
     var dataEdgeTablePanel = new Ext.Panel({
                     id:'dataEdge-panel',
                     name : 'dataEdge-panel',
+                    title: 'Domain Connections',
                     layout : 'fit',
                     height: 300,
                     width:680,
@@ -714,6 +715,7 @@ Ext.onReady(function() {
     var dataDocumentTablePanel = new Ext.Panel({
                     id:'dataDocument-panel',
                     name : 'dataDocument-panel',
+                    title: 'Medline Documents',
                     layout : 'fit',
                     height: 300,
                     width:680,
@@ -1049,24 +1051,6 @@ Ext.onReady(function() {
         renderTo:Ext.getBody()
     });
 
-       dataTable_window =
-            new Ext.Window({
-                id          : 'datatable-window',
-                renderTo    : 'networkviz-acc',
-                modal       : false,
-                closeAction : 'hide',
-                layout      : 'anchor',
-                width       : 700,
-                height      : 300,
-                title       : "Domain Data",
-                closable    : true,
-                layoutConfig : {
-                    animate : true
-                },
-                maximizable : false,
-                items : [dataEdgeTablePanel]
-            });
-    dataTable_window.hide();
 
     query_window =
           new Ext.Window({
@@ -1148,24 +1132,31 @@ Ext.onReady(function() {
     });
     denovo_window.hide();
 
-    documentTable_window =
+    details_window =
             new Ext.Window({
-                id          : 'documenttable-window',
+                id          : 'details-window',
                 renderTo    : 'networkviz-acc',
                 modal       : false,
                 closeAction : 'hide',
                 layout      : 'anchor',
                 autoWidth       : true,
                 autoHeight      : true,
-                title       : "Medline Documents",
+                title       : "Details",
                 closable    : true,
                 layoutConfig : {
                     animate : true
                 },
                 maximizable : false,
-                items : [dataDocumentTablePanel]
+                items:[{
+                    id : 'detailsTabPanel',
+                    xtype: 'tabpanel',
+                    activeTab: 0,
+                    height: 600,
+                    width: 600,
+                    items: [dataDocumentTablePanel,dataEdgeTablePanel]
+                }]
             });
-    documentTable_window.hide();
+    details_window.hide();
 
     function renderNetworkViz() {
 

@@ -1,21 +1,5 @@
 var base_query_url = '',
         pubcrawl_base_query_uri = '/google-dsapi-svc/addama/datasources/pubcrawl',
-        pubcrawl_node_query = '/ngd/query',
-        pubcrawl_edge_query = '/edgeMap/query',
-        pubcrawl_ngdSummary_query = '/ngd_summary/query',
-        pubcrawl_ccSummary_query = '/combocount_summary/query',
-        pubcrawl_node_aliasquery = '/ngd_alias/query',
-        pubcrawl_ngdSummary_aliasquery = '/ngd_summary_alias/query',
-        pubcrawl_ccSummary_aliasquery = '/combocount_summary_alias/query',
-        pubcrawl_edge_aliasquery = '/edgeMap_alias/query',
-        pubcrawl_node_aliasdeNovoquery = '/ngd_denovo_alias/query',
-        pubcrawl_node_deNovoquery = '/ngd_denovo/query',
-        pubcrawl_ngdSummary_aliasdeNovoquery = '/ngd_summary_denovo_alias/query',
-        pubcrawl_ngdSummary_deNovoquery = '/ngd_summary_denovo/query',
-        pubcrawl_ccSummary_aliasdeNovoquery = '/combocount_summary_denovo_alias/query',
-        pubcrawl_ccSummary_deNovoquery = '/combocount_summary_denovo/query',
-        pubcrawl_edge_aliasdeNovoquery = '/edgeMap_denovo_alias/query',
-        pubcrawl_edge_deNovoquery = '/edgeMap_denovo/query',
         pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
         current_data = {};
 
@@ -369,7 +353,7 @@ function retrieveMedlineDocuments(term1,term2){
          }
      });
 
-    renderDocumentTable();
+    Ext.StoreMgr.get('dataDocument_grid_store').load({params: {start:0, rows:20}});
 
 }
 

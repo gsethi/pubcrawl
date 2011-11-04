@@ -427,7 +427,7 @@ function visReady(){
         else{
             fullTerm2=getSolrCombinedTerm(targetNode);
         }
-       retrieveMedlineDocuments(fullTerm1,fullTerm2);
+       renderDetailsWindow(fullTerm1,fullTerm2);
     });
         vis.addContextMenuItem("Medline Documents","nodes",function(evt){
 
@@ -451,7 +451,7 @@ function visReady(){
             fullTerm2=getSolrCombinedTerm(term2Node);
         }
 
-       retrieveMedlineDocuments(fullTerm1,fullTerm2);
+       renderDetailsWindow(fullTerm1,fullTerm2);
     });
 
     vis.addContextMenuItem("Remove Node", "nodes", function(evt){
@@ -647,10 +647,7 @@ function renderModel() {
 
 }
 
-function renderEdgeTable(data){
-    dataTable_window.show();
-    dataTable_window_mask =  new Ext.LoadMask('datatable-window', {msg:"Loading Data..."});
-    dataTable_window_mask.show();
+function retrieveEdgeDetails(data){
     Ext.Ajax.request({
             method:"GET",
             url: "/pubcrawl_svc/relationships/" + data.toLowerCase(),
@@ -670,12 +667,12 @@ function renderEdgeTable(data){
                 }
 
                  Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedEdgeData);
-                dataTable_window_mask.hide();
+                details_window_mask.hide();
 
             },
             failure: function(o) {
                 Ext.StoreMgr.get('dataEdge_grid_store').loadData([]);
-                dataTable_window_mask.hide();
+                details_window_mask.hide();
                 Ext.MessageBox.alert('Error Retrieving Edges', o.statusText);
             }
         });
@@ -692,10 +689,13 @@ function launchDenovoWindow(){
     loadDeNovoSearches();
 }
 
-function renderDocumentTable(documentData){
-    documentTable_window.show();
+function renderDetailsWindow(term1,term2){
+    details_window_mask =  new Ext.LoadMask('details-window', {msg:"Loading Data..."});
+     details_window.show();
+    details_window_mask.show();
+    retrieveMedlineDocuments(term1,term2)
+    retrieveEdgeDetails(term1);
 
-    Ext.StoreMgr.get('dataDocument_grid_store').load({params: {start:0, rows:20}});
 }
 
 function generateNetworkRequest(term,alias,deNovo){

@@ -287,7 +287,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>1.5.M01</version>
+            <version>1.5.M02</version>
         </dependency>
 
         <dependency>
@@ -361,6 +361,18 @@
             <groupId>commons-dbcp</groupId>
             <artifactId>commons-dbcp</artifactId>
             <version>1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.systemsbiology.addama.commons</groupId>
+            <artifactId>json-config</artifactId>
+            <version>2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20080701</version>
         </dependency>
     </dependencies>
 
