@@ -17,7 +17,7 @@ def usage_error():
 
 if __name__ == "__main__":
     try:
-        optlist, args=getopt.getopt(sys.argv[1:],'o:')
+        optlist, args=getopt.getopt(sys.argv[1:],'o:a')
     except:
         usage_error();
         exit(1);
@@ -29,6 +29,10 @@ if __name__ == "__main__":
             fileString = option[1];
         if(option[0] == '-a'):
             useAlias=True;
+
+    if(fileString==""):
+        usage_error();
+        exit(1);
 
     config=ConfigParser.ConfigParser()
     config.readfp(open('pubcrawl.properties'))
@@ -43,28 +47,29 @@ if __name__ == "__main__":
     cur = db.cursor();
 
     if(useAlias):
-        cur.execute("SELECT term1,alias1,term2,alias2,ngd, combocount from ngd_alias order by term1,term2");
+        cur.execute("SELECT term1,term2,ngd, combocount from ngd_alias order by term1,term2");
     else:
         cur.execute("Select term1,term2,ngd, combocount from ngd order by term1,term2");
 
     #open files for writing
     outFile=open(fileString+".txt","w");
+    outFile.writelines("source\ttarget\tngd\tcombocount\n");
     while(1):
         data=cur.fetchone();
         if data == None:
             break;
         if(useAlias):
-            if(data[4] == 0):
+            if(data[2] == 0):
                 ngd='0';
             else:
-                ngd=str(data[4]);
-            outFile.writelines(data[0].lower() + "\t" + data[2].lower() + "\t" + str(data[5]) + "\t" + ngd + "\t" + data[1].lower() + "\t" + data[3].lower() + "\n");
+                ngd=str(data[2]);
+            outFile.writelines(data[0].lower() + "\t" + data[1].lower() + "\t" + ngd + "\t" + str(data[3]) + "\n");
         else:
             if(data[2] == 0):
                 ngd='0';
             else:
                 ngd=str(data[2]);
-            outFile.writelines(data[0].lower() + "\t" + data[1].lower() + "\t" + str(data[3]) + "\t" + ngd + "\n");
+            outFile.writelines(data[0].lower() + "\t" + data[1].lower() + "\t" + ngd + "\t" + str(data[3]) + "\n");
 
 
     cur.close();

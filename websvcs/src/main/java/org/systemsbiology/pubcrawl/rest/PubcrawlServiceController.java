@@ -2,6 +2,9 @@ package org.systemsbiology.pubcrawl.rest;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONException;
+import org.mortbay.util.ajax.JSON;
+import org.neo4j.test.GraphDescription;
 import org.springframework.beans.factory.InitializingBean;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -84,7 +87,7 @@ public class PubcrawlServiceController  {
 
 
     @RequestMapping(value = "/relationships/**", method = RequestMethod.GET)
-    protected ModelAndView handleDomineRelationships(HttpServletRequest request) throws Exception {
+    protected ModelAndView handleRelationships(HttpServletRequest request) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
@@ -92,9 +95,22 @@ public class PubcrawlServiceController  {
         String node = "";
         node = getNodeName(nodeUri, node);
 
+        String searchterm = request.getParameter("searchterm");
+        String node2 = request.getParameter("node");
+        boolean alias = new Boolean(request.getParameter("alias")).booleanValue();
+
+        JSONObject json;
         log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = getDomineEdges(node);
+        if(searchterm== null || isEmpty(searchterm)){
+            json = getEdgesBetweenNodes(node,node2,alias);
+        }
+        else{
+            json = getEdgesFromGraph(node,searchterm,alias);
+        }
         json.put("node", nodeUri);
+        json.put("node2", node2);
+        json.put("searchterm", searchterm);
+        json.put("alias",alias);
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
@@ -251,7 +267,7 @@ public class PubcrawlServiceController  {
             json.put("success","true");
         }
         catch (Exception e) {
-            log.info("exception occured: " + e.getMessage());
+            log.info("exception occurred: " + e.getMessage());
             return new JSONObject();
         }
         return json;
@@ -264,7 +280,7 @@ public class PubcrawlServiceController  {
             Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
             Node searchNode = nodeIdx.get("name", bean.getNode()).getSingle();
 
-            List<Relationship> sortedNGDList = new ArrayList<Relationship>();
+
             List<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
             Map<String, Node> geneMap = new HashMap<String, Node>();
             Map<String, Integer> processedMap = new HashMap<String, Integer>();
@@ -275,70 +291,7 @@ public class PubcrawlServiceController  {
             log.info("node: " + bean.getNode() + " alias: " + bean.getAlias());
             //got all nodes, now sort and go thru the first 200
 
-            JSONObject searchNodeJson = new JSONObject();
-            if(bean.getAlias()){
-                searchNodeJson.put("aliases", searchNode.getProperty("aliases", ""));
-            }
-            searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
-            searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
-            searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
-            searchNodeJson.put("mutCount", searchNode.getProperty("mutCount",0));
-            searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
-            searchNodeJson.put("label", searchNode.getProperty("name"));
-            searchNodeJson.put("ngd", 0);
-            searchNodeJson.put("cc", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-            searchNodeJson.put("termcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-            searchNodeJson.put("searchterm", bean.getNode().toUpperCase());
-            searchNodeJson.put("searchtermcount", bean.getAlias() ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-
-            //geneArray will hold the returned list of nodes for the graph
-            geneArray.put(searchNodeJson);
-            //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
-            geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
-
-            //get nodes that are related to the search node thru ngd values
-            if (bean.getAlias()) {
-                for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD_ALIAS, Direction.OUTGOING)) {
-                    sortedNGDList.add(ngdConnection);
-                }
-            } else {
-                for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD, Direction.OUTGOING)) {
-                    sortedNGDList.add(ngdConnection);
-                }
-            }
-
-            //got all nodes, now sort and go thru the first 175
-            sort(sortedNGDList, new RelationshipComparator());
-
-            for (int i = 0; i < sortedNGDList.size() && i < 175; i++) {
-                Relationship ngdRelationship = sortedNGDList.get(i);
-                Node gene = (ngdRelationship).getEndNode();
-
-                JSONObject geneJson = new JSONObject();
-                Node searchGene = ngdRelationship.getStartNode();
-                 if(bean.getAlias()){
-                geneJson.put("aliases", gene.getProperty("aliases", ""));
-                 }
-                geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
-                geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
-                geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
-                  geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
-                geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
-                geneJson.put("label", gene.getProperty("name"));
-                geneJson.put("ngd", ngdRelationship.getProperty("value"));
-                geneJson.put("cc", ngdRelationship.getProperty("combocount"));
-                geneJson.put("termcount", bean.getAlias() ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
-                geneJson.put("searchtermcount", bean.getAlias() ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
-                geneJson.put("searchterm", bean.getNode().toUpperCase());
-
-                //geneArray will hold the returned list of nodes for the graph
-                geneArray.put(geneJson);
-
-                //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
-                geneMap.put(((String) gene.getProperty("name")).toUpperCase(), gene);
-
-
-            }
+            retrieveGraphNodes(searchNode, geneMap, geneArray, bean.getAlias());
 
 
             //Done getting the correct nodes, now find all the edges
@@ -535,28 +488,103 @@ public class PubcrawlServiceController  {
         return json;
     }
 
+    private void retrieveGraphNodes(Node searchNode,  Map<String, Node> geneMap, JSONArray geneArray, boolean alias) throws JSONException {
+         List<Relationship> sortedNGDList = new ArrayList<Relationship>();
 
-    protected JSONObject getDomineEdges(String node) {
+        JSONObject searchNodeJson = new JSONObject();
+        if(alias){
+            searchNodeJson.put("aliases", searchNode.getProperty("aliases", ""));
+        }
+        searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
+        searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
+        searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
+        searchNodeJson.put("mutCount", searchNode.getProperty("mutCount",0));
+        searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
+        searchNodeJson.put("label", searchNode.getProperty("name"));
+        searchNodeJson.put("ngd", 0);
+        searchNodeJson.put("cc", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+        searchNodeJson.put("termcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+        searchNodeJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
+        searchNodeJson.put("searchtermcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+
+        //geneArray will hold the returned list of nodes for the graph
+        geneArray.put(searchNodeJson);
+        //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
+        geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
+
+        //get nodes that are related to the search node thru ngd values
+        if (alias) {
+            for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD_ALIAS, Direction.OUTGOING)) {
+                sortedNGDList.add(ngdConnection);
+            }
+        } else {
+            for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD, Direction.OUTGOING)) {
+                sortedNGDList.add(ngdConnection);
+            }
+        }
+
+        //got all nodes, now sort and go thru the first 175
+        sort(sortedNGDList, new RelationshipComparator());
+
+        for (int i = 0; i < sortedNGDList.size() && i < 175; i++) {
+            Relationship ngdRelationship = sortedNGDList.get(i);
+            Node gene = (ngdRelationship).getEndNode();
+
+            JSONObject geneJson = new JSONObject();
+            Node searchGene = ngdRelationship.getStartNode();
+             if(alias){
+            geneJson.put("aliases", gene.getProperty("aliases", ""));
+             }
+            geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
+            geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
+            geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
+              geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
+            geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
+            geneJson.put("label", gene.getProperty("name"));
+            geneJson.put("ngd", ngdRelationship.getProperty("value"));
+            geneJson.put("cc", ngdRelationship.getProperty("combocount"));
+            geneJson.put("termcount", alias ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
+            geneJson.put("searchtermcount", alias ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
+            geneJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
+
+            //geneArray will hold the returned list of nodes for the graph
+            geneArray.put(geneJson);
+
+            //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
+            geneMap.put(((String) gene.getProperty("name")).toUpperCase(), gene);
+
+
+        }
+    }
+
+
+    protected JSONObject getEdgesFromGraph(String node,String searchterm,boolean alias) {
         JSONObject json = new JSONObject();
 
         try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
-            Node searchNode = nodeIdx.get("name", node).getSingle();
+            Node searchTermNode = nodeIdx.get("name", searchterm).getSingle();
 
+            HashMap<String,Node> geneMap = new HashMap<String,Node>();
+            JSONArray geneArray = new JSONArray();
+            retrieveGraphNodes(searchTermNode, geneMap, geneArray, alias);
+
+            Node termNode = nodeIdx.get("name", node).getSingle();
             JSONArray edgeArray = new JSONArray();
-            for (Relationship rel : searchNode.getRelationships(Direction.OUTGOING, MyRelationshipTypes.DOMINE)) {
-                JSONObject relJson = new JSONObject();
-                relJson.put("pf1", rel.getProperty("pf1"));
-                relJson.put("pf2", rel.getProperty("pf2"));
-                relJson.put("uni1", rel.getProperty("uni1"));
-                relJson.put("uni2", rel.getProperty("uni2"));
-                relJson.put("type", rel.getProperty("domine_type"));
-                relJson.put("pf1_count", rel.getProperty("pf1_count"));
-                relJson.put("pf2_count", rel.getProperty("pf2_count"));
-                relJson.put("source", node);
-                relJson.put("target", rel.getEndNode().getProperty("name"));
-                edgeArray.put(relJson);
+            for (Relationship rel : termNode.getRelationships(Direction.OUTGOING)) {
+                String term2=((String)rel.getEndNode().getProperty("name")).toUpperCase();
+                if(geneMap.containsKey(term2)){
+                    JSONObject relJson = new JSONObject();
+                    relJson.put("relType",rel.getType().name());
+                    relJson.put("source", node);
+                    relJson.put("target", rel.getEndNode().getProperty("name"));
+                    for(String propKey : rel.getPropertyKeys()){
+                        relJson.put(propKey, rel.getProperty(propKey));
+                    }
+
+                    edgeArray.put(relJson);
+                }
             }
 
             json.put("edges", edgeArray);
@@ -565,6 +593,40 @@ public class PubcrawlServiceController  {
             return new JSONObject();
         }
         return json;
+    }
+
+    protected JSONObject getEdgesBetweenNodes(String node1, String node2, boolean alias){
+         JSONObject json = new JSONObject();
+
+        try {
+            IndexManager indexMgr = graphDB.index();
+            Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+
+            Node termNode = nodeIdx.get("name", node1).getSingle();
+            JSONArray edgeArray = new JSONArray();
+
+            for (Relationship rel : termNode.getRelationships(Direction.OUTGOING)) {
+                String term2=((String)rel.getEndNode().getProperty("name")).toUpperCase();
+                if(term2.equalsIgnoreCase(node2)){
+                    JSONObject relJson = new JSONObject();
+                    relJson.put("relType",rel.getType().name());
+                    relJson.put("source", node1);
+                    relJson.put("target", node2);
+                    for(String propKey : rel.getPropertyKeys()){
+                        relJson.put(propKey, rel.getProperty(propKey));
+                    }
+
+                    edgeArray.put(relJson);
+                }
+            }
+
+            json.put("edges", edgeArray);
+        } catch (Exception e) {
+            log.info("error in retrieving edges: " + e.getMessage());
+            return new JSONObject();
+        }
+        return json;
+
     }
 
     protected JSONArray getNGDNodes(String node, boolean alias) {
