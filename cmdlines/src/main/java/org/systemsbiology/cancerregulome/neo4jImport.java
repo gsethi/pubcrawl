@@ -84,6 +84,10 @@ public class neo4jImport {
             for( int i=0; i< nodeFiles.length(); i++){
                 JSONObject nodeItem = (JSONObject) nodeFiles.get(i);
                 log.info("processing file: " + nodeItem.getString("location"));
+                 if(nodeTypes.get(nodeItem.getString("type"))== null){
+                    log.warning("no matching node type in config file for type: " + nodeItem.getString("type"));
+                    continue;
+                }
                 insertNodes(((JSONObject)nodeFiles.get(i)).getString("location"),((JSONObject)nodeFiles.get(i)).getString("type"),inserter,indexProvider);
             }
 
@@ -91,6 +95,10 @@ public class neo4jImport {
             for(int i=0; i< edgeFiles.length(); i++){
                 JSONObject edgeItem= (JSONObject) edgeFiles.get(i);
                 log.info("processing file: " + edgeItem.getString("location"));
+                if(edgeTypes.get(edgeItem.getString("relType"))== null){
+                    log.warning("no matching edge type in config file for relType: " + edgeItem.getString("relType"));
+                    continue;
+                }
                 insertEdges(edgeItem.getString("location"),edgeItem.getString("relType"),edgeItem.getString("sourceNodeType"),edgeItem.getString("targetNodeType"),inserter,indexProvider);
             }
 
@@ -113,6 +121,7 @@ public class neo4jImport {
 
         //create an index for the nodes based on nodeType value
         BatchInserterIndex nodeIdx = indexProvider.nodeIndex(nodeType+"Idx", MapUtil.stringMap("type", "exact"));
+        BatchInserterIndex generalIdx = indexProvider.nodeIndex("generalIdx", MapUtil.stringMap("type", "exact"));
 
         try {
             BufferedReader vertexFile = new BufferedReader(new FileReader(nodeFile));
@@ -137,9 +146,11 @@ public class neo4jImport {
                 }
                 long node = inserter.createNode(properties);
                 nodeIdx.add(node, properties);
+                generalIdx.add(node, properties);
             }
 
             nodeIdx.flush();
+            generalIdx.flush();
         }
         catch(Exception ex){
             ex.printStackTrace();
