@@ -1,10 +1,11 @@
 package org.systemsbiology.pubcrawl.rest;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
-import org.mortbay.util.ajax.JSON;
-import org.neo4j.test.GraphDescription;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.server.WrappingNeoServerBootstrapper;
+import org.neo4j.server.configuration.Configurator;
+import org.neo4j.server.configuration.EmbeddedServerConfigurator;
 import org.springframework.beans.factory.InitializingBean;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,7 +45,8 @@ import static org.systemsbiology.addama.commons.web.utils.HttpIO.pipe_close;
 @Controller
 public class PubcrawlServiceController  {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
-    private GraphDatabaseService graphDB;
+    private EmbeddedGraphDatabase graphDB;
+    private WrappingNeoServerBootstrapper srv;
 
     enum MyRelationshipTypes implements RelationshipType {
         NGD, DOMINE, NGD_ALIAS, DRUG_NGD_ALIAS,GBM_1006_MASK,DRUG_NGD
@@ -293,7 +295,7 @@ public class PubcrawlServiceController  {
 
             retrieveGraphNodes(searchNode, geneMap, geneArray, bean.getAlias());
 
-
+             log.info("gene array: " + geneArray.length());
             //Done getting the correct nodes, now find all the edges
             JSONArray edgeArray = new JSONArray();
            MyRelationshipTypes drugType = bean.getAlias() ? MyRelationshipTypes.DRUG_NGD_ALIAS : MyRelationshipTypes.DRUG_NGD;
@@ -314,7 +316,7 @@ public class PubcrawlServiceController  {
 
                         //do this relationship if the end node is in our list and it hasn't already been processed
                         if (geneMap.containsKey(nodeName)){
-                            if(connection.isType(MyRelationshipTypes.DOMINE) || connection.isType(MyRelationshipTypes.GBM_1006_MASK))
+                            if(connection.isType(DynamicRelationshipType.withName("domine")) || connection.isType(DynamicRelationshipType.withName("gbm_1006_mask")))
                                 edgeCount=edgeCount+1;
                         if (!processedMap.containsKey(nodeName)) {
                             //keep this relationship
@@ -343,11 +345,11 @@ public class PubcrawlServiceController  {
             JSONArray edgeListArray = new JSONArray();
             for (List<Relationship> itemList : relMap.values()) {
                 for (Relationship item : itemList) {
-                    if ((item.isType(MyRelationshipTypes.NGD) && !bean.getAlias()) ||
-                            (item.isType(MyRelationshipTypes.NGD_ALIAS) && bean.getAlias())) {
-                        edgeJson.put("ngd", item.getProperty("value"));
+                    if ((item.isType(DynamicRelationshipType.withName("ngd")) && !bean.getAlias()) ||
+                            (item.isType(DynamicRelationshipType.withName("ngd_alias")) && bean.getAlias())) {
+                        edgeJson.put("ngd", item.getProperty("ngd"));
                             edgeJson.put("cc", item.getProperty("combocount"));
-                    } else if (item.isType(MyRelationshipTypes.DOMINE)) {
+                    } else if (item.isType(DynamicRelationshipType.withName("domine"))) {
                         String hgnc1 = ((String) item.getStartNode().getProperty("name")).toUpperCase();
                         String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
                         if (first) {
@@ -370,13 +372,13 @@ public class PubcrawlServiceController  {
                         edgeListItem.put("pf2", item.getProperty("pf2"));
                         edgeListItem.put("uni1", item.getProperty("uni1"));
                         edgeListItem.put("uni2", item.getProperty("uni2"));
-                        edgeListItem.put("type", item.getProperty("domine_type"));
+                        edgeListItem.put("type", item.getProperty("type"));
                         edgeListItem.put("pf1_count", item.getProperty("pf1_count"));
                         edgeListItem.put("pf2_count", item.getProperty("pf2_count"));
 
                         edgeListArray.put(edgeListItem);
 
-                    } else if (item.isType(MyRelationshipTypes.GBM_1006_MASK)) {
+                    } else if (item.isType(DynamicRelationshipType.withName("gbm_1006_mask"))) {
                         String startName = ((String) item.getStartNode().getProperty("name")).toUpperCase();
                         String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
                         if (first) {
@@ -420,7 +422,7 @@ public class PubcrawlServiceController  {
                 edgeJson.put("directed", false);
                 edgeJson.put("source", startName);
                 edgeJson.put("target", endName);
-                edgeJson.put("ngd", rel.getProperty("value"));
+                edgeJson.put("ngd", rel.getProperty("ngd"));
                 edgeJson.put("connType", "drugNGD");
                 edgeJson.put("id", startName + endName);
                 edgeArray.put(edgeJson);
@@ -437,8 +439,7 @@ public class PubcrawlServiceController  {
             }
 
             log.info("done getting graph edges");
-            //now get all domine edges between all nodes
-
+            log.info("edge array: " + edgeArray.length());
             if(processedMap.get(((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase()) == 0 ){
                 //no edges for our first item in the array, set the first item to be something with edges (needed for correct layout in cytoscape web)
                 int maxCount=0;
@@ -495,17 +496,19 @@ public class PubcrawlServiceController  {
         if(alias){
             searchNodeJson.put("aliases", searchNode.getProperty("aliases", ""));
         }
-        searchNodeJson.put("tf", (Integer) searchNode.getProperty("tf", 0) == 1);
-        searchNodeJson.put("somatic", (Integer) searchNode.getProperty("somatic", 0) == 1);
-        searchNodeJson.put("germline", (Integer) searchNode.getProperty("germline", 0) == 1);
+        searchNodeJson.put("tf", Integer.parseInt((String)searchNode.getProperty("tf", "0")) == 1);
+        searchNodeJson.put("somatic", Integer.parseInt((String)searchNode.getProperty("somatic", "0")) == 1);
+        searchNodeJson.put("germline", Integer.parseInt((String)searchNode.getProperty("germline", "0")) == 1);
         searchNodeJson.put("mutCount", searchNode.getProperty("mutCount",0));
         searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
         searchNodeJson.put("label", searchNode.getProperty("name"));
         searchNodeJson.put("ngd", 0);
-        searchNodeJson.put("cc", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
-        searchNodeJson.put("termcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+        int termcount_alias= Integer.parseInt((String) searchNode.getProperty("termcount_alias","0"));
+        int termcount = Integer.parseInt((String) searchNode.getProperty("termcount","0"));
+        searchNodeJson.put("cc", alias ? termcount_alias : termcount);
+        searchNodeJson.put("termcount", alias ? termcount_alias : termcount);
         searchNodeJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
-        searchNodeJson.put("searchtermcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount"));
+        searchNodeJson.put("searchtermcount", alias ? termcount_alias : termcount);
 
         //geneArray will hold the returned list of nodes for the graph
         geneArray.put(searchNodeJson);
@@ -514,17 +517,18 @@ public class PubcrawlServiceController  {
 
         //get nodes that are related to the search node thru ngd values
         if (alias) {
-            for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD_ALIAS, Direction.OUTGOING)) {
+            for (Relationship ngdConnection : searchNode.getRelationships(DynamicRelationshipType.withName("ngd_alias"), Direction.OUTGOING)) {
                 sortedNGDList.add(ngdConnection);
             }
         } else {
-            for (Relationship ngdConnection : searchNode.getRelationships(MyRelationshipTypes.NGD, Direction.OUTGOING)) {
+            for (Relationship ngdConnection : searchNode.getRelationships(DynamicRelationshipType.withName("ngd"), Direction.OUTGOING)) {
                 sortedNGDList.add(ngdConnection);
             }
         }
 
         //got all nodes, now sort and go thru the first 175
         sort(sortedNGDList, new RelationshipComparator());
+        log.info("sorted list size: " + sortedNGDList.size());
 
         for (int i = 0; i < sortedNGDList.size() && i < 175; i++) {
             Relationship ngdRelationship = sortedNGDList.get(i);
@@ -535,16 +539,18 @@ public class PubcrawlServiceController  {
              if(alias){
             geneJson.put("aliases", gene.getProperty("aliases", ""));
              }
-            geneJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
-            geneJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
-            geneJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
-              geneJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
+            geneJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
+            geneJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
+            geneJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
+              geneJson.put("mutCount", Integer.parseInt((String)gene.getProperty("mutCount","0")));
             geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
             geneJson.put("label", gene.getProperty("name"));
-            geneJson.put("ngd", ngdRelationship.getProperty("value"));
+            geneJson.put("ngd", ngdRelationship.getProperty("ngd"));
             geneJson.put("cc", ngdRelationship.getProperty("combocount"));
-            geneJson.put("termcount", alias ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
-            geneJson.put("searchtermcount", alias ? (Integer) searchGene.getProperty("termcount_alias", 0) : (Integer) searchGene.getProperty("termcount", 0));
+            termcount_alias= Integer.parseInt((String) gene.getProperty("termcount_alias","0"));
+            termcount = Integer.parseInt((String) gene.getProperty("termcount","0"));
+            geneJson.put("termcount", alias ? termcount_alias : termcount);
+            geneJson.put("searchtermcount", alias ? termcount_alias: termcount);
             geneJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
 
             //geneArray will hold the returned list of nodes for the graph
@@ -649,16 +655,18 @@ public class PubcrawlServiceController  {
                 Node gene = rel.getEndNode();
 
                 relJson.put("aliases", gene.getProperty("aliases", ""));
-                relJson.put("tf", (Integer) gene.getProperty("tf", 0) == 1);
-                relJson.put("somatic", (Integer) gene.getProperty("somatic", 0) == 1);
-                relJson.put("germline", (Integer) gene.getProperty("germline", 0) == 1);
-                relJson.put("mutCount", (Integer) gene.getProperty("mutCount",0));
+                relJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
+                relJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
+                relJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
+                relJson.put("mutCount", Integer.parseInt((String)gene.getProperty("mutCount","0")));
                 relJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
                 relJson.put("label", gene.getProperty("name"));
                 relJson.put("ngd", rel.getProperty("value"));
                 relJson.put("cc", rel.getProperty("combocount"));
-                relJson.put("termcount", alias ? (Integer) gene.getProperty("termcount_alias", 0) : (Integer) gene.getProperty("termcount", 0));
-                relJson.put("searchtermcount", alias ? (Integer) searchNode.getProperty("termcount_alias", 0) : (Integer) searchNode.getProperty("termcount", 0));
+                int termcount_alias = Integer.parseInt((String) gene.getProperty("termcount_alias","0"));
+                int termcount = Integer.parseInt((String) gene.getProperty("termcount","0"));
+                relJson.put("termcount", alias ? termcount_alias : termcount);
+                relJson.put("searchtermcount", alias ? termcount_alias : termcount);
                 relJson.put("searchterm", node.toUpperCase());
 
                 nodeArray.put(relJson);
@@ -699,28 +707,28 @@ public class PubcrawlServiceController  {
                             n.setProperty("nodeType", "deNovo");
                             if (alias) {
                                 n.setProperty("aliases", vertexInfo[1]);
-                                n.setProperty("termcount_alias", new Integer(vertexInfo[4]));
+                                n.setProperty("termcount_alias",vertexInfo[4]);
                             } else {
-                                n.setProperty("termcount", new Integer(vertexInfo[2]));
+                                n.setProperty("termcount", vertexInfo[2]);
                             }
                             nodeIdx.add(n, "name", vertexInfo[0].toLowerCase());
                             nodeIdx.add(n, "nodeType", "deNovo");
                             log.info("end of first");
                         } else {
                             //need to set whatever properties weren't set before
-                            if (alias && ((Integer) searchNode.getProperty("termcount_alias", 0) == 0)) {
+                            if (alias && (Integer.parseInt((String)searchNode.getProperty("termcount_alias", "0")) == 0)) {
                                 //doing alias - and it isn't set - so we are good
                                 log.info("going to insert the alias into existing term");
                                 searchNode.setProperty("aliases", vertexInfo[1]);
-                                searchNode.setProperty("termcount_alias", new Integer(vertexInfo[4]));
-                            } else if (alias && ((Integer) searchNode.getProperty("termcount_alias", 0) != 0)) {
+                                searchNode.setProperty("termcount_alias", vertexInfo[4]);
+                            } else if (alias && (Integer.parseInt((String)searchNode.getProperty("termcount_alias", "0")) != 0)) {
                                 //whoops - this is already set - so just return
                                 log.info("already have inserted alias for this term, do nothing");
                                 return false;
-                            } else if (!alias && ((Integer) searchNode.getProperty("termcount", 0) == 0)) {
+                            } else if (!alias && (Integer.parseInt((String) searchNode.getProperty("termcount", "0")) == 0)) {
                                 log.info("Doing the non-alias version, going to insert termcount");
-                                searchNode.setProperty("termcount", new Integer(vertexInfo[2]));
-                            } else if (!alias && ((Integer) searchNode.getProperty("termcount", 0) != 0)) {
+                                searchNode.setProperty("termcount", vertexInfo[2]);
+                            } else if (!alias && (Integer.parseInt((String)searchNode.getProperty("termcount", "0")) != 0)) {
                                 log.info("already have inserted alias for this term, do nothing");
                                 return false;
                             }
@@ -759,11 +767,11 @@ public class PubcrawlServiceController  {
                             if (ngd >= 0) {
                                 Relationship r = gene1.createRelationshipTo(gene2, MyRelationshipTypes.NGD);
                                 r.setProperty("value", ngd);
-                                r.setProperty("combocount", new Integer(vertexInfo[4]));
+                                r.setProperty("combocount", vertexInfo[4]);
 
                                 Relationship r2 = gene2.createRelationshipTo(gene1, MyRelationshipTypes.NGD);
                                 r2.setProperty("value", ngd);
-                                r2.setProperty("combocount", new Integer(vertexInfo[4]));
+                                r2.setProperty("combocount", vertexInfo[4]);
 
 
                             }
@@ -788,7 +796,18 @@ public class PubcrawlServiceController  {
         return true;
     }
 
-    public void setGraphDB(GraphDatabaseService graphDB) {
+    public void cleanUp(){
+        this.srv.stop();
+        this.graphDB.shutdown();
+    }
+
+    public void setGraphDB(EmbeddedGraphDatabase graphDB) {
         this.graphDB = graphDB;
+        EmbeddedServerConfigurator config = new EmbeddedServerConfigurator(graphDB);
+        config.configuration().setProperty(Configurator.WEBSERVER_PORT_PROPERTY_KEY,7474);
+        config.configuration().setProperty(Configurator.WEBSERVER_ADDRESS_PROPERTY_KEY,"0.0.0.0");
+        this.srv = new WrappingNeoServerBootstrapper(graphDB, config);
+        srv.start();
+
     }
 }
