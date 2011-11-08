@@ -9,6 +9,6 @@ import java.util.Comparator;
  */
 public class RelationshipComparator implements Comparator<Relationship>{
     public int compare(Relationship a, Relationship b) {
-        return ((Double) a.getProperty("value")).compareTo((Double) b.getProperty("value"));
+        return (new Double((String)a.getProperty("ngd")).compareTo(new Double((String)b.getProperty("ngd"))));
     }
 }
