@@ -233,6 +233,7 @@ function populateData(allnodes){
         if(edge.edgeList != undefined){
         for (var edgeDetailIdx=0; edgeDetailIdx < edge.edgeList.length; edgeDetailIdx++){
             var edgeDetail = edge.edgeList[edgeDetailIdx];
+            if(edgeDetail.edgeType == 'domine'){
      
             var pf1_count = edgeDetail.pf1_count;
             var pf2_count = edgeDetail.pf2_count;
@@ -251,6 +252,7 @@ function populateData(allnodes){
                 var count2 = domainCounts[pf2_count].count;
                 domainCounts[pf2_count]= {start: pf2_count - .5, end: pf2_count + .5, label: count2+1, count:count2+1, ngd: pf2_count};
             }
+        }
 
         }
         }
