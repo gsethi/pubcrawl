@@ -186,7 +186,7 @@ public class neo4jImport {
                     if (!sourceNode.equals(targetNode)) {
 
                         Map<String, Object> properties = new HashMap<String, Object>();
-                        for(int i=3; i< relInfo.length; i++){
+                        for(int i=2; i< relInfo.length; i++){
                             properties.put(columns[i],relInfo[i]);
                         }
                         long rel = inserter.createRelationship(sourceNode, targetNode, edgeTypes.get(edgeType),properties);
