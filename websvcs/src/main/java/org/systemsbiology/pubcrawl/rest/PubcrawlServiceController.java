@@ -29,6 +29,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -247,7 +248,7 @@ public class PubcrawlServiceController  {
         JSONObject json = new JSONObject();
         try{
             IndexManager indexMgr = graphDB.index();
-            Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
+            Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
             Node deleteNode = nodeIdx.get("name", bean.getNode()).getSingle();
 
             log.info("got the delete node: " + deleteNode.getProperty("id"));
@@ -314,7 +315,11 @@ public class PubcrawlServiceController  {
                         if (!processedEdges.containsKey(connection.getId())) {
                             //keep this relationship
                             processedEdges.put(connection.getId(),connection);
-                            String key = geneName + "_" + nodeName;
+                            String key = nodeName + "_" + geneName;
+                            if(geneName.compareTo(nodeName) < 0){
+                                key = geneName + "_" + nodeName;
+                            }
+
 
                             if (relMap.containsKey(key)) {
                                 List<Relationship> relList = relMap.get(key);
@@ -385,9 +390,15 @@ public class PubcrawlServiceController  {
                             edgeJson.put("target", endName);
                             edgeJson.put("id", startName + endName);
                             edgeJson.put("label", startName + "to" + endName);
+                            edgeJson.put("directed", true);
                             first = false;
                         }
-                        edgeJson.put("directed", true);
+                        else{
+                            if(edgeJson.get("source").equals(endName)){  //bidirectional
+                                edgeJson.remove("directed");
+                                edgeJson.put("directed",false);
+                            }
+                        }
 
                         if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
                             edgeJson.put("connType", "rface");
@@ -401,8 +412,8 @@ public class PubcrawlServiceController  {
                         edgeListItem.put("pvalue", Double.parseDouble((String)item.getProperty("pvalue")));
                         edgeListItem.put("correlation", Double.parseDouble((String) item.getProperty("correlation")));
                         edgeListItem.put("importance", Double.parseDouble((String)item.getProperty("importance")));
-                        edgeListItem.put("sourceid", item.getProperty("featureid1"));
-                        edgeListItem.put("targetid", item.getProperty("featureid2"));
+                        edgeListItem.put("featureid1", item.getProperty("featureid1"));
+                        edgeListItem.put("featureid2", item.getProperty("featureid2"));
                         edgeListItem.put("edgeType", "rface");
 
                         edgeListArray.put(edgeListItem);
@@ -414,9 +425,16 @@ public class PubcrawlServiceController  {
                             edgeJson.put("target", endName);
                             edgeJson.put("id", startName + endName);
                             edgeJson.put("label", startName + "to" + endName);
+                                edgeJson.put("directed", true);
                             first = false;
                         }
-                        edgeJson.put("directed", true);
+                        else{
+                            if(edgeJson.get("source").equals(endName)){  //bidirectional
+                                edgeJson.remove("directed");
+                                edgeJson.put("directed",false);
+                            }
+                        }
+
 
                         if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
                             edgeJson.put("connType", "pairwise");
@@ -429,8 +447,8 @@ public class PubcrawlServiceController  {
                         JSONObject edgeListItem = new JSONObject();
                         edgeListItem.put("pvalue", Double.parseDouble((String)item.getProperty("pvalue")));
                         edgeListItem.put("correlation", Double.parseDouble((String)item.getProperty("correlation")));
-                        edgeListItem.put("sourceid", item.getProperty("featureid1"));
-                        edgeListItem.put("targetid", item.getProperty("featureid2"));
+                        edgeListItem.put("featureid1", item.getProperty("featureid1"));
+                        edgeListItem.put("featureid2", item.getProperty("featureid2"));
                         edgeListItem.put("edgeType", "pairwise");
 
                         edgeListArray.put(edgeListItem);
@@ -816,12 +834,12 @@ public class PubcrawlServiceController  {
                             Double ngd = new Double(vertexInfo[7]);
                             if (ngd >= 0) {
                                 Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd_alias"));
-                                r.setProperty("ngd", ngd);
-                                r.setProperty("combocount", new Integer(vertexInfo[6]));
+                                r.setProperty("ngd", vertexInfo[7]);
+                                r.setProperty("combocount", vertexInfo[6]);
 
                                 Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd_alias"));
-                                r2.setProperty("ngd", ngd);
-                                r2.setProperty("combocount", new Integer(vertexInfo[6]));
+                                r2.setProperty("ngd", vertexInfo[7]);
+                                r2.setProperty("combocount", vertexInfo[6]);
                             }
                         }
                     } else {
@@ -835,11 +853,11 @@ public class PubcrawlServiceController  {
                             Double ngd = new Double(vertexInfo[5]);
                             if (ngd >= 0) {
                                 Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd"));
-                                r.setProperty("ngd", ngd);
+                                r.setProperty("ngd", vertexInfo[5]);
                                 r.setProperty("combocount", vertexInfo[4]);
 
                                 Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd"));
-                                r2.setProperty("ngd", ngd);
+                                r2.setProperty("ngd", vertexInfo[5]);
                                 r2.setProperty("combocount", vertexInfo[4]);
 
 

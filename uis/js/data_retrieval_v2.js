@@ -8,6 +8,8 @@ var nodeNGDScroll;
 var edgeDCScroll;
 var edgeCCScroll;
 var edgeNGDScroll;
+var edgeImportanceScroll;
+var edgeCorrelationScroll;
 var model_def;
 var ngdPlotData;
 var edgeNGDPlotData;
@@ -18,6 +20,8 @@ var edgeNGDScrollUpdate;
 var nodeCCScrollUpdate;
 var edgeCCScrollUpdate;
 var edgeDCScrollUpdate;
+var edgeImportanceScrollUpdate;
+var edgeCorrelationScrollUpdate;
 
 
 
@@ -53,7 +57,7 @@ function loadModel(term1, alias,deNovo, callback) {
     model_def = {edges:null,nodes:null};
     var modelDefTimer = new vq.utils.SyncDatasources(300, 3000, callback, model_def);
     modelDefTimer.start_poll();
-
+    firstload=true;
     model_def['term'] = term1.toUpperCase();
     model_def['alias'] = alias;
     model_def['deNovo'] = deNovo;
@@ -101,12 +105,14 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('domainOnly-cb').enable();
                     Ext.getCmp('rfaceOnly-cb').enable();
                     Ext.getCmp('rfaceOnly-cb').setValue(true);
+                    Ext.getCmp('pairwiseOnly-cb').enable();
+                    Ext.getCmp('pairwiseOnly-cb').setValue(true);
                     Ext.getCmp('showDrugs-cb').enable();
                     Ext.getCmp('showDrugs-cb').setValue(true);
                     Ext.getCmp('standalone-cb').enable();
                     Ext.getCmp('standalone-cb').setValue(true);
                     filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
-                    Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),json.nodes,json.edges);
+                    Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),Ext.getCmp('pairwiseOnly-cb').getValue(),json.nodes,json.edges);
                     query_window.hide();
                     denovo_window.hide();
                     populateData(json.allnodes);
@@ -121,7 +127,7 @@ function loadModel(term1, alias,deNovo, callback) {
 
 }
 
-function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChecked,nodes,edges){
+function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChecked,pairwiseOnlyChecked,nodes,edges){
 
     var tempModelEdges=[];
     var nodeList={};
@@ -130,6 +136,9 @@ function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChe
              continue;
         }
         if(!rfaceOnlyChecked && edges[index].ngd == null && edges[index].connType == 'rface'){
+            continue;
+        }
+        if(!pairwiseOnlyChecked && edges[index].ngd == null && edges[index].connType == 'pairwise'){
             continue;
         }
         if(!domainOnlyChecked && edges[index].ngd == null && edges[index].connType == 'domine'){
@@ -171,6 +180,8 @@ function populateData(allnodes){
     var edgeNGDSummary={};
     var edgeCCSummary={};
     var graphNodes={};
+    var edgeImportanceSummary={};
+    var edgeCorrValueSummary = {};
 
 
     for (var nIndex=0; nIndex < model_def['nodes'].length; nIndex++){
@@ -224,7 +235,13 @@ function populateData(allnodes){
         histCC.push(comboCounts[ccItem]);
     }
     ccPlotData['data']=histCC;
-    nodeCCScroll=renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,2,-1);
+    var initstart=2;
+    var initend=-1;
+    if(!firstload){
+        initstart=Ext.getCmp('node_cc_start').getValue();
+        initend=Ext.getCmp('node_cc_end').getValue();
+    }
+    nodeCCScroll=renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,initstart,initend);
 
 
     var domainCounts = {};
@@ -253,6 +270,31 @@ function populateData(allnodes){
                 domainCounts[pf2_count]= {start: pf2_count - .5, end: pf2_count + .5, label: count2+1, count:count2+1, ngd: pf2_count};
             }
         }
+            if(edgeDetail.edgeType == 'rface'){
+                var importance = Math.round(Math.abs(edgeDetail.importance) *1000)/1000;
+                if(edgeImportanceSummary[importance] == undefined){
+                    if(importance0){
+                        startimp=0;
+                    }
+                    edgeImportanceSummary[importance] = {start: (importance - .0005 <= 0)? 0 : importance - .0005, end: importance + .0005, label: 1, ngd: importance, count:1};
+
+                }
+                else{
+                    var count = edgeImportanceSummary[importance].count;
+                    edgeImportanceSummary[importance] = {start: (importance == 0)? 0 : importance - .0005, end: importance + .0005, label: count+1, count: count+1,ngd:importance};
+                }
+            }
+
+            if(edgeDetail.edgeType == 'pairwise'){
+                var correlation = Math.round(Math.abs(edgeDetail.correlation) *100)/100;
+                if(edgeCorrValueSummary[correlation] == undefined){
+                    edgeCorrValueSummary[correlation] = {start: correlation - .005, end: correlation + .005, label: 1, ngd: correlation, count:1};
+                }
+                else{
+                    var count = edgeCorrValueSummary[correlation].count;
+                    edgeCorrValueSummary[correlation] = {start: correlation - .005, end: correlation + .005, label: count+1, ngd: correlation, count:count+1};
+                }
+            }
 
         }
         }
@@ -289,7 +331,13 @@ function populateData(allnodes){
         histedgeNGD.push(edgeNGDSummary[edgengdItem]);
     }
     edgeNGDPlotData['data'] =  histedgeNGD;
-    edgeNGDScroll=renderEdgeNGDHistogramData(-1,-1);
+    initstart=-1;
+    initend=-1;
+    if(!firstload){
+        initstart=Ext.getCmp('edge_ngd_start').getValue();
+        initend=Ext.getCmp('edge_ngd_end').getValue();
+    }
+    edgeNGDScroll=renderEdgeNGDHistogramData(initstart,initend);
     Ext.getCmp('edge_ngd_start').setMinValue(edgeNGDScroll.min_position());
     Ext.getCmp('edge_ngd_start').setMaxValue(edgeNGDScroll.max_position());
     Ext.getCmp('edge_ngd_end').setMinValue(edgeNGDScroll.min_position());
@@ -301,14 +349,54 @@ function populateData(allnodes){
         histedgeCC.push(edgeCCSummary[ccItem]);
     }
     edgeCCPlotData['data']=histedgeCC;
-    edgeCCScroll=renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,2,-1);
+    initstart=2;
+    initend=-1;
+    if(!firstload){
+        initstart=Ext.getCmp('edge_cc_start').getValue();
+        initend=Ext.getCmp('edge_cc_end').getValue();
+    }
+    edgeCCScroll=renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,initstart,initend);
 
     domainCountData={data:null};
     domainCountData['data']=histData;
-    edgeDCScroll=renderDCHistogramData(histData,-1,60);
+     initstart=-1;
+    initend=60;
+    if(!firstload){
+        initstart=Ext.getCmp('f1_dc_start').getValue();
+        initend=Ext.getCmp('f1_dc_end').getValue();
+    }
+    edgeDCScroll=renderDCHistogramData(histData,initstart,initend);
 
-    
+    edgeImportancePlotData={data:null};
+    var histedgeImportance=[];
+    for(var importanceItem in edgeImportanceSummary){
+        histedgeImportance.push(edgeImportanceSummary[importanceItem]);
+    }
+    edgeImportancePlotData['data']=histedgeImportance;
+     initstart=-1;
+    initend=-1;
+    if(!firstload){
+        initstart=Ext.getCmp('edge_importance_start').getValue();
+        initend=Ext.getCmp('edge_importance_end').getValue();
+    }
+    edgeImportanceScroll=renderCCLinearBrowserData(edgeImportancePlotData['data'],'edge-importance',updateEdgeImportanceRange,initstart,initend);
+
+    edgeCorrelationPlotData={data:null};
+      var histedgeCorrelation=[];
+      for(var correlationItem in edgeCorrValueSummary){
+          histedgeCorrelation.push(edgeCorrValueSummary[correlationItem]);
+      }
+      edgeCorrelationPlotData['data']=histedgeCorrelation;
+     initstart=-1;
+    initend=-1;
+    if(!firstload){
+        initstart=Ext.getCmp('edge_correlation_start').getValue();
+        initend=Ext.getCmp('edge_correlation_end').getValue();
+    }
+      edgeCorrelationScroll=renderCCLinearBrowserData(edgeCorrelationPlotData['data'],'edge-correlation',updateEdgeCorrelationRange,initstart,initend);
+
     Ext.StoreMgr.get('dataNode_grid_store').loadData(completeData['nodes']);
+    firstload=false;
 }
 
 function retrieveMedlineDocuments(term1,term2){

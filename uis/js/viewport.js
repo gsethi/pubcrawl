@@ -163,6 +163,166 @@ Ext.onReady(function() {
             }]
         });
 
+    var edgeImportanceFields = new Ext.Panel({
+           // column layout with 2 columns
+            layout:'column',
+            border: false
+           ,defaults:{
+                columnWidth:0.5
+               ,layout:'form'
+               ,border:false
+               ,xtype:'panel'
+               ,bodyStyle:'padding:0 50px 0 50px'
+           }
+           ,items:[{
+                defaults:{anchor:'100%'}
+               ,items:[{xtype: 'numberfield',
+                                   id: 'edge_importance_start',
+                                   name: 'edge_importance_start',
+                                   allowNegative: false,
+                                   decimalPrecision: 3,
+                                   invalidText: 'This value is not valid.',
+                                   tabIndex: 2,
+                                   validateOnBlur: true,
+                                   allowDecimals: true,
+                                   value:'',
+                                   hideLabel: true,
+                  validator: function(){
+                                      istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                           return false;
+                                       }
+                                       else
+                                           return true;
+                                   },
+                                    listeners:{
+                                   valid: function(field){
+                                       if(edgeImportanceScroll != undefined){
+                                       edgeImportanceScrollUpdate=true;
+                                       istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       var end = iend-istart;
+                                       edgeImportanceScroll.set_position(istart, end);
+                                       }
+                               }}
+                               }]
+           },{
+                defaults:{anchor:'100%'}
+               ,items:[{xtype: 'numberfield',
+                                   id: 'edge_importance_end',
+                                   name: 'edge_importance_end',
+                                   allowNegative: false,
+                                   decimalPrecision: 3,
+                                   invalidText: 'This value is not valid.',
+                                   tabIndex: 2,
+                                   validateOnBlur: true,
+                                   allowDecimals: true,
+                                   value:'',
+                                   hideLabel: true,
+                  validator: function(){
+                                      istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                           return false;
+                                       }
+                                       else
+                                           return true;
+                                   },
+                                    listeners:{
+                                   valid: function(field){
+                                       if(edgeImportanceScroll != undefined){
+                                       edgeImportanceScrollUpdate=true;
+                                       istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       var end = iend-istart;
+                                       edgeImportanceScroll.set_position(istart, end);
+                                       }
+                               }}
+                               }]
+           }]
+       });
+
+    var edgeCorrelationFields = new Ext.Panel({
+              // column layout with 2 columns
+               layout:'column',
+               border: false
+              ,defaults:{
+                   columnWidth:0.5
+                  ,layout:'form'
+                  ,border:false
+                  ,xtype:'panel'
+                  ,bodyStyle:'padding:0 50px 0 50px'
+              }
+              ,items:[{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'edge_correlation_start',
+                                      name: 'edge_correlation_start',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                     validator: function(){
+                                         istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(edgeCorrelationScroll != undefined){
+                                          edgeCorrelationScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          var end = iend-istart;
+                                          edgeCorrelationScroll.set_position(istart, end);
+                                          }
+                                  }}
+                                  }]
+              },{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'edge_correlation_end',
+                                      name: 'edge_correlation_end',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                     validator: function(){
+                                         istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(edgeCorrelationScroll != undefined){
+                                          edgeCorrelationScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          var end = iend-istart;
+                                          edgeCorrelationScroll.set_position(istart, end);
+                                          }
+                                  }}
+                                  }]
+              }]
+          });
+
     var nodeCCValueFields = new Ext.Panel({
                 // column layout with 2 columns
                  layout:'column',
@@ -515,7 +675,28 @@ Ext.onReady(function() {
                             items:[ edgeCCValueFields,
                                 { xtype: 'panel', id: 'edge-cc', x:20, y:20}
                             ]
-                        }]
+                        },{
+                            xtype: 'fieldset',
+                            defaults:{anchor:'100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight:true,
+                            title: 'RF-ACE Importance',
+                            items:[edgeImportanceFields,
+                                {xtype: 'panel', id: 'edge-importance', x:20, y:20}
+                            ]
+                         },
+                        {
+                            xtype: 'fieldset',
+                            defaults:{anchor:'100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            autoHeight:true,
+                            title: 'Pairwise Correlation',
+                            items:[edgeCorrelationFields,
+                                {xtype: 'panel', id: 'edge-correlation', x:20, y:20}
+                            ]
+                         }]
                 }]
         }]
     });
@@ -585,7 +766,8 @@ Ext.onReady(function() {
             fieldLabel: 'Include Edges',
               xtype: 'checkboxgroup',
               items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: true},
-                  {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true }]
+                  {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true },
+              {boxLabel: 'Pairwise Only', name: 'pairwiseOnly-cb', id:'pairwiseOnly-cb', checked: true }]
                }]
                 }]
             }]
@@ -642,7 +824,7 @@ Ext.onReady(function() {
                 });
 
 
-    var dataEdgeTablePanel = new Ext.Panel({
+    var dataDomineEdgeTablePanel = new Ext.Panel({
                     id:'dataEdge-panel',
                     name : 'dataEdge-panel',
                     title: 'Domain Connections',
@@ -685,6 +867,85 @@ Ext.onReady(function() {
                             })
                         }]
                 });
+
+    var dataRFACEEdgeTablePanel = new Ext.Panel({
+                      id:'dataRFACEEdge-panel',
+                      name : 'dataRFACEEdge-panel',
+                      title: 'RFACE Connections',
+                      layout : 'fit',
+                      height: 300,
+                      width:680,
+                      collapsible : false,
+                      items : [
+                          {
+                              xtype:'grid',
+                              id : 'dataRFACEEdge_grid',
+                              name : 'dataRFACEEdge_grid',
+                              autoScroll:true,
+                              autoWidth : true,
+                              height: 300,
+                              viewConfig: {
+                                          forceFit : true
+                              },
+                              cm : new Ext.grid.ColumnModel({
+                                  columns: [
+                                      {header : "featureid1", width:110,  id:'featureid1', dataIndex:'featureid1', groupName: 'Edge'},
+                                      { header: "featureid2", width: 110,  id:'featureid2', dataIndex:'featureid2',groupName:'Edge'},
+                                      { header: "pvalue", width: 110, id:'pvalue',dataIndex:'pvalue',groupName:'Edge'},
+                                       { header: "importance", width: 110, id:'importance',dataIndex:'importance',groupName:'Edge'},
+                                      { header: "correlation", width: 110, id:'correlation',dataIndex:'correlation',groupName:'Edge'},
+                                  ],
+                                  defaults: {
+                                      sortable: true,
+                                      width: 100
+                                  }
+                              }),
+                              store : new Ext.data.JsonStore({
+                                  autoLoad:false,
+                                  storeId:'dataRFACEEdge_grid_store',
+                                  fields : ['featureid1','featureid2','pvalue','importance','correlation']
+                              })
+                          }]
+                  });
+
+        var dataPairwiseEdgeTablePanel = new Ext.Panel({
+                      id:'dataPairwiseEdge-panel',
+                      name : 'dataPairwiseEdge-panel',
+                      title: 'Pairwise Connections',
+                      layout : 'fit',
+                      height: 300,
+                      width:680,
+                      collapsible : false,
+                      items : [
+                          {
+                              xtype:'grid',
+                              id : 'dataPairwiseEdge_grid',
+                              name : 'dataPairwiseEdge_grid',
+                              autoScroll:true,
+                              autoWidth : true,
+                              height: 300,
+                              viewConfig: {
+                                          forceFit : true
+                              },
+                              cm : new Ext.grid.ColumnModel({
+                                  columns: [
+                                      {header : "featureid1", width:110,  id:'featureid1', dataIndex:'featureid1', groupName: 'Edge'},
+                                      { header: "featureid2", width: 110,  id:'featureid2', dataIndex:'featureid2',groupName:'Edge'},
+                                      { header: "pvalue", width: 110, id:'pvalue',dataIndex:'pvalue',groupName:'Edge'},
+                                      { header: "correlation", width: 110, id:'correlation',dataIndex:'correlation',groupName:'Edge'},
+                                  ],
+                                  defaults: {
+                                      sortable: true,
+                                      width: 100
+                                  }
+                              }),
+                              store : new Ext.data.JsonStore({
+                                  autoLoad:false,
+                                  storeId:'dataPairwiseEdge_grid_store',
+                                  fields : ['featureid1','featureid2','pvalue','correlation']
+                              })
+                          }]
+                  });
 
     function renderPMID(value,p,record){
         return String.format('<b><a href="http://www.ncbi.nlm.nih.gov/pubmed/{0}" target="_blank">{0}</a></b>',record.data.pmid);
@@ -1153,7 +1414,7 @@ Ext.onReady(function() {
                     activeTab: 0,
                     height: 600,
                     width: 600,
-                    items: [dataDocumentTablePanel,dataEdgeTablePanel]
+                    items: [dataDocumentTablePanel,dataDomineEdgeTablePanel,dataRFACEEdgeTablePanel,dataPairwiseEdgeTablePanel]
                 }]
             });
     details_window.hide();
