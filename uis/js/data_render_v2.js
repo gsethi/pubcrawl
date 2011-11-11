@@ -57,6 +57,36 @@ function updateEdgeCCRange(start,width){
 
 }
 
+function updateEdgeImportanceRange(start,width){
+    if(!edgeImportanceScrollUpdate){
+      Ext.getCmp('edge_importance_start').setValue(start);
+      Ext.getCmp('edge_importance_end').setValue(new Number(start+width).toFixed(3));
+    }
+    else{
+        edgeImportanceScrollUpdate=false;
+    }
+
+    if(vis_ready){
+    filterVis();
+    }
+
+}
+
+function updateEdgeCorrelationRange(start,width){
+    if(!edgeCorrelationScrollUpdate){
+      Ext.getCmp('edge_correlation_start').setValue(start);
+      Ext.getCmp('edge_correlation_end').setValue(new Number(start+width).toFixed(2));
+    }
+    else{
+        edgeCorrelationScrollUpdate=false;
+    }
+
+    if(vis_ready){
+    filterVis();
+    }
+
+}
+
 function updateDCRange(start,width){
     if(!edgeDCScrollUpdate){
     var starta=Math.round(start);
@@ -95,6 +125,7 @@ function filterVis(){
             var hcChecked = Ext.getCmp('hc-cb').getValue();
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
             var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
+            var pairwiseOnlyChecked = Ext.getCmp('pairwiseOnly-cb').getValue();
             var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
@@ -102,6 +133,10 @@ function filterVis(){
             var ngdend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
             var ccstart = parseFloat(Ext.getCmp('edge_cc_start').getValue());
             var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
+         var corrstart = parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+            var corrend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+         var impstart = parseFloat(Ext.getCmp('edge_importance_start').getValue());
+            var impend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
 
         if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
          return false;
@@ -109,27 +144,44 @@ function filterVis(){
     if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
         return false;
     }
+        if(!pairwiseOnlyChecked && edge.data.ngd == null && edge.data.connType == 'pairwise'){
+        return false;
+    }
     if(!drugChecked && edge.data.connType == 'drugNGD'){
          return false;
     }
         
             if(edge.data.edgeList != undefined && edge.data.edgeList.length > 0){
+                var keep=false;
                 for(var i=0; i< edge.data.edgeList.length; i++){
-                    if(!(((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
+                    if(edge.data.edgeList[i].edgeType == 'domine' && (((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
                         edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
                         edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend)){
 
-                        return false;
+                        keep=true;
+                    }
+                     if(edge.data.edgeList[i].edgeType == 'pairwise' &&
+                        (Math.abs(edge.data.edgeList[i].correlation) >= corrstart && Math.abs(edge.data.edgeList[i].correlation) <=corrend)){
+
+                        keep=true;
+                    }
+                    if(edge.data.edgeList[i].edgeType == 'rface' &&
+                        (Math.abs(edge.data.edgeList[i].importance) >= impstart && Math.abs(edge.data.edgeList[i].importance) <=impend)){
+
+                        keep=true;
                     }
                 }
                 if(edge.data.ngd != null){
-                    return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
-                    (edge.data.cc >= ccstart && edge.data.cc <= ccend));
+                    if((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
+                    (edge.data.cc >= ccstart && edge.data.cc <= ccend)){
+                        keep=true;
+                    }
                 }
-                else
-                    return true;
 
-            }else{
+                    return keep;
+
+            }
+            else{
                    if(edge.data.ngd != null){
                     return ((edge.data.ngd >= ngdstart && edge.data.ngd <= ngdend) &&
                     (edge.data.cc >= ccstart && edge.data.cc <= ccend));
@@ -298,7 +350,7 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
   var ccArray = ccData.map(function(node){ return node.count;});
   var maxPosY = pv.max(ccArray)+1;
   var ngdValueArray = ccData.map(function(node){return node.ngd;});
-  var maxPosValueX = pv.max(ngdValueArray)+ 1;
+  var maxPosValueX = pv.max(ngdValueArray);
 
 
     var data_obj = function(){ return {
@@ -407,7 +459,7 @@ function visReady(){
     });
     vis_ready = true;
     filterVis();
-    vis.addContextMenuItem("Medline Documents","edges",function(evt){
+    vis.addContextMenuItem("Edge Details","edges",function(evt){
        var source = evt.target.data.source;
        var target = evt.target.data.target;
        var sourceNode=vis.node(source);
@@ -427,9 +479,9 @@ function visReady(){
         else{
             fullTerm2=getSolrCombinedTerm(targetNode);
         }
-       renderDetailsWindow(fullTerm1,fullTerm2);
+       renderDetailsWindow(fullTerm1,fullTerm2,"edge");
     });
-        vis.addContextMenuItem("Medline Documents","nodes",function(evt){
+        vis.addContextMenuItem("Node Details","nodes",function(evt){
 
        var term1 = evt.target.data.id;
        var term2= evt.target.data.searchterm;
@@ -451,7 +503,7 @@ function visReady(){
             fullTerm2=getSolrCombinedTerm(term2Node);
         }
 
-       renderDetailsWindow(fullTerm1,fullTerm2);
+       renderDetailsWindow(fullTerm1,fullTerm2,"node");
     });
 
     vis.addContextMenuItem("Remove Node", "nodes", function(evt){
@@ -468,17 +520,21 @@ function getVisualStyle(){
                 '<br>NGD: ' + (data.ngd == null ? "infinite" : data.ngd);
 
         if(edgeList != undefined){
-                tooltip = tooltip + '<br>Domain connections in this link are: <br>';
+            tooltip=tooltip + '<br>Edge details<br>';
+             for( var i=0; i< edgeList.length; i++){
+                 var edgeDetails = edgeList[i];
+                 if(edgeDetails.edgeType == "domine"){
+                     tooltip=tooltip + edgeDetails.pf1 + ' --- ' + edgeDetails.pf2 + '<br>';
+                 }
+                 else if(edgeDetails.edgeType == "rface" || edgeDetails.edgeType == "pairwise"){
+                     tooltip=tooltip + edgeDetails.featureid1 + ' --- ' + edgeDetails.featureid2 + '<br>';
+                 }
+
+            }
+        }
 
 
-        for( var i=0; i< edgeList.length; i++){
-            var edgeDetails = edgeList[i];
-            tooltip=tooltip + edgeDetails.pf1 + ' --- ' + edgeDetails.pf2 + '<br>';
-        }
-        }
-        if(data["connType"] == "rface"){
-            tooltip=tooltip + '<br>RFACE Connection: <br>';// + data["details"];
-        }
+
 
      return tooltip;
  };
@@ -513,6 +569,9 @@ function getVisualStyle(){
         }
         else if(data.connType == "rface"){
             return "#10B622";//"#0F8C06"; //39485F";
+        }
+        else if(data.connType == "pairwise"){
+            return "#543C87";//"#0F8C06"; //39485F";
         }
         else if(data.connType == "combo"){
               return "#CC00CC";
@@ -604,8 +663,7 @@ function getModelDef(){
                 { name: "label", type: "string"},
                 {name: "ngd", type:"double"},
                 {name: "connType", type: "string"},
-                    {name: "cc", type: "double"},
-              //  {name: "details", type:"object"},
+                 {name: "cc", type: "double"},
                 {name: "edgeList", type:"object"}
             ]
         },
@@ -647,26 +705,51 @@ function renderModel() {
 
 }
 
-function retrieveEdgeDetails(data){
+function retrieveEdgeDetails(node1,node2,type){
+    if(type == "edge"){
+        nodevar=node2.toLowerCase();
+        searchtermvar="";
+    }
+    else{
+        searchtermvar=node2.toLowerCase();
+        nodevar="";
+    }
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl_svc/relationships/" + data.toLowerCase(),
+            url: "/pubcrawl_svc/relationships/" + node1.toLowerCase(),
+            params: {
+                    node: nodevar,
+                    searchterm: searchtermvar,
+                alias: model_def['alias']
+            },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
-                  var selectedEdgeData=[];
+                  var selectedDomineEdgeData=[];
+                var selectedRFACEEdgeData=[];
+                var selectedPairwiseEdgeData=[];
                 if(json.edges == undefined || json.edges.length == 0){
                     //do nothing in this case - just send an empty selectedEdgeData to the table
                 }
                 else{
                      for(var i=0; i < json.edges.length; i++){
-                    
-                      selectedEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].pf1, pf2: json.edges[i].pf2,
-                          uni1:json.edges[i].uni1,uni2:json.edges[i].uni2,type:json.edges[i].type,pf1_count:json.edges[i].pf1_count,pf2_count:json.edges[i].pf2_count});
 
+                         if(json.edges[i].relType == "domine"){
+                      selectedDomineEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].pf1, pf2: json.edges[i].pf2,
+                          uni1:json.edges[i].uni1,uni2:json.edges[i].uni2,type:json.edges[i].type,pf1_count:json.edges[i].pf1_count,pf2_count:json.edges[i].pf2_count});
+                         }
+                         if(json.edges[i].relType.indexOf("rface") > -1){
+                            selectedRFACEEdgeData.push( {featureid1: json.edges[i].featureid1, featureid2: json.edges[i].featureid2,pvalue: json.edges[i].pvalue, correlation: json.edges[i].correlation,
+                          importance:json.edges[i].importance});
+                         }
+                         if(json.edges[i].relType.indexOf("pairwise") > -1){
+                            selectedPairwiseEdgeData.push( {featureid1: json.edges[i].featureid1, featureid2: json.edges[i].featureid2,pvalue: json.edges[i].pvalue, correlation: json.edges[i].correlation});
+                         }
                      }
                 }
 
-                 Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedEdgeData);
+                 Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
+                Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+                Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
                 details_window_mask.hide();
 
             },
@@ -689,12 +772,13 @@ function launchDenovoWindow(){
     loadDeNovoSearches();
 }
 
-function renderDetailsWindow(term1,term2){
+function renderDetailsWindow(term1,term2,type){
     details_window_mask =  new Ext.LoadMask('details-window', {msg:"Loading Data..."});
-     details_window.show();
-    details_window_mask.show();
+   // details_window_mask.show();
     retrieveMedlineDocuments(term1,term2)
-    retrieveEdgeDetails(term1);
+    retrieveEdgeDetails(term1,term2,type);
+     details_window.show();
+    Ext.StoreMgr.get('dataDocument_grid_store').load({params:{start: 0, rows:20}});
 
 }
 
@@ -707,6 +791,9 @@ function generateNetworkRequest(term,alias,deNovo){
 }
 
 function redraw(){
+    vis_ready=false;
+    vis_mask = new Ext.LoadMask('cytoscape-web', {msg:"Redrawing..."});
+    vis_mask.show();
     trimModel();
 
     if(!Ext.getCmp('domainOnly-cb').getValue()){
@@ -717,11 +804,16 @@ function redraw(){
         Ext.getCmp('rfaceOnly-cb').disable();
     }
 
+    if(!Ext.getCmp('pairwiseOnly-cb').getValue()){
+        Ext.getCmp('pairwiseOnly-cb').disable();
+    }
+
     if(!Ext.getCmp('showDrugs-cb').getValue()){
         Ext.getCmp('showDrugs-cb').disable();
     }
 
     populateData(completeData['nodes']);
+    vis_mask.hide();
     renderModel();
 }
 
