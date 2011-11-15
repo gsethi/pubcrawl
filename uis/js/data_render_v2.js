@@ -118,7 +118,7 @@ function filterVis(){
         }
         else
             return true;
-    });
+    },true);
 
     vis.filter("edges", function(edge){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
@@ -195,12 +195,19 @@ function filterVis(){
 
 }
 
+function getMutCountsData(){
+    setMutCount(model_def['nodes']);
+    return model_def['mutCounts'];
+
+}
+
 function trimModel(){
     var inclStandalone= Ext.getCmp('standalone-cb').getValue();
     var nodeModel=[];
     var edgeModel=[];
     var inclDrug=Ext.getCmp('showDrugs-cb').getValue();
 
+    model_def['nodes']=setMutCount(model_def['nodes']);
     filterVis();
 
     var visNodes=vis.nodes();
@@ -222,7 +229,8 @@ function trimModel(){
             edgeModel.push(visEdges[e].data);
         }
     }
-    model_def['nodes']=nodeModel;
+
+    model_def['nodes']=setMutCount(nodeModel);
     model_def['edges']=edgeModel;
 
 }
@@ -260,7 +268,7 @@ function renderNodeNGDHistogramData(istart,iend){
             fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateNGDRange,
-        callback_always: true
+        callback_always: false
     }};
 
   var nodeScroll = new vq.FlexScrollBar();
@@ -296,7 +304,7 @@ function renderEdgeNGDHistogramData(istart,iend){
             fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateEdgeNGDRange,
-        callback_always: true
+        callback_always: false
     }};
 
   var edgeScroll = new vq.FlexScrollBar();
@@ -332,7 +340,7 @@ function renderDCHistogramData(dcPlotData,istart,iend){
             interval: maxPosValueX
         },
         notifier: updateDCRange,
-        callback_always: true
+        callback_always: false
     }};
 
   var dcScroll = new vq.FlexScrollBar();
@@ -367,7 +375,7 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
 
         },
         notifier: notifyCall,
-        callback_always: true
+        callback_always: false
     }};
 
   var ccScroll = new vq.FlexScrollBar();
@@ -548,7 +556,7 @@ function getVisualStyle(){
      return tooltip;
  };
     var colorMap = d3.scale.linear()
-        .domain([pv.min(model_def["mutCounts"]),pv.max(model_def["mutCounts"])])
+        .domain([pv.min(getMutCountsData()),pv.max(getMutCountsData())])
         .range(["#F97BA2","#790663"]);
 
     vis["customNodeColor"] = function(data){
@@ -657,7 +665,8 @@ function getModelDef(){
                 {name: "mutCount", type: "number"},
                 {name: "aliases", type: "string"},
                 {name: "termcount", type: "double"},
-                {name: "searchtermcount", type: "double"}
+                {name: "searchtermcount", type: "double"},
+                {name: "length", type: "number"}
             ],
             edges: [
                 { name: "label", type: "string"},

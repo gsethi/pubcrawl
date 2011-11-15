@@ -288,6 +288,7 @@ public class PubcrawlServiceController  {
             Map<String, List<Relationship>> relMap = new HashMap<String, List<Relationship>>();
             Map<String, Node> drugMap = new HashMap<String, Node>();
             JSONArray geneArray = new JSONArray();
+            Map<String, List<String>> patientMutMap = new HashMap<String, List<String>>();
 
             log.info("node: " + bean.getNode() + " alias: " + bean.getAlias());
             //got all nodes, now sort and go thru the first 200
@@ -306,8 +307,12 @@ public class PubcrawlServiceController  {
                 String geneName = ((String) gene.getProperty("name")).toUpperCase();
                 for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
                     Node endNode = connection.getEndNode();
-                    String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
 
+                    String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
+                    if(connection.isType(DynamicRelationshipType.withName("gbm_1006_pairwise"))){
+                        if(Math.abs(Float.parseFloat((String)connection.getProperty("correlation","0"))) <= 0.4)
+                            continue;
+                    }
                         //do this relationship if the end node is in our list
                         if (geneMap.containsKey(nodeName)){
                             if(connection.isType(DynamicRelationshipType.withName("domine")) || connection.isType(DynamicRelationshipType.withName("gbm_1006_mask")))
@@ -340,6 +345,16 @@ public class PubcrawlServiceController  {
                         sortedDrugNGDList.add(connection);
 
                     }
+                for(Relationship connection: gene.getRelationships(Direction.INCOMING,DynamicRelationshipType.withName("gbm_mutation"))){
+                        Node startNode=connection.getStartNode();
+                        List<String> patients = new ArrayList<String>();
+                        if(patientMutMap.containsKey(geneName)){
+                            patients = patientMutMap.get(geneName);
+                        }
+                        patients.add(((String)startNode.getProperty("name")).toUpperCase());
+                        patientMutMap.put(geneName,patients);
+
+                }
             }
 
             //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
@@ -458,6 +473,7 @@ public class PubcrawlServiceController  {
 
                 if (edgeJson.has("id")) {
                     edgeJson.put("edgeList", edgeListArray);
+                    edgeJson.put("edgeLength", edgeListArray.length());
                     if (!edgeJson.has("directed")) {
                         edgeJson.put("directed", false);
                     }
@@ -466,6 +482,23 @@ public class PubcrawlServiceController  {
                 edgeJson = new JSONObject();
                 edgeListArray = new JSONArray();
                 first = true;
+            }
+
+            //go thru and do mutations
+            JSONArray mutationArray = new JSONArray();
+            for(String key: patientMutMap.keySet()){
+                JSONObject mutInfo = new JSONObject();
+                List<String> patients=patientMutMap.get(key);
+                mutInfo.put("gene",key);
+                JSONArray patientArray = new JSONArray();
+                for(String patient : patients){
+                    JSONObject patientJSON = new JSONObject();
+                    patientJSON.put("id",patient);
+                    patientArray.put(patientJSON);
+                }
+                mutInfo.put("patients",patientArray);
+                mutationArray.put(mutInfo);
+
             }
             //go thru drugMap and put into node array
             sort(sortedDrugNGDList, new RelationshipComparator());
@@ -531,6 +564,7 @@ public class PubcrawlServiceController  {
             }
             json.put("nodes", geneArray);
             json.put("edges", edgeArray);
+            json.put("mutations", mutationArray);
 
             JSONArray nodesArray = getNGDNodes(bean.getNode(), bean.getAlias());
             for (int i = 0; i < nodesArray.length(); i++) {
@@ -556,7 +590,6 @@ public class PubcrawlServiceController  {
         searchNodeJson.put("tf", Integer.parseInt((String)searchNode.getProperty("tf", "0")) == 1);
         searchNodeJson.put("somatic", Integer.parseInt((String)searchNode.getProperty("somatic", "0")) == 1);
         searchNodeJson.put("germline", Integer.parseInt((String)searchNode.getProperty("germline", "0")) == 1);
-        searchNodeJson.put("mutCount", Integer.parseInt((String)searchNode.getProperty("mutCount","0")));
         searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
         searchNodeJson.put("label", searchNode.getProperty("name"));
         searchNodeJson.put("ngd", 0);
@@ -566,6 +599,7 @@ public class PubcrawlServiceController  {
         searchNodeJson.put("termcount", alias ? termcount_alias : termcount);
         searchNodeJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
         searchNodeJson.put("searchtermcount", alias ? termcount_alias : termcount);
+        searchNodeJson.put("length", Integer.parseInt((String)searchNode.getProperty("length","0")));
 
         //geneArray will hold the returned list of nodes for the graph
         geneArray.put(searchNodeJson);
@@ -599,7 +633,6 @@ public class PubcrawlServiceController  {
             geneJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
             geneJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
             geneJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
-              geneJson.put("mutCount", Integer.parseInt((String)gene.getProperty("mutCount","0")));
             geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
             geneJson.put("label", gene.getProperty("name"));
             geneJson.put("ngd", ngdRelationship.getProperty("ngd"));
@@ -609,6 +642,7 @@ public class PubcrawlServiceController  {
             geneJson.put("termcount", alias ? termcount_alias : termcount);
             geneJson.put("searchtermcount", alias ? termcount_alias: termcount);
             geneJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
+            geneJson.put("length", Integer.parseInt((String)gene.getProperty("length","0")));
 
             //geneArray will hold the returned list of nodes for the graph
             geneArray.put(geneJson);
@@ -745,7 +779,6 @@ public class PubcrawlServiceController  {
                 relJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
                 relJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
                 relJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
-                relJson.put("mutCount", Integer.parseInt((String)gene.getProperty("mutCount","0")));
                 relJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
                 relJson.put("label", gene.getProperty("name"));
                 relJson.put("ngd", Double.parseDouble((String)rel.getProperty("ngd")));

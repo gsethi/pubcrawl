@@ -1,4 +1,5 @@
 Ext.onReady(loadDeNovoSearches);
+Ext.onReady(loadPatients);
 
 Ext.onReady(function() {
 
@@ -773,6 +774,66 @@ Ext.onReady(function() {
             }]
     });
 
+    var sm = new Ext.grid.CheckboxSelectionModel();
+
+
+var patientTablePanel = new Ext.Panel({
+                    id:'patientTable-panel',
+                    name : 'patientTable-panel',
+                    monitorResize : true,
+                    autoScroll : false,
+                    flex: 4,
+                    collapsible : false,
+                    items : [
+                        {
+                            xtype:'grid',
+                            id : 'patient_grid',
+                            name : 'patient_grid',
+                            autoScroll:true,
+                            monitorResize: true,
+                            autoWidth : true,
+                            autoHeight: true,
+                            viewConfig: {
+                                        forceFit : true
+                            },
+                            cm : new Ext.grid.ColumnModel({
+                                columns: [  sm,
+                                    { header: "Patient Id", width: 100,  id:'patientId', dataIndex:'patientId',groupName:'Node'},
+                                    { header: "Cancer", width:75 , id:'cancer', dataIndex:'cancer',groupName:'Node'},
+                                    { header: "Subtype", width: 100, id: 'subtype', dataIndex:'subtype',groupName:'Node'}
+                                ],
+                                defaults: {
+                                    sortable: true,
+                                    width: 100
+                                }
+                            }),
+                            sm:sm,
+                            store : new Ext.data.JsonStore({
+                                autoLoad:false,
+                                storeId:'patient_grid_store',
+                                fields : ['patientId','cancer','subtype']
+                            }),
+                            listeners: {
+                                rowclick : function(grid,rowIndex,event) {
+                                    var record = grid.getStore().getAt(rowIndex);
+
+                                }
+
+                            }
+                        }]
+                });
+
+    var patientPanel = new Ext.Panel({
+           id:'patientPanel',
+           name:'patientPanel',
+           autoScroll: true,
+           height:600,
+           autoWidth: true,
+           title: 'Patients',
+           border: false,
+           items: [patientTablePanel]
+       });
+
     var dataNodeTablePanel = new Ext.Panel({
                     id:'dataNode-panel',
                     name : 'dataNode-panel',
@@ -1095,7 +1156,7 @@ Ext.onReady(function() {
     var deNovoPanel = new Ext.Panel({
       id:'deNovo-panel',
       name:'deNovo-panel',
-      height: 600,
+      height: 400,
       padding: 5,
       layout:{
         type: 'vbox',
@@ -1180,7 +1241,7 @@ Ext.onReady(function() {
                 tbar:[ '->',{text: 'Redraw',width:40, ctCls:'rightBtn',handler: function(){ redraw();}},{xtype: 'tbspacer'},
                     {text: 'Reset', width:40, ctCls: 'rightBtn',handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
               ],
-                items:[configPanel, nodeFilterPanel,edgeFilterPanel]
+                items:[configPanel, patientPanel,nodeFilterPanel,edgeFilterPanel]
             });
 
     var networkvizPanel = new Ext.Panel({
@@ -1379,7 +1440,7 @@ Ext.onReady(function() {
               renderTo: 'networkviz-acc',
               modal: false,
               width: 800,
-              height: 600,
+              height: 410,
               closeAction: 'hide',
               closable: true,
               title: "Search",
