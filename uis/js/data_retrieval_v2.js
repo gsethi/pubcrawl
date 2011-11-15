@@ -1,6 +1,7 @@
 var base_query_url = '',
         pubcrawl_base_query_uri = '/google-dsapi-svc/addama/datasources/pubcrawl',
         pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
+        pubcrawl_patient_query = '/patients/query',
         current_data = {};
 
 var nodeCCScroll;
@@ -49,6 +50,25 @@ function loadDeNovoSearches(){
   dn_query.send(handleDNTerms);
 }
 
+function loadPatients(){
+  var patient_query = new google.visualization.Query(base_query_url + pubcrawl_base_query_uri + pubcrawl_patient_query);
+  patient_query.setQuery("select patientId, cancer,subtype");
+  var patients={searches:null};
+
+  function handlePatients(response){
+    if(!response.isError()){
+
+      rows=vq.utils.GoogleDSUtils.dataTableToArray(response.getDataTable());
+      patients['searches'] = rows.map(function(row){
+                return{patientId: row.patientId.toLowerCase(), cancer: row.cancer.toLowerCase(), subtype: row.subtype.toLowerCase()};
+      });
+      Ext.StoreMgr.get('patient_grid_store').loadData(patients['searches']);
+
+  }}
+
+  patient_query.send(handlePatients);
+}
+
 
 function loadModel(term1, alias,deNovo, callback) {
 
@@ -95,12 +115,7 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
                     Ext.getCmp('nodeFilterPanel').enable();
                     Ext.getCmp('edgeFilterPanel').enable();
-                     model_def['mutCounts'] = json.nodes.map(function(node){
-                        if(node.mutCount == undefined)
-                            return 0;
-                         else
-                            return node.mutCount;                                   
-                    });
+                     model_def['mutations'] = json.mutations;
                     Ext.getCmp('domainOnly-cb').setValue(true);
                     Ext.getCmp('domainOnly-cb').enable();
                     Ext.getCmp('rfaceOnly-cb').enable();
@@ -166,9 +181,47 @@ function filterData(domainOnlyChecked,rfaceOnlyChecked,drugChecked,standaloneChe
         tempModelNodes.push(nodes[nIndex]);
     }
 
-    model_def['nodes'] = tempModelNodes;
+    model_def['nodes'] = setMutCount(tempModelNodes);
 }
 
+function setMutCount(nodes){
+    var mutCounts=[];
+    var selectionDict={};
+            var selections = Ext.getCmp('patient_grid').getSelectionModel().getSelections();
+            for(var sIndex=0; sIndex < selections.length; sIndex++){
+                selectionDict[selections[sIndex].data.patientId.toUpperCase()]="";
+            }
+
+    for(var nIndex=0; nIndex < nodes.length; nIndex++){
+        if(!nodes[nIndex].drug){
+            var count=0;
+            var patientMutList = undefined;
+            for(var mIndex=0; mIndex < model_def['mutations'].length; mIndex++){
+                if(model_def['mutations'][mIndex].gene == nodes[nIndex].id)
+                    patientMutList=model_def['mutations'][mIndex].patients;
+            }
+
+            if(patientMutList != undefined){
+            for(var pIndex=0; pIndex < patientMutList.length; pIndex++){
+                if(selectionDict[patientMutList[pIndex].id] != undefined){
+                    count=count+1;
+                }
+            }
+            }
+            if(count == 0 || selections.length == 0){
+                nodes[nIndex].mutCount=0;
+
+            }
+            else{
+                mutCount= count/nodes[nIndex].length/selections.length;
+            nodes[nIndex].mutCount=mutCount;
+                mutCounts.push(mutCount);
+            }
+        }
+    }
+    model_def['mutCounts']=mutCounts;
+    return nodes;
+}
 
 function populateData(allnodes){
     completeData={nodes:null,edges:null};
@@ -273,7 +326,7 @@ function populateData(allnodes){
             if(edgeDetail.edgeType == 'rface'){
                 var importance = Math.round(Math.abs(edgeDetail.importance) *1000)/1000;
                 if(edgeImportanceSummary[importance] == undefined){
-                    if(importance0){
+                    if(importance-0.0005 < 0){
                         startimp=0;
                     }
                     edgeImportanceSummary[importance] = {start: (importance - .0005 <= 0)? 0 : importance - .0005, end: importance + .0005, label: 1, ngd: importance, count:1};

@@ -39,6 +39,7 @@ public class neo4jImport {
     private static HashMap<String, RelationshipType> edgeTypes = new HashMap<String, RelationshipType>();
     private static JSONArray nodeFiles;
     private static JSONArray edgeFiles;
+    private static JSONArray nodePropFiles;
 
 
     private static class MyJsonConfigHandler implements JsonConfigHandler {
@@ -63,6 +64,9 @@ public class neo4jImport {
             }
             if (configuration.has("edgeFiles")) {
                 edgeFiles = configuration.getJSONArray("edgeFiles");
+            }
+            if (configuration.has("nodePropFiles")){
+                nodePropFiles = configuration.getJSONArray("nodePropFiles");
             }
         }
     }
@@ -100,6 +104,17 @@ public class neo4jImport {
                     continue;
                 }
                 insertEdges(edgeItem.getString("location"),edgeItem.getString("relType"),edgeItem.getString("sourceNodeType"),edgeItem.getString("targetNodeType"),inserter,indexProvider);
+            }
+
+            //insert node properties
+            for(int i=0; i< nodePropFiles.length(); i++){
+                JSONObject nodePropItem = (JSONObject) nodePropFiles.get(i);
+                log.info("processing file: " + nodePropItem.getString("location"));
+                if(nodeTypes.get(nodePropItem.getString("nodeType")) == null){
+                    log.warning("no matching node type in config file for nodeType: " + nodePropItem.getString("nodeType"));
+                    continue;
+                }
+                insertNodeProperties(nodePropItem.getString("location"),nodePropItem.getString("nodeType"),inserter,indexProvider);
             }
 
         }catch(Exception ex){
@@ -211,6 +226,51 @@ public class neo4jImport {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private static void insertNodeProperties(String propFile, String nodeType, BatchInserter inserter, BatchInserterIndexProvider indexProvider) {
+
+        //create an index for the nodes based on nodeType value
+        BatchInserterIndex nodeIdx = indexProvider.nodeIndex(nodeType+"Idx", MapUtil.stringMap("type", "exact"));
+        BatchInserterIndex generalIdx = indexProvider.nodeIndex("generalIdx", MapUtil.stringMap("type", "exact"));
+
+        try {
+            BufferedReader vertexFile = new BufferedReader(new FileReader(propFile));
+            String vertexLine = vertexFile.readLine();
+            if(vertexLine == null){
+                vertexFile.close();
+                return;
+            }
+            String[] columns = vertexLine.split("\t");
+            String props="";
+            for (int v=1; v< columns.length; v++){
+               props=props + columns[v] + "\t";
+            }
+
+            log.info("NodeType: " + nodeType + " with properties: " + props);
+
+            while ((vertexLine = vertexFile.readLine()) != null) {
+                String[] vertexInfo = vertexLine.split("\t");
+                Long sourceNode = nodeIdx.get("name", vertexInfo[0]).getSingle();
+                 if(sourceNode == null){
+                            log.warning("node: " + vertexInfo[0] + " not found.");
+                            continue;
+                        }
+                Map<String,Object> properties = new HashMap<String,Object>();
+                for(int i=1; i< vertexInfo.length; i++){
+                       properties.put(columns[i],vertexInfo[i]);
+                }
+                inserter.setNodeProperties(sourceNode,properties);
+            }
+
+            nodeIdx.flush();
+            generalIdx.flush();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+
+        return;
     }
 
 
