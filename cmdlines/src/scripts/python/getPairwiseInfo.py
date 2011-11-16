@@ -7,8 +7,8 @@ import ConfigParser
 
 
 def usage():
-    print "python getRFACEInfo.py -i inputFile -o fileName";
-    print "-i <inputFile> filename that contains input RFACE data";
+    print "python getPairwiseInfo.py -i inputFile -o fileName";
+    print "-i <inputFile> filename that contains input pairwise association data";
     print "-o <fileName> prefix that should be used for output file";
 
 def usage_error():
@@ -28,19 +28,19 @@ def getNode(featureid):
 			return index[0].lower();
 
 def processLine(line,outFile):
-	rfaceInfo=line.strip().split("\t");      
-	sourceNode=getNode(rfaceInfo[1]);
-	targetNode=getNode(rfaceInfo[0]);
+	rfaceInfo=line.strip().split("\t");
+	sourceNode=getNode(rfaceInfo[0]);
+	targetNode=getNode(rfaceInfo[1]);
 
-	if(sourceNode==None or targetNode==None or sourceNode=="" or targetNode==""):
+     if(sourceNode==None or targetNode==None or sourceNode=="" or targetNode==""):
 		return;
 
-	if(rfaceInfo[2]=="-inf"):
+	if(rfaceInfo[4]=="-inf"):
 		pvalue="-1000";
 	else:
-		pvalue=rfaceInfo[2];
+		pvalue=rfaceInfo[4];
 	
-	outFile.writelines(sourceNode + "\t" + targetNode + "\t" + rfaceInfo[1] + "\t" + rfaceInfo[0] + "\t" +  pvalue +  "\t" + rfaceInfo[3] + "\t" + rfaceInfo[4] +  "\n");
+	outFile.writelines(sourceNode + "\t" + targetNode + "\t" + rfaceInfo[0] + "\t" + rfaceInfo[1] + "\t" +  pvalue +  "\t" + rfaceInfo[2] + "\t" + rfaceInfo[3] +  "\n");
 	return;
 
 
@@ -56,20 +56,21 @@ if __name__ == "__main__":
     fileString="";
     inputFileString="";
     for option in optlist:
-		if(option[0] == '-o'):
-			fileString = option[1];
-		if(option[0] == '-i'):
-			inputFileString = option[1];
+        if(option[0] == '-o'):
+            fileString = option[1];
+	if(option[0] == '-i'):
+	    inputFileString = option[1];
 
-	if(fileString=="" or inputFileString==""):
-		usage_error();
-		exit(1);
+    if(fileString=="" or inputFileString==""):
+	usage_error();
+	exit(1);
 
+   
     inputFile=open(inputFileString,"r"); 
     outFile=open(fileString+".txt","w");
-    outFile.writelines("source\ttarget\tfeatureid1\tfeatureid2\tpvalue\timportance\tcorrelation\n");
+    outFile.writelines("source\ttarget\tfeatureid1\tfeatureid2\tpvalue\tcorrelation\tcount\n");
     for line in inputFile:
-		processLine(line,outFile);
-	
+		processLine(line,outFile);	
+
     inputFile.close();
     outFile.close();
