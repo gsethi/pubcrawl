@@ -61,9 +61,9 @@ if __name__ == "__main__":
 		if(option[0] == '-i'):
 			inputFileString = option[1];
 
-	if(fileString=="" or inputFileString==""):
-		usage_error();
-		exit(1);
+		if(fileString=="" or inputFileString==""):
+			usage_error();
+			exit(1);
 
     inputFile=open(inputFileString,"r"); 
     outFile=open(fileString+".txt","w");
