@@ -23,11 +23,12 @@ var edgeCCScrollUpdate;
 var edgeDCScrollUpdate;
 var edgeImportanceScrollUpdate;
 var edgeCorrelationScrollUpdate;
+var dataSet;
 
 
 
-selectModel = function(set_label) {
-    current_data['label'] = set_label;
+function setDataSet(itemChecked){
+    dataSet=itemChecked.value;
 }
 
 
@@ -81,13 +82,13 @@ function loadModel(term1, alias,deNovo, callback) {
     model_def['term'] = term1.toUpperCase();
     model_def['alias'] = alias;
     model_def['deNovo'] = deNovo;
-    urlString="/pubcrawl_svc/node/";
-    if(alias){
-        urlString="/pubcrawl_svc/node_alias/";
-    }
+    urlString="/pubcrawl_svc/graph/";
     Ext.Ajax.request({
             method:"GET",
             url: urlString + term1.toLowerCase(),
+            params: {
+                alias: alias
+            },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
 
