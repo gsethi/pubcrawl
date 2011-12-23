@@ -1259,36 +1259,57 @@ var patientTablePanel = new Ext.Panel({
                 id: 'north-toolbar',
                 cls: 'x-panel-header-noborder',
                 border: false,
-                tbar:[{
-                id:'visDataMenu',
-                    text:'Export',
+                tbar:[{ id:'dataSetMenu',
+                    text:'DataSet',
                     labelStyle: 'font-weight:bold;',
                     menu: [{
-                        text: 'Graph',
-                        menu:[
-                '<b class="menu-title">Choose a Data Format</b>',
-                    {
-                        text: 'png',
-                        value: 'png',
-                        group: 'theme',
-                        handler: exportVisData
+                        text: 'GBM',
+                        checked: true,
+                        value: 'gbm_1031',
+                        checkHandler: setDataSet
+
                     },{
-                        text: 'svg',
-                        group: 'theme',
-                        value: 'svg',
-                        handler: exportVisData}]
-                  },{
-                        text: 'Nodes',
-                        menu:[
-                '<b class="menu-title">Choose a Data Format</b>',
+                        text: 'COAD/READ',
+                        checked: false,
+                        checkHandler: setDataSet,
+                        value: 'coad_read_1111'
+                    },{
+                        text: 'BRCA/OV',
+                        checked: false,
+                        checkHandler: setDataSet,
+                        value: 'brca_ov_1113'
+                    }]},
                     {
-                        text: 'csv',
-                        value: 'csv',
-                        group: 'theme',
-                        handler: exportNodeData
-                    }]
-                  }]
-              },{xtype: 'tbspacer'},{ id: 'legendMenu',
+                        id:'visDataMenu',
+                        text:'Export',
+                        labelStyle: 'font-weight:bold;',
+                        menu: [{
+                            text: 'Graph',
+                            menu:[
+                                '<b class="menu-title">Choose a Data Format</b>',
+                                {
+                                    text: 'png',
+                                    value: 'png',
+                                    group: 'theme',
+                                    handler: exportVisData
+                                },{
+                                    text: 'svg',
+                                    group: 'theme',
+                                    value: 'svg',
+                                    handler: exportVisData}]
+                        },{
+                            text: 'Nodes',
+                            menu:[
+                                '<b class="menu-title">Choose a Data Format</b>',
+                                {
+                                    text: 'csv',
+                                    value: 'csv',
+                                    group: 'theme',
+                                    handler: exportNodeData
+                                }]
+                        }]
+
+        },{xtype: 'tbspacer'},{ id: 'legendMenu',
                   text: 'Legend',
                   labelStyle: 'font-weight:bold;',
                   menu:[{
