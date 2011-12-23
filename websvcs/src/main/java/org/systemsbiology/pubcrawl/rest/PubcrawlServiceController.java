@@ -2,25 +2,27 @@ package org.systemsbiology.pubcrawl.rest;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
+import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.server.WrappingNeoServerBootstrapper;
 import org.neo4j.server.configuration.Configurator;
 import org.neo4j.server.configuration.EmbeddedServerConfigurator;
-import org.springframework.beans.factory.InitializingBean;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.systemsbiology.addama.commons.web.views.JsonItemsView;
 import org.systemsbiology.pubcrawl.RelationshipComparator;
+import org.systemsbiology.pubcrawl.pojos.GraphQuery;
 import org.systemsbiology.pubcrawl.pojos.PubcrawlNetworkBean;
-import scala.Dynamic;
+import org.systemsbiology.pubcrawl.pojos.RelationshipQuery;
 
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,12 +31,8 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.Key;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Logger;
-import java.util.List;
-import java.util.Map;
 
 
 import static java.util.Collections.sort;
@@ -45,143 +43,116 @@ import static org.systemsbiology.addama.commons.web.utils.HttpIO.pipe_close;
  * @author aeakin
  */
 @Controller
-public class PubcrawlServiceController  {
+public class PubcrawlServiceController {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
     private EmbeddedGraphDatabase graphDB;
     private WrappingNeoServerBootstrapper srv;
 
-    @RequestMapping(value = "/node/**", method = RequestMethod.GET)
-    protected ModelAndView handleGraphRetrieval(HttpServletRequest request) throws Exception {
+    @RequestMapping(value = "/graph/{nodeName}", method = RequestMethod.GET)
+    protected ModelAndView handleGraphRetrieval(HttpServletRequest request, @PathVariable("nodeName") String nodeName) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
-        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        GraphQuery gQuery = new GraphQuery(request,nodeName,null);
         log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = getGraph(bean);
-        json.put("node", bean.getNode());
+        JSONObject json = getGraph(gQuery);
+        json.put("node", gQuery.getSearchNode());
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
-    @RequestMapping(value= "/node/**", method=RequestMethod.DELETE)
-    protected ModelAndView handleNodeDelete(HttpServletRequest request) throws Exception {
+    @RequestMapping(value = "/graph/{searchNode}/relationships/{nodeName}", method = RequestMethod.GET)
+    protected ModelAndView handleGraphRetrieval(HttpServletRequest request, @PathVariable("searchNode") String searchNode, @PathVariable("nodeName") String nodeName) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
-        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
+        GraphQuery gQuery = new GraphQuery(request,searchNode,nodeName);
         log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = deleteNode(bean);
-        return new ModelAndView(new JsonItemsView()).addObject("json",json);
-    }
+        JSONObject json = getEdgesFromGraph(gQuery);
 
-    @RequestMapping(value = "/node_alias/**", method = RequestMethod.GET)
-    protected ModelAndView handleGraphAliasRetrieval(HttpServletRequest request) throws Exception {
-        String requestUri = request.getRequestURI();
-        log.info(requestUri);
-
-        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
-        log.info("request.getMethod: " + request.getMethod());
-        JSONObject json = getGraph(bean);
-        json.put("node", bean.getNode());
+        json.put("searchterm", gQuery.getSearchNode());
+        json.put("node", gQuery.getRelNode());
+        json.put("dataset", gQuery.getDataSet());
+        json.put("alias", gQuery.getAlias());
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
 
-    @RequestMapping(value = "/relationships/**", method = RequestMethod.GET)
-    protected ModelAndView handleRelationships(HttpServletRequest request) throws Exception {
+    @RequestMapping(value = "/node/{nodeName}", method = RequestMethod.DELETE)
+    protected ModelAndView handleNodeDelete(HttpServletRequest request, @PathVariable("nodeName") String nodeName) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
-        String nodeUri = StringUtils.substringAfterLast(requestUri, "relationships/");
-        String node = "";
-        node = getNodeName(nodeUri, node);
-
-        String searchterm = request.getParameter("searchterm");
-        String node2 = request.getParameter("node");
-        boolean alias = new Boolean(request.getParameter("alias")).booleanValue();
-
-        JSONObject json;
         log.info("request.getMethod: " + request.getMethod());
-        if(searchterm== null || isEmpty(searchterm)){
-            json = getEdgesBetweenNodes(node,node2,alias);
-        }
-        else{
-            json = getEdgesFromGraph(node,searchterm,alias);
-        }
-        json.put("node", nodeUri);
-        json.put("node2", node2);
-        json.put("searchterm", searchterm);
-        json.put("alias",alias);
+        JSONObject json = deleteNode(nodeName);
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
-    private String getNodeName(String nodeUri, String node) {
-        log.info("nodeUri: " + nodeUri);
-        if (nodeUri != null) {
-            String[] splits = nodeUri.split("/");
-            if (splits.length > 0) {
-                node = splits[0].replaceAll("%20", " ");
-
-            }
-        }
-        return node;
-    }
-
-    @RequestMapping(value = "/nodes/**", method = RequestMethod.GET)
-    protected ModelAndView handleNGDNodes(HttpServletRequest request) throws Exception {
+    //Get relationships between nodes - should specify dataset name (but not required)
+    @RequestMapping(value = "/relationships/{nodeName}/node/{secondNode}", method = RequestMethod.GET)
+    protected ModelAndView handleRelationships(HttpServletRequest request, @PathVariable("nodeName") String nodeName,@PathVariable("secondNode") String secondNode) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
-        String nodeUri = StringUtils.substringAfterLast(requestUri, "nodes/");
-        String node = "";
-        node = getNodeName(nodeUri, node);
+        RelationshipQuery rQuery = new RelationshipQuery(request,nodeName,secondNode);
+        log.info("request.getMethod: " + request.getMethod());
+
+        JSONObject json = getEdgesBetweenNodes(rQuery);
+
+
+        json.put("node", rQuery.getNode());
+        json.put("node2", rQuery.getNode2());
+        json.put("dataset", rQuery.getDataSet());
+        json.put("alias", rQuery.getAlias());
+        return new ModelAndView(new JsonItemsView()).addObject("json", json);
+    }
+
+
+    @RequestMapping(value = "/nodes/{nodeName}", method = RequestMethod.GET)
+    protected ModelAndView handleNGDNodes(HttpServletRequest request, @PathVariable("nodeName") String nodeName) throws Exception {
+        String requestUri = request.getRequestURI();
+        log.info(requestUri);
 
         log.info("request.getMethod: " + request.getMethod());
-        JSONArray nodeJson = getNGDNodes(node, false);
+        JSONArray nodeJson = getNGDNodes(nodeName, false);
         JSONObject json = new JSONObject();
         json.put("nodes", nodeJson);
-        json.put("node", nodeUri);
+        json.put("node", nodeName);
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
 
     }
 
-    @RequestMapping(method = RequestMethod.POST)
-    protected ModelAndView handleNodeInsert(HttpServletRequest request) throws Exception {
+    @RequestMapping(value = "/deNovo/{nodeName}/", method = RequestMethod.POST)
+    protected ModelAndView handleNodeInsert(HttpServletRequest request, @PathVariable("nodeName") String nodeName) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
 
-        PubcrawlNetworkBean bean = new PubcrawlNetworkBean(request);
         JSONObject json = new JSONObject();
         log.info("request.getMethod: " + request.getMethod());
-        json.put("insert", insertGraphNodeData(bean));
+        json.put("insert", insertGraphNodeData(Boolean.getBoolean(request.getParameter("alias"))));
 
-        json.put("node", bean.getNode());
+        json.put("node", nodeName);
         return new ModelAndView(new JsonItemsView()).addObject("json", json);
     }
 
-    @RequestMapping(value="/exportNodes/**",method= RequestMethod.GET)
-    protected ModelAndView exportNetwork(HttpServletRequest request, HttpServletResponse response) throws Exception {
-         String requestUri = request.getRequestURI();
+    @RequestMapping(value = "/exportNodes/{nodeName}", method = RequestMethod.GET)
+    protected ModelAndView exportNetwork(HttpServletRequest request, HttpServletResponse response, @PathVariable("nodeName") String node) throws Exception {
+        String requestUri = request.getRequestURI();
         log.info(requestUri);
 
         String dataFormat = request.getParameter("type");
-        if(dataFormat.toLowerCase().equals("csv")){
+        if (dataFormat.toLowerCase().equals("csv")) {
             response.setContentType("text/csv");
-            response.setHeader("Content-Disposition","attachment;filename=nodes.csv");
+            response.setHeader("Content-Disposition", "attachment;filename=nodes.csv");
+        } else if (dataFormat.toLowerCase().equals("tsv")) {
+            response.setContentType("text/tsv");
+            response.setHeader("Content-Disposition", "attachment;filename=nodes.tsv");
         }
-        else if(dataFormat.toLowerCase().equals("tsv")){
-             response.setContentType("text/tsv");
-            response.setHeader("Content-Disposition","attachment;filename=nodes.tsv");
-        }
-
-        String nodeUri = StringUtils.substringAfterLast(requestUri, "exportNodes/");
-        String node="";
-        node = getNodeName(nodeUri,node);
 
         log.info("request.getMethod: " + request.getMethod());
 
- 
+
         boolean alias = new Boolean(request.getParameter("alias")).booleanValue();
-        try{
+        try {
 
             BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
 
@@ -190,21 +161,23 @@ public class PubcrawlServiceController  {
 
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("geneIdx");
-            Node searchNode = nodeIdx.get("name",node).getSingle();
+            RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
+            Node searchNode = nodeIdx.get("name", node).getSingle();
 
-            csvLine=node+","+searchNode.getProperty("termcount","0")+",0,"+ searchNode.getProperty("termcount","0")+"\n";
+            csvLine = node + "," + searchNode.getProperty("termcount", "0") + ",0," + searchNode.getProperty("termcount", "0") + "\n";
             out.write(csvLine.getBytes());
 
-            DynamicRelationshipType relationshipType = DynamicRelationshipType.withName("ngd");
-            if(alias){
-                relationshipType = DynamicRelationshipType.withName("ngd_alias");
+           String ngdType = "ngd";
+            if (alias) {
+                ngdType = "ngd_alias";
             }
 
             //go thru ngd relationships and create an array of all node objects that have an ngd distance from the search term
-            for(Relationship rel: searchNode.getRelationships(Direction.OUTGOING,relationshipType)){
+             IndexHits<Relationship> ngdHits = relIdx.get("type", ngdType, searchNode, null);
+            for (Relationship rel : ngdHits) {
                 JSONObject relJson = new JSONObject();
                 Node gene = rel.getEndNode();
-                csvLine=gene.getProperty("name")+","+ gene.getProperty("termcount",0)+ "," + rel.getProperty("ngd")+","+rel.getProperty("combocount")+"\n";
+                csvLine = gene.getProperty("name") + "," + gene.getProperty("termcount", 0) + "," + rel.getProperty("ngd") + "," + rel.getProperty("combocount") + "\n";
                 out.write(csvLine.getBytes());
             }
 
@@ -212,7 +185,7 @@ public class PubcrawlServiceController  {
             out.flush();
             out.close();
 
-        }catch(Exception e){
+        } catch (Exception e) {
             log.info("exception occurred: " + e.getMessage());
             return null;
         }
@@ -220,7 +193,7 @@ public class PubcrawlServiceController  {
         return null;
     }
 
-    @RequestMapping(value="/exportGraph",method= RequestMethod.POST)
+    @RequestMapping(value = "/exportGraph", method = RequestMethod.POST)
     protected ModelAndView exportGraph(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
@@ -244,329 +217,142 @@ public class PubcrawlServiceController  {
         return null;
     }
 
-    protected JSONObject deleteNode(PubcrawlNetworkBean bean){
+    //TODO: Do we need to manually remove from indexes as well?
+    protected JSONObject deleteNode(String nodeName) {
         JSONObject json = new JSONObject();
-        try{
+        try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
-            Node deleteNode = nodeIdx.get("name", bean.getNode()).getSingle();
+            Node deleteNode = nodeIdx.get("name",nodeName).getSingle();
 
             log.info("got the delete node: " + deleteNode.getProperty("id"));
-            if(deleteNode != null){
-            for (Relationship relConnection : deleteNode.getRelationships()) {
-                if(relConnection != null){
-                    relConnection.delete();
-                log.info("delete relationship");
-                }
+            if (deleteNode != null) {
+                for (Relationship relConnection : deleteNode.getRelationships()) {
+                    if (relConnection != null) {
+                        relConnection.delete();
+                        log.info("delete relationship");
+                    }
 
-            }
+                }
             }
 
             log.info("deleted the relationships");
             deleteNode.delete();
-            json.put("success","true");
-        }
-        catch (Exception e) {
+            json.put("success", "true");
+        } catch (Exception e) {
             log.info("exception occurred: " + e.getMessage());
             return new JSONObject();
         }
         return json;
     }
-    
-    protected JSONObject getGraph(PubcrawlNetworkBean bean) {
+
+    protected JSONObject getGraph(GraphQuery gQuery) {
         JSONObject json = new JSONObject();
         try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
-            Node searchNode = nodeIdx.get("name", bean.getNode()).getSingle();
+            Node searchNode = nodeIdx.get("name", gQuery.getSearchNode()).getSingle();
+
+            //relationship index
+            RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
 
 
             List<Relationship> sortedDrugNGDList = new ArrayList<Relationship>();
             Map<String, Node> geneMap = new HashMap<String, Node>();
             Map<String, Integer> processedMap = new HashMap<String, Integer>();
-            Map<Long, Relationship> processedEdges = new HashMap<Long, Relationship>();
             Map<String, List<Relationship>> relMap = new HashMap<String, List<Relationship>>();
             Map<String, Node> drugMap = new HashMap<String, Node>();
             JSONArray geneArray = new JSONArray();
             Map<String, List<String>> patientMutMap = new HashMap<String, List<String>>();
 
-            log.info("node: " + bean.getNode() + " alias: " + bean.getAlias());
-            //got all nodes, now sort and go thru the first 200
+            //retrieve all nodes for the graph
+            retrieveGraphNodes(searchNode, geneMap, geneArray, gQuery.getAlias());
+            log.info("gene array: " + geneArray.length());
 
-            retrieveGraphNodes(searchNode, geneMap, geneArray, bean.getAlias());
-
-             log.info("gene array: " + geneArray.length());
             //Done getting the correct nodes, now find all the edges
             JSONArray edgeArray = new JSONArray();
-           DynamicRelationshipType drugType = bean.getAlias() ? DynamicRelationshipType.withName("drug_ngd_alias") : DynamicRelationshipType.withName("drug_ngd");
+            String drugTypeName = gQuery.getAlias() ? "drug_ngd_alias" : "drug_ngd";
 
 
-            //now get the edges between all graph nodes, need to keep track of the nodes that have already been processed so we don't keep adding their connections
+            //now loop thru all gene nodes and get the edges between all the graph nodes
             for (Node gene : geneMap.values()) {
-                int edgeCount=0;
                 String geneName = ((String) gene.getProperty("name")).toUpperCase();
-                for (Relationship connection : gene.getRelationships(Direction.OUTGOING)) {
-                    Node endNode = connection.getEndNode();
 
-                    String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
-                    if(connection.isType(DynamicRelationshipType.withName("gbm_1006_pairwise"))){
-                        if(Math.abs(Float.parseFloat((String)connection.getProperty("correlation","0"))) <= 0.4)
-                            continue;
+                int edgeCount = getEdgesForNode(gQuery.getDataSet(),gQuery.getAlias(), relIdx, geneMap, relMap, gene);
+
+                //also get any drug edges
+                IndexHits<Relationship> drugHits = relIdx.get("type", drugTypeName, null, gene);
+                for (Relationship connection : drugHits) {
+                    sortedDrugNGDList.add(connection);
+
+                }
+
+                //and get mutation data
+                IndexHits<Relationship> mutationHits = relIdx.get("type", gQuery.getDataSet() + "_mutation", null, gene);
+                for (Relationship connection : mutationHits) {
+                    Node startNode = connection.getStartNode();
+                    List<String> patients = new ArrayList<String>();
+                    if (patientMutMap.containsKey(geneName)) {
+                        patients = patientMutMap.get(geneName);
                     }
-                        //do this relationship if the end node is in our list
-                        if (geneMap.containsKey(nodeName)){
-                            if(connection.isType(DynamicRelationshipType.withName("domine")) || connection.isType(DynamicRelationshipType.withName("gbm_1006_mask")))
-                                edgeCount=edgeCount+1;
-                        if (!processedEdges.containsKey(connection.getId())) {
-                            //keep this relationship
-                            processedEdges.put(connection.getId(),connection);
-                            String key = nodeName + "_" + geneName;
-                            if(geneName.compareTo(nodeName) < 0){
-                                key = geneName + "_" + nodeName;
-                            }
+                    patients.add(((String) startNode.getProperty("name")).toUpperCase());
+                    patientMutMap.put(geneName, patients);
 
-
-                            if (relMap.containsKey(key)) {
-                                List<Relationship> relList = relMap.get(key);
-                                relList.add(connection);
-                                relMap.put(key, relList);
-                            } else {
-                                List<Relationship> relList = new ArrayList<Relationship>();
-                                relList.add(connection);
-                                relMap.put(key, relList);
-                            }
-                        }
-                        }
-                    }
-
+                }
 
                 processedMap.put(geneName, edgeCount);
-                for(Relationship connection: gene.getRelationships(Direction.INCOMING,drugType)){
-                        sortedDrugNGDList.add(connection);
-
-                    }
-                for(Relationship connection: gene.getRelationships(Direction.INCOMING,DynamicRelationshipType.withName("gbm_mutation"))){
-                        Node startNode=connection.getStartNode();
-                        List<String> patients = new ArrayList<String>();
-                        if(patientMutMap.containsKey(geneName)){
-                            patients = patientMutMap.get(geneName);
-                        }
-                        patients.add(((String)startNode.getProperty("name")).toUpperCase());
-                        patientMutMap.put(geneName,patients);
-
-                }
             }
 
-            //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
-            JSONObject edgeJson = new JSONObject();
-            boolean first = true;
-            JSONArray edgeListArray = new JSONArray();
-            for (List<Relationship> itemList : relMap.values()) {
-                for (Relationship item : itemList) {
-                    if ((item.isType(DynamicRelationshipType.withName("ngd")) && !bean.getAlias()) ||
-                            (item.isType(DynamicRelationshipType.withName("ngd_alias")) && bean.getAlias())) {
-                        edgeJson.put("ngd", Double.parseDouble((String)item.getProperty("ngd")));
-                            edgeJson.put("cc", Integer.parseInt((String) item.getProperty("combocount")));
-                    } else if (item.isType(DynamicRelationshipType.withName("domine"))) {
-                        String hgnc1 = ((String) item.getStartNode().getProperty("name")).toUpperCase();
-                        String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
-                        if (first) {
-                            edgeJson.put("source", hgnc1);
-                            edgeJson.put("target", hgnc2);
-                            edgeJson.put("id", hgnc1 + hgnc2);
-                            edgeJson.put("label", hgnc1 + "to" + hgnc2);
-                            first = false;
-                        }
-
-                        if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
-                            edgeJson.put("connType", "domine");
-                        } else {
-                            edgeJson.remove("connType");
-                            edgeJson.put("connType", "combo");
-                        }
-
-                        JSONObject edgeListItem = new JSONObject();
-                        edgeListItem.put("pf1", item.getProperty("pf1"));
-                        edgeListItem.put("pf2", item.getProperty("pf2"));
-                        edgeListItem.put("uni1", item.getProperty("uni1"));
-                        edgeListItem.put("uni2", item.getProperty("uni2"));
-                        edgeListItem.put("type", item.getProperty("type"));
-                        edgeListItem.put("pf1_count", Integer.parseInt((String)item.getProperty("pf1_count")));
-                        edgeListItem.put("pf2_count", Integer.parseInt((String)item.getProperty("pf2_count")));
-                        edgeListItem.put("edgeType", "domine");
-
-                        edgeListArray.put(edgeListItem);
-
-                    } else if (item.isType(DynamicRelationshipType.withName("gbm_1006_rface"))) {
-                        String startName = ((String) item.getStartNode().getProperty("name")).toUpperCase();
-                        String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
-                        if (first) {
-                            edgeJson.put("source", startName);
-                            edgeJson.put("target", endName);
-                            edgeJson.put("id", startName + endName);
-                            edgeJson.put("label", startName + "to" + endName);
-                            edgeJson.put("directed", true);
-                            first = false;
-                        }
-                        else{
-                            if(edgeJson.get("source").equals(endName)){  //bidirectional
-                                edgeJson.remove("directed");
-                                edgeJson.put("directed",false);
-                            }
-                        }
-
-                        if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
-                            edgeJson.put("connType", "rface");
-                        } else {
-                            edgeJson.remove("connType");
-                            edgeJson.put("connType", "combo");
-                        }
-
-
-                        JSONObject edgeListItem = new JSONObject();
-                        edgeListItem.put("pvalue", Double.parseDouble((String)item.getProperty("pvalue")));
-                        edgeListItem.put("correlation", Double.parseDouble((String) item.getProperty("correlation")));
-                        edgeListItem.put("importance", Double.parseDouble((String)item.getProperty("importance")));
-                        edgeListItem.put("featureid1", item.getProperty("featureid1"));
-                        edgeListItem.put("featureid2", item.getProperty("featureid2"));
-                        edgeListItem.put("edgeType", "rface");
-
-                        edgeListArray.put(edgeListItem);
-                    }    else if (item.isType(DynamicRelationshipType.withName("gbm_1006_pairwise"))) {
-                        String startName = ((String) item.getStartNode().getProperty("name")).toUpperCase();
-                        String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
-                        if (first) {
-                            edgeJson.put("source", startName);
-                            edgeJson.put("target", endName);
-                            edgeJson.put("id", startName + endName);
-                            edgeJson.put("label", startName + "to" + endName);
-                                edgeJson.put("directed", true);
-                            first = false;
-                        }
-                        else{
-                            if(edgeJson.get("source").equals(endName)){  //bidirectional
-                                edgeJson.remove("directed");
-                                edgeJson.put("directed",false);
-                            }
-                        }
-
-
-                        if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
-                            edgeJson.put("connType", "pairwise");
-                        } else {
-                            edgeJson.remove("connType");
-                            edgeJson.put("connType", "combo");
-                        }
-
-
-                        JSONObject edgeListItem = new JSONObject();
-                        edgeListItem.put("pvalue", Double.parseDouble((String)item.getProperty("pvalue")));
-                        edgeListItem.put("correlation", Double.parseDouble((String)item.getProperty("correlation")));
-                        edgeListItem.put("featureid1", item.getProperty("featureid1"));
-                        edgeListItem.put("featureid2", item.getProperty("featureid2"));
-                        edgeListItem.put("edgeType", "pairwise");
-
-                        edgeListArray.put(edgeListItem);
-                    }
-
-                }
-
-                if (edgeJson.has("id")) {
-                    edgeJson.put("edgeList", edgeListArray);
-                    edgeJson.put("edgeLength", edgeListArray.length());
-                    if (!edgeJson.has("directed")) {
-                        edgeJson.put("directed", false);
-                    }
-                    edgeArray.put(edgeJson);
-                }
-                edgeJson = new JSONObject();
-                edgeListArray = new JSONArray();
-                first = true;
-            }
-
-            //go thru and do mutations
-            JSONArray mutationArray = new JSONArray();
-            for(String key: patientMutMap.keySet()){
-                JSONObject mutInfo = new JSONObject();
-                List<String> patients=patientMutMap.get(key);
-                mutInfo.put("gene",key);
-                JSONArray patientArray = new JSONArray();
-                for(String patient : patients){
-                    JSONObject patientJSON = new JSONObject();
-                    patientJSON.put("id",patient);
-                    patientArray.put(patientJSON);
-                }
-                mutInfo.put("patients",patientArray);
-                mutationArray.put(mutInfo);
-
-            }
-            //go thru drugMap and put into node array
+            //want the drug list in relationship order so we pick the closest ngd values to show first
             sort(sortedDrugNGDList, new RelationshipComparator());
 
-            for (int i = 0; i < sortedDrugNGDList.size() && i < 100; i++) {
-                edgeJson = new JSONObject();
-                Relationship rel = sortedDrugNGDList.get(i);
-                String startName = ((String) rel.getStartNode().getProperty("name")).toUpperCase();
-                String endName = ((String) rel.getEndNode().getProperty("name")).toUpperCase();
-                edgeJson.put("directed", false);
-                edgeJson.put("source", startName);
-                edgeJson.put("target", endName);
-                edgeJson.put("ngd", Double.parseDouble((String)rel.getProperty("ngd")));
-                edgeJson.put("cc", Integer.parseInt((String) rel.getProperty("combocount")));
-                edgeJson.put("connType", "drugNGD");
-                edgeJson.put("id", startName + endName);
-                edgeArray.put(edgeJson);
-                drugMap.put((String) rel.getStartNode().getProperty("name"), rel.getStartNode());
-            }
-            for (Node drug : drugMap.values()) {
-                JSONObject drugJson = new JSONObject();
-                drugJson.put("aliases","");
-                drugJson.put("label", drug.getProperty("name"));
-                drugJson.put("termcount", Integer.parseInt((String)drug.getProperty("termcount")));
-                drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
-                drugJson.put("drug", true);
-                geneArray.put(drugJson);
-            }
+            log.info("creating JSON");
+            //have a relMap with all the relationships between the correct nodes, now need to go thru and create json objects
+            JSONArray mutationArray = createGraphJSON(gQuery, sortedDrugNGDList, relMap, drugMap, geneArray, patientMutMap, edgeArray);
 
             log.info("done getting graph edges");
             log.info("edge array: " + edgeArray.length());
-            if(processedMap.get(((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase()) == 0 ){
+            if (processedMap.get(((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase()) == 0) {
                 //no edges for our first item in the array, set the first item to be something with edges (needed for correct layout in cytoscape web)
-                int maxCount=0;
-                String maxNode=((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase();
-                for(String nodeName: processedMap.keySet()){
-                    Integer edgeCount=processedMap.get(nodeName);
-                      if(edgeCount > maxCount){
-                          maxCount=edgeCount;
-                          maxNode=nodeName.toUpperCase();
-                      }
+                int maxCount = 0;
+                String maxNode = ((JSONObject) geneArray.get(0)).get("label").toString().toUpperCase();
+                for (String nodeName : processedMap.keySet()) {
+                    Integer edgeCount = processedMap.get(nodeName);
+                    if (edgeCount > maxCount) {
+                        maxCount = edgeCount;
+                        maxNode = nodeName.toUpperCase();
+                    }
                 }
 
                 //found maxNode, now get it from geneArray and put it in the front
                 JSONArray geneArray2 = new JSONArray();
                 JSONObject topObj = null;
-                for(int i=0; i< geneArray.length(); i++){
-                    if(((JSONObject)geneArray.get(i)).get("label").toString().toUpperCase().equals(maxNode)){
-                        topObj = (JSONObject)geneArray.get(i);
+                for (int i = 0; i < geneArray.length(); i++) {
+                    if (((JSONObject) geneArray.get(i)).get("label").toString().toUpperCase().equals(maxNode)) {
+                        topObj = (JSONObject) geneArray.get(i);
 
-                    }
-                    else
+                    } else
                         geneArray2.put(geneArray.get(i));
 
                 }
 
-                if(topObj != null){
-                    JSONObject firstObj = (JSONObject)geneArray2.get(0);
-                    geneArray2.put(0,topObj);
+                if (topObj != null) {
+                    JSONObject firstObj = (JSONObject) geneArray2.get(0);
+                    geneArray2.put(0, topObj);
                     geneArray2.put(firstObj);
                 }
-                geneArray=geneArray2;
+                geneArray = geneArray2;
             }
+
+
+            //populate json object
             json.put("nodes", geneArray);
             json.put("edges", edgeArray);
             json.put("mutations", mutationArray);
 
-            JSONArray nodesArray = getNGDNodes(bean.getNode(), bean.getAlias());
+            //retrieving all ngd nodes here...perhaps move this to a separate web service call instead.
+            log.info("retrieving all ngd nodes now...");
+            JSONArray nodesArray = getNGDNodes(gQuery.getSearchNode(), gQuery.getAlias());
             for (int i = 0; i < nodesArray.length(); i++) {
                 nodesArray.getJSONObject(i).put("graph", geneMap.containsKey((nodesArray.getJSONObject(i).get("label").toString()).toUpperCase()) ? 1 : 0);
             }
@@ -580,122 +366,358 @@ public class PubcrawlServiceController  {
         return json;
     }
 
-    private void retrieveGraphNodes(Node searchNode,  Map<String, Node> geneMap, JSONArray geneArray, boolean alias) throws JSONException {
-         List<Relationship> sortedNGDList = new ArrayList<Relationship>();
+    private JSONArray createGraphJSON(GraphQuery gQuery, List<Relationship> sortedDrugNGDList, Map<String, List<Relationship>> relMap, Map<String, Node> drugMap, JSONArray geneArray, Map<String, List<String>> patientMutMap, JSONArray edgeArray) throws JSONException {
+        JSONObject edgeJson = new JSONObject();
+        boolean first = true;
+        JSONArray edgeListArray = new JSONArray();
+        for (List<Relationship> itemList : relMap.values()) {
+            for (Relationship item : itemList) {
+                first = createRelationshipJSON(gQuery.getDataSet(),gQuery.getAlias(), edgeJson, first, edgeListArray, item);
 
-        JSONObject searchNodeJson = new JSONObject();
-        if(alias){
-            searchNodeJson.put("aliases", searchNode.getProperty("aliases", ""));
+            }
+
+            if (edgeJson.has("id")) {
+                edgeJson.put("edgeList", edgeListArray);
+                if (!edgeJson.has("directed")) {
+                    edgeJson.put("directed", false);
+                }
+                edgeArray.put(edgeJson);
+            }
+            edgeJson = new JSONObject();
+            edgeListArray = new JSONArray();
+            first = true;
         }
-        searchNodeJson.put("tf", Integer.parseInt((String)searchNode.getProperty("tf", "0")) == 1);
-        searchNodeJson.put("somatic", Integer.parseInt((String)searchNode.getProperty("somatic", "0")) == 1);
-        searchNodeJson.put("germline", Integer.parseInt((String)searchNode.getProperty("germline", "0")) == 1);
-        searchNodeJson.put("id", ((String) searchNode.getProperty("name")).toUpperCase());
-        searchNodeJson.put("label", searchNode.getProperty("name"));
-        searchNodeJson.put("ngd", 0);
-        int termcount_alias= Integer.parseInt((String) searchNode.getProperty("termcount_alias","0"));
-        int termcount = Integer.parseInt((String) searchNode.getProperty("termcount","0"));
-        searchNodeJson.put("cc", alias ? termcount_alias : termcount);
-        searchNodeJson.put("termcount", alias ? termcount_alias : termcount);
-        searchNodeJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
-        searchNodeJson.put("searchtermcount", alias ? termcount_alias : termcount);
-        searchNodeJson.put("length", Integer.parseInt((String)searchNode.getProperty("length","0")));
 
+        //go thru and do mutations
+        JSONArray mutationArray = new JSONArray();
+        for (String key : patientMutMap.keySet()) {
+            JSONObject mutInfo = new JSONObject();
+            List<String> patients = patientMutMap.get(key);
+            mutInfo.put("gene", key);
+            JSONArray patientArray = new JSONArray();
+            for (String patient : patients) {
+                JSONObject patientJSON = new JSONObject();
+                patientJSON.put("id", patient);
+                patientArray.put(patientJSON);
+            }
+            mutInfo.put("patients", patientArray);
+            mutationArray.put(mutInfo);
+
+        }
+
+        //go thru drugMap and put into node array
+        for (int i = 0; i < sortedDrugNGDList.size() && i < 100; i++) {
+            edgeJson = new JSONObject();
+            Relationship rel = sortedDrugNGDList.get(i);
+            String startName = ((String) rel.getStartNode().getProperty("name")).toUpperCase();
+            String endName = ((String) rel.getEndNode().getProperty("name")).toUpperCase();
+            edgeJson.put("directed", false);
+            edgeJson.put("source", startName);
+            edgeJson.put("target", endName);
+            edgeJson.put("ngd", Double.parseDouble((String) rel.getProperty("ngd")));
+            edgeJson.put("cc", Integer.parseInt((String) rel.getProperty("combocount")));
+            edgeJson.put("connType", "drugNGD");
+            edgeJson.put("id", startName + endName);
+            edgeArray.put(edgeJson);
+            drugMap.put((String) rel.getStartNode().getProperty("name"), rel.getStartNode());
+        }
+        for (Node drug : drugMap.values()) {
+            JSONObject drugJson = new JSONObject();
+            drugJson.put("aliases", "");
+            drugJson.put("label", drug.getProperty("name"));
+            drugJson.put("termcount", Integer.parseInt((String) drug.getProperty("termcount")));
+            drugJson.put("id", ((String) drug.getProperty("name")).toUpperCase());
+            drugJson.put("drug", true);
+            geneArray.put(drugJson);
+        }
+        return mutationArray;
+    }
+
+    private boolean createRelationshipJSON(String dataset, Boolean alias, JSONObject edgeJson, boolean first, JSONArray edgeListArray, Relationship item) throws JSONException {
+        if ((item.isType(DynamicRelationshipType.withName("ngd")) && !alias) ||
+                (item.isType(DynamicRelationshipType.withName("ngd_alias")) && alias)) {
+            edgeJson.put("ngd", Double.parseDouble((String) item.getProperty("ngd")));
+            edgeJson.put("cc", Integer.parseInt((String) item.getProperty("combocount")));
+        } else if (item.isType(DynamicRelationshipType.withName("domine"))) {
+            String hgnc1 = ((String) item.getStartNode().getProperty("name")).toUpperCase();
+            String hgnc2 = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+            if (first) {
+                edgeJson.put("source", hgnc1);
+                edgeJson.put("target", hgnc2);
+                edgeJson.put("id", hgnc1 + hgnc2);
+                edgeJson.put("label", hgnc1 + "to" + hgnc2);
+                first = false;
+            }
+
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+                edgeJson.put("connType", "domine");
+            } else {
+                edgeJson.remove("connType");
+                edgeJson.put("connType", "combo");
+            }
+
+            JSONObject edgeListItem = new JSONObject();
+            edgeListItem.put("pf1", item.getProperty("pf1"));
+            edgeListItem.put("pf2", item.getProperty("pf2"));
+            edgeListItem.put("uni1", item.getProperty("uni1"));
+            edgeListItem.put("uni2", item.getProperty("uni2"));
+            edgeListItem.put("type", item.getProperty("type"));
+            edgeListItem.put("pf1_count", Integer.parseInt((String) item.getProperty("pf1_count")));
+            edgeListItem.put("pf2_count", Integer.parseInt((String) item.getProperty("pf2_count")));
+            edgeListItem.put("edgeType", "domine");
+
+            edgeListArray.put(edgeListItem);
+
+        } else if (item.isType(DynamicRelationshipType.withName(dataset + "_rface"))) {
+            String startName = ((String) item.getStartNode().getProperty("name")).toUpperCase();
+            String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+            if (first) {
+                edgeJson.put("source", startName);
+                edgeJson.put("target", endName);
+                edgeJson.put("id", startName + endName);
+                edgeJson.put("label", startName + "to" + endName);
+                edgeJson.put("directed", true);
+                first = false;
+            } else {
+                if (edgeJson.get("source").equals(endName)) {  //bidirectional
+                    edgeJson.remove("directed");
+                    edgeJson.put("directed", false);
+                }
+            }
+
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+                edgeJson.put("connType", "rface");
+            } else {
+                edgeJson.remove("connType");
+                edgeJson.put("connType", "combo");
+            }
+
+
+            JSONObject edgeListItem = new JSONObject();
+            edgeListItem.put("pvalue", Double.parseDouble((String) item.getProperty("pvalue")));
+            edgeListItem.put("correlation", Double.parseDouble((String) item.getProperty("correlation")));
+            edgeListItem.put("importance", Double.parseDouble((String) item.getProperty("importance")));
+            edgeListItem.put("featureid1", item.getProperty("featureid1"));
+            edgeListItem.put("featureid2", item.getProperty("featureid2"));
+            edgeListItem.put("edgeType", "rface");
+
+            edgeListArray.put(edgeListItem);
+        } else if (item.isType(DynamicRelationshipType.withName(dataset + "_pairwise"))) {
+            String startName = ((String) item.getStartNode().getProperty("name")).toUpperCase();
+            String endName = ((String) item.getEndNode().getProperty("name")).toUpperCase();
+            if (first) {
+                edgeJson.put("source", startName);
+                edgeJson.put("target", endName);
+                edgeJson.put("id", startName + endName);
+                edgeJson.put("label", startName + "to" + endName);
+                edgeJson.put("directed", true);
+                first = false;
+            } else {
+                if (edgeJson.get("source").equals(endName)) {  //bidirectional
+                    edgeJson.remove("directed");
+                    edgeJson.put("directed", false);
+                }
+            }
+
+
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+                edgeJson.put("connType", "pairwise");
+            } else {
+                edgeJson.remove("connType");
+                edgeJson.put("connType", "combo");
+            }
+
+
+            JSONObject edgeListItem = new JSONObject();
+            edgeListItem.put("pvalue", Double.parseDouble((String) item.getProperty("pvalue")));
+            edgeListItem.put("correlation", Double.parseDouble((String) item.getProperty("correlation")));
+            edgeListItem.put("featureid1", item.getProperty("featureid1"));
+            edgeListItem.put("featureid2", item.getProperty("featureid2"));
+            edgeListItem.put("edgeType", "pairwise");
+
+            edgeListArray.put(edgeListItem);
+        }
+        return first;
+    }
+
+    //gets all edges for a given node and any nodes in the geneMap.
+    private int getEdgesForNode(String dataset, Boolean alias, RelationshipIndex relIdx, Map<String, Node> geneMap, Map<String, List<Relationship>> relMap, Node gene) {
+
+        int edgeCount=0;
+          /*
+        for( Relationship rel : gene.getRelationships(Direction.OUTGOING)){
+             String ngdTypeName = alias ? "ngd_alias" : "ngd";
+            if(rel.isType(DynamicRelationshipType.withName(dataset+"_pairwise"))){
+                 if (Math.abs(Float.parseFloat((String) rel.getProperty("correlation", "0"))) <= 0.4)
+                    continue;
+            }
+            if(rel.isType(DynamicRelationshipType.withName(ngdTypeName))){
+                processConnection(geneMap,relMap,geneName,rel);
+            }
+            else{
+                edgeCount = edgeCount + processConnection(geneMap,relMap, geneName, rel);
+
+            }
+        }
+
+        */
+        for(Node gene2: geneMap.values()){
+            if(!gene2.equals(gene))  {
+        IndexHits<Relationship> pairwiseHits = relIdx.get("type", dataset + "_pairwise", gene, gene2);
+        for (Relationship connection : pairwiseHits) {
+            if (Math.abs(Float.parseFloat((String) connection.getProperty("correlation", "0"))) <= 0.4)
+                continue;
+
+            edgeCount = edgeCount + processConnection(geneMap,relMap, gene, connection);
+
+        }
+
+        IndexHits<Relationship> domineHits = relIdx.get("type", "domine", gene, gene2);
+        for (Relationship connection : domineHits) {
+            edgeCount = edgeCount + processConnection(geneMap, relMap, gene, connection);
+        }
+
+        IndexHits<Relationship> rfaceHits = relIdx.get("type", dataset + "_rface", gene, gene2);
+        for (Relationship connection : rfaceHits) {
+            edgeCount = edgeCount + processConnection(geneMap, relMap, gene, connection);
+        }
+
+        String ngdTypeName = alias ? "ngd_alias" : "ngd";
+        IndexHits<Relationship> ngdHits = relIdx.get("type", ngdTypeName, gene, gene2);
+        for (Relationship connection : ngdHits) {
+            processConnection(geneMap, relMap, gene, connection);
+
+        }
+            }
+        }
+
+
+        return edgeCount;
+    }
+
+    private int processConnection(Map<String, Node> geneMap, Map<String, List<Relationship>> relMap, Node nodeItem, Relationship connection) {
+        Node endNode = connection.getOtherNode(nodeItem);
+        String nodeName = ((String) endNode.getProperty("name")).toUpperCase();
+        int edgeCount = 0;
+        String geneName = ((String)nodeItem.getProperty("name")).toUpperCase();
+        //do this relationship if the end node is in our list
+
+
+        if (geneMap.containsKey(nodeName)) {
+                edgeCount = edgeCount + 1;
+                String key = nodeName + "_" + geneName;
+                if (geneName.compareTo(nodeName) < 0) {
+                    key = geneName + "_" + nodeName;
+                }
+
+
+                if (relMap.containsKey(key)) {
+                    List<Relationship> relList = relMap.get(key);
+                    relList.add(connection);
+                    relMap.put(key, relList);
+                } else {
+                    List<Relationship> relList = new ArrayList<Relationship>();
+                    relList.add(connection);
+                    relMap.put(key, relList);
+                }
+        }
+        return edgeCount;
+    }
+
+    private void retrieveGraphNodes(Node searchNode, Map<String, Node> geneMap, JSONArray geneArray, boolean alias) throws JSONException {
+        List<Relationship> sortedNGDList = new ArrayList<Relationship>();
+        IndexManager indexMgr = graphDB.index();
+        RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
+
+        //get nodes that are related to the search node thru ngd values
+        if (alias) {
+            IndexHits<Relationship> relationshipHits = relIdx.get("type", "ngd_alias", searchNode, null);
+            for (Relationship ngdConnection : relationshipHits) {
+
+                sortedNGDList.add(ngdConnection);
+            }
+        } else {
+            IndexHits<Relationship> relationshipHits = relIdx.get("type", "ngd", searchNode, null);
+            for (Relationship ngdConnection : relationshipHits) {
+                sortedNGDList.add(ngdConnection);
+            }
+        }
+
+        //now put nodes into array and gene map
+        JSONObject searchNodeJson = createNodeJSON(searchNode, alias, null, searchNode);
         //geneArray will hold the returned list of nodes for the graph
         geneArray.put(searchNodeJson);
         //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
         geneMap.put(((String) searchNode.getProperty("name")).toUpperCase(), searchNode);
 
-        //get nodes that are related to the search node thru ngd values
-        if (alias) {
-            for (Relationship ngdConnection : searchNode.getRelationships(DynamicRelationshipType.withName("ngd_alias"), Direction.OUTGOING)) {
-                sortedNGDList.add(ngdConnection);
-            }
-        } else {
-            for (Relationship ngdConnection : searchNode.getRelationships(DynamicRelationshipType.withName("ngd"), Direction.OUTGOING)) {
-                sortedNGDList.add(ngdConnection);
-            }
-        }
-
-        //got all nodes, now sort and go thru the first 175
+        //sort and go thru the first 175
         sort(sortedNGDList, new RelationshipComparator());
-        log.info("sorted list size: " + sortedNGDList.size());
-
         for (int i = 0; i < sortedNGDList.size() && i < 175; i++) {
             Relationship ngdRelationship = sortedNGDList.get(i);
             Node gene = (ngdRelationship).getEndNode();
 
-            JSONObject geneJson = new JSONObject();
-            Node searchGene = ngdRelationship.getStartNode();
-             if(alias){
-            geneJson.put("aliases", gene.getProperty("aliases", ""));
-             }
-            geneJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
-            geneJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
-            geneJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
-            geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
-            geneJson.put("label", gene.getProperty("name"));
-            geneJson.put("ngd", ngdRelationship.getProperty("ngd"));
-            geneJson.put("cc", ngdRelationship.getProperty("combocount"));
-            termcount_alias= Integer.parseInt((String) gene.getProperty("termcount_alias","0"));
-            termcount = Integer.parseInt((String) gene.getProperty("termcount","0"));
-            geneJson.put("termcount", alias ? termcount_alias : termcount);
-            geneJson.put("searchtermcount", alias ? termcount_alias: termcount);
-            geneJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
-            geneJson.put("length", Integer.parseInt((String)gene.getProperty("length","0")));
-
-            //geneArray will hold the returned list of nodes for the graph
+            JSONObject geneJson = createNodeJSON(searchNode, alias, ngdRelationship, gene);
             geneArray.put(geneJson);
-
-            //geneMap is a map to easily lookup the nodes that are in the graph, in order to get the appropriate edges below
             geneMap.put(((String) gene.getProperty("name")).toUpperCase(), gene);
-
 
         }
     }
 
+    private JSONObject createNodeJSON(Node searchNode, boolean alias, Relationship ngdRelationship, Node gene) throws JSONException {
+        int termcount_alias;
+        int termcount;
+        int searchtermcount_alias;
+        int searchtermcount;
 
-    protected JSONObject getEdgesFromGraph(String node,String searchterm,boolean alias) {
+        JSONObject geneJson = new JSONObject();
+        if (alias) {
+            geneJson.put("aliases", gene.getProperty("aliases", ""));
+        }
+        geneJson.put("tf", Integer.parseInt((String) gene.getProperty("tf", "0")) == 1);
+        geneJson.put("somatic", Integer.parseInt((String) gene.getProperty("somatic", "0")) == 1);
+        geneJson.put("germline", Integer.parseInt((String) gene.getProperty("germline", "0")) == 1);
+        geneJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
+        geneJson.put("label", gene.getProperty("name"));
+        geneJson.put("ngd", ngdRelationship == null ? 0 : ngdRelationship.getProperty("ngd"));
+        termcount_alias = Integer.parseInt((String) gene.getProperty("termcount_alias", "0"));
+        termcount = Integer.parseInt((String) gene.getProperty("termcount", "0"));
+        int ccAlt = alias ? termcount_alias : termcount;
+        searchtermcount_alias = Integer.parseInt((String) searchNode.getProperty("termcount_alias", "0"));
+        searchtermcount = Integer.parseInt((String) searchNode.getProperty("termcount", "0"));
+        geneJson.put("cc", ngdRelationship == null ? ccAlt : ngdRelationship.getProperty("combocount"));
+        geneJson.put("termcount", alias ? termcount_alias : termcount);
+        geneJson.put("searchtermcount", alias ? searchtermcount_alias: searchtermcount);
+        geneJson.put("searchterm", ((String) searchNode.getProperty("name")).toUpperCase());
+        geneJson.put("length", Integer.parseInt((String) gene.getProperty("length", "0")));
+        return geneJson;
+    }
+
+    //retrieves all edges for a given node from within the graph query
+    protected JSONObject getEdgesFromGraph(GraphQuery gQuery) {
         JSONObject json = new JSONObject();
+
 
         try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
-            Node searchTermNode = nodeIdx.get("name", searchterm).getSingle();
+            RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
+            Node searchTermNode = nodeIdx.get("name", gQuery.getSearchNode()).getSingle();
+            Map<String, List<Relationship>> relMap = new HashMap<String, List<Relationship>>();
 
-            HashMap<String,Node> geneMap = new HashMap<String,Node>();
+            HashMap<String, Node> geneMap = new HashMap<String, Node>();
             JSONArray geneArray = new JSONArray();
-            retrieveGraphNodes(searchTermNode, geneMap, geneArray, alias);
+            retrieveGraphNodes(searchTermNode, geneMap, geneArray, gQuery.getAlias());
 
-            Node termNode = nodeIdx.get("name", node).getSingle();
+            Node termNode = nodeIdx.get("name", gQuery.getRelNode()).getSingle();
             JSONArray edgeArray = new JSONArray();
-            for (Relationship rel : termNode.getRelationships(Direction.OUTGOING)) {
-                String term2=((String)rel.getEndNode().getProperty("name")).toUpperCase();
-                if(geneMap.containsKey(term2)){
-                    JSONObject relJson = new JSONObject();
-                    relJson.put("relType",rel.getType().name());
-                    relJson.put("source", node);
-                    relJson.put("target", rel.getEndNode().getProperty("name"));
-                    for(String propKey : rel.getPropertyKeys()){
-                        relJson.put(propKey, rel.getProperty(propKey));
-                    }
 
-                    edgeArray.put(relJson);
-                }
-            }
+            getEdgesForNode(gQuery.getDataSet(), gQuery.getAlias(), relIdx, geneMap, relMap, termNode);
+            JSONObject edgeJson = new JSONObject();
+            boolean first = true;
+            for (List<Relationship> itemList : relMap.values()) {
+                for (Relationship item : itemList) {
+                    first = createRelationshipJSON(gQuery.getDataSet(), gQuery.getAlias(), edgeJson, first, edgeArray, item);
 
-             for (Relationship rel : termNode.getRelationships(Direction.INCOMING)) {
-                String term2=((String)rel.getStartNode().getProperty("name")).toUpperCase();
-                if(geneMap.containsKey(term2)){
-                    JSONObject relJson = new JSONObject();
-                    relJson.put("relType",rel.getType().name());
-                    relJson.put("source", rel.getEndNode().getProperty("name"));
-                    relJson.put("target", node);
-                    for(String propKey : rel.getPropertyKeys()){
-                        relJson.put(propKey, rel.getProperty(propKey));
-                    }
-
-                    edgeArray.put(relJson);
                 }
             }
 
@@ -707,44 +729,70 @@ public class PubcrawlServiceController  {
         return json;
     }
 
-    protected JSONObject getEdgesBetweenNodes(String node1, String node2, boolean alias){
-         JSONObject json = new JSONObject();
+    //get edges between two nodes
+    protected JSONObject getEdgesBetweenNodes(RelationshipQuery rQuery) {
+        JSONObject json = new JSONObject();
 
         try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
+            RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
 
-            Node termNode = nodeIdx.get("name", node1).getSingle();
+            Node termNode = nodeIdx.get("name", rQuery.getNode()).getSingle();
+            Node term2Node = nodeIdx.get("name", rQuery.getNode2()).getSingle();
             JSONArray edgeArray = new JSONArray();
 
-            for (Relationship rel : termNode.getRelationships(Direction.OUTGOING)) {
-                String term2=((String)rel.getEndNode().getProperty("name")).toUpperCase();
-                if(term2.equalsIgnoreCase(node2)){
-                    JSONObject relJson = new JSONObject();
-                    relJson.put("relType",rel.getType().name());
-                    relJson.put("source", node1);
-                    relJson.put("target", node2);
-                    for(String propKey : rel.getPropertyKeys()){
-                        relJson.put(propKey, rel.getProperty(propKey));
+            if (rQuery.getEdgeType() != null && !rQuery.getEdgeType().isEmpty()) {
+                if (!(termNode == null) && !(term2Node == null)) {
+
+
+                    IndexHits<Relationship> edgeTypeHits = relIdx.get("type", rQuery.getEdgeType(), termNode, term2Node);
+                    for (Relationship rel : edgeTypeHits) {
+                        JSONObject relJson = new JSONObject();
+                        relJson.put("relType", rel.getType().name());
+                        relJson.put("source", rQuery.getNode());
+                        relJson.put("target", rQuery.getNode2());
+                        for (String propKey : rel.getPropertyKeys()) {
+                            relJson.put(propKey, rel.getProperty(propKey));
+                        }
+
+                        edgeArray.put(relJson);
+
                     }
 
-                    edgeArray.put(relJson);
-                }
-            }
+                    if (!rQuery.getEdgeType().equalsIgnoreCase("ngd") && !rQuery.getEdgeType().equalsIgnoreCase("ngd_alias")) {
+                        edgeTypeHits = relIdx.get("type", rQuery.getEdgeType(), term2Node, termNode);
+                        for (Relationship rel : edgeTypeHits) {
+                            JSONObject relJson = new JSONObject();
+                            relJson.put("relType", rel.getType().name());
+                            relJson.put("source", rQuery.getNode());
+                            relJson.put("target", rQuery.getNode2());
+                            for (String propKey : rel.getPropertyKeys()) {
+                                relJson.put(propKey, rel.getProperty(propKey));
+                            }
 
-            for (Relationship rel : termNode.getRelationships(Direction.INCOMING)) {
-                String term2=((String)rel.getStartNode().getProperty("name")).toUpperCase();
-                if(term2.equalsIgnoreCase(node2)){
-                    JSONObject relJson = new JSONObject();
-                    relJson.put("relType",rel.getType().name());
-                    relJson.put("source", node2);
-                    relJson.put("target", node1);
-                    for(String propKey : rel.getPropertyKeys()){
-                        relJson.put(propKey, rel.getProperty(propKey));
+                            edgeArray.put(relJson);
+                        }
+                    }
+                }
+            } else {
+                 Map<String, Node> geneMap = new HashMap<String, Node>();
+                 Map<String, List<Relationship>> relMap = new HashMap<String, List<Relationship>>();
+                 geneMap.put(rQuery.getNode2().toUpperCase(),term2Node);
+
+                getEdgesForNode(rQuery.getDataSet(), rQuery.getAlias(), relIdx, geneMap, relMap, termNode);
+                geneMap.clear();
+                geneMap.put(rQuery.getNode().toUpperCase(),termNode);
+                getEdgesForNode(rQuery.getDataSet(), rQuery.getAlias(), relIdx, geneMap, relMap, term2Node);
+                JSONObject edgeJson = new JSONObject();
+                boolean first = true;
+                for(List<Relationship> itemList : relMap.values()){
+                    for(Relationship rel : itemList){
+                        first = createRelationshipJSON(rQuery.getDataSet(),rQuery.getAlias(),edgeJson,first,edgeArray,rel);
                     }
 
-                    edgeArray.put(relJson);
                 }
+
             }
 
             json.put("edges", edgeArray);
@@ -763,28 +811,30 @@ public class PubcrawlServiceController  {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("generalIdx");
             Node searchNode = nodeIdx.get("name", node).getSingle();
+            RelationshipIndex relIdx = indexMgr.forRelationships("genRelIdx");
 
-            DynamicRelationshipType relationshipType = DynamicRelationshipType.withName("ngd");
+            String relationshipName = "ngd";
 
             if (alias) {
-                relationshipType = DynamicRelationshipType.withName("ngd_alias");
+                relationshipName ="ngd_alias";
             }
 
+            IndexHits<Relationship> relHits = relIdx.get("type",relationshipName,searchNode,null);
             //go thru ngd relationships and create an array of all node objects that have an ngd distance from the search term
-            for (Relationship rel : searchNode.getRelationships(Direction.OUTGOING, relationshipType)) {
+            for (Relationship rel : relHits) {
                 JSONObject relJson = new JSONObject();
                 Node gene = rel.getEndNode();
 
                 relJson.put("aliases", gene.getProperty("aliases", ""));
-                relJson.put("tf", Integer.parseInt((String)gene.getProperty("tf", "0")) == 1);
-                relJson.put("somatic", Integer.parseInt((String)gene.getProperty("somatic", "0")) == 1);
-                relJson.put("germline", Integer.parseInt((String)gene.getProperty("germline", "0")) == 1);
+                relJson.put("tf", Integer.parseInt((String) gene.getProperty("tf", "0")) == 1);
+                relJson.put("somatic", Integer.parseInt((String) gene.getProperty("somatic", "0")) == 1);
+                relJson.put("germline", Integer.parseInt((String) gene.getProperty("germline", "0")) == 1);
                 relJson.put("id", ((String) gene.getProperty("name")).toUpperCase());
                 relJson.put("label", gene.getProperty("name"));
-                relJson.put("ngd", Double.parseDouble((String)rel.getProperty("ngd")));
-                relJson.put("cc", Integer.parseInt((String)rel.getProperty("combocount")));
-                int termcount_alias = Integer.parseInt((String) gene.getProperty("termcount_alias","0"));
-                int termcount = Integer.parseInt((String) gene.getProperty("termcount","0"));
+                relJson.put("ngd", Double.parseDouble((String) rel.getProperty("ngd")));
+                relJson.put("cc", Integer.parseInt((String) rel.getProperty("combocount")));
+                int termcount_alias = Integer.parseInt((String) gene.getProperty("termcount_alias", "0"));
+                int termcount = Integer.parseInt((String) gene.getProperty("termcount", "0"));
                 relJson.put("termcount", alias ? termcount_alias : termcount);
                 relJson.put("searchtermcount", alias ? termcount_alias : termcount);
                 relJson.put("searchterm", node.toUpperCase());
@@ -802,9 +852,10 @@ public class PubcrawlServiceController  {
 
     }
 
-    protected boolean insertGraphNodeData(PubcrawlNetworkBean bean) {
+    protected boolean insertGraphNodeData(boolean alias) {
         Index<Node> nodeIdx = graphDB.index().forNodes("generalIdx");
-        boolean alias = bean.getAlias();
+        Index<Relationship> relIdx = graphDB.index().forRelationships("genRelIdx");
+
         try {
             BufferedReader vertexFile = new BufferedReader(new FileReader("/local/neo4j-server/deNovo.out"));
             String vertexLine;
@@ -827,7 +878,7 @@ public class PubcrawlServiceController  {
                             n.setProperty("nodeType", "deNovo");
                             if (alias) {
                                 n.setProperty("aliases", vertexInfo[1]);
-                                n.setProperty("termcount_alias",vertexInfo[4]);
+                                n.setProperty("termcount_alias", vertexInfo[4]);
                             } else {
                                 n.setProperty("termcount", vertexInfo[2]);
                             }
@@ -836,21 +887,14 @@ public class PubcrawlServiceController  {
                             log.info("end of first");
                         } else {
                             //need to set whatever properties weren't set before
-                            if (alias && (Integer.parseInt((String)searchNode.getProperty("termcount_alias", "0")) == 0)) {
+                            if (alias) {
                                 //doing alias - and it isn't set - so we are good
                                 log.info("going to insert the alias into existing term");
                                 searchNode.setProperty("aliases", vertexInfo[1]);
                                 searchNode.setProperty("termcount_alias", vertexInfo[4]);
-                            } else if (alias && (Integer.parseInt((String)searchNode.getProperty("termcount_alias", "0")) != 0)) {
-                                //whoops - this is already set - so just return
-                                log.info("already have inserted alias for this term, do nothing");
-                                return false;
-                            } else if (!alias && (Integer.parseInt((String) searchNode.getProperty("termcount", "0")) == 0)) {
+                            } else{
                                 log.info("Doing the non-alias version, going to insert termcount");
                                 searchNode.setProperty("termcount", vertexInfo[2]);
-                            } else if (!alias && (Integer.parseInt((String)searchNode.getProperty("termcount", "0")) != 0)) {
-                                log.info("already have inserted alias for this term, do nothing");
-                                return false;
                             }
                         }
 
@@ -869,10 +913,12 @@ public class PubcrawlServiceController  {
                                 Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd_alias"));
                                 r.setProperty("ngd", vertexInfo[7]);
                                 r.setProperty("combocount", vertexInfo[6]);
+                                relIdx.add(r,"type","ngd_alias");
 
                                 Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd_alias"));
                                 r2.setProperty("ngd", vertexInfo[7]);
                                 r2.setProperty("combocount", vertexInfo[6]);
+                                relIdx.add(r,"type","ngd_alias");
                             }
                         }
                     } else {
@@ -888,10 +934,12 @@ public class PubcrawlServiceController  {
                                 Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd"));
                                 r.setProperty("ngd", vertexInfo[5]);
                                 r.setProperty("combocount", vertexInfo[4]);
+                                relIdx.add(r,"type","ngd");
 
                                 Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd"));
                                 r2.setProperty("ngd", vertexInfo[5]);
                                 r2.setProperty("combocount", vertexInfo[4]);
+                                relIdx.add(r,"type","ngd");
 
 
                             }
@@ -916,18 +964,19 @@ public class PubcrawlServiceController  {
         return true;
     }
 
-    public void cleanUp(){
-        this.srv.stop();
+    public void cleanUp() {
+      //  this.srv.stop();
         this.graphDB.shutdown();
     }
 
     public void setGraphDB(EmbeddedGraphDatabase graphDB) {
         this.graphDB = graphDB;
-        EmbeddedServerConfigurator config = new EmbeddedServerConfigurator(graphDB);
-        config.configuration().setProperty(Configurator.WEBSERVER_PORT_PROPERTY_KEY,7474);
-        config.configuration().setProperty(Configurator.WEBSERVER_ADDRESS_PROPERTY_KEY,"0.0.0.0");
-        this.srv = new WrappingNeoServerBootstrapper(graphDB, config);
-        srv.start();
+
+      //  EmbeddedServerConfigurator config = new EmbeddedServerConfigurator(graphDB);
+      //  config.configuration().setProperty(Configurator.WEBSERVER_PORT_PROPERTY_KEY, 7474);
+      //  config.configuration().setProperty(Configurator.WEBSERVER_ADDRESS_PROPERTY_KEY, "0.0.0.0");
+      //  this.srv = new WrappingNeoServerBootstrapper(graphDB, config);
+      //  srv.start();
 
     }
 }

@@ -822,7 +822,6 @@ function redraw(){
     }
 
     populateData(completeData['nodes']);
-    vis_mask.hide();
     renderModel();
 }
 

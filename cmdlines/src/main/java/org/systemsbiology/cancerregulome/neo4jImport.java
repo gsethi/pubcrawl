@@ -4,6 +4,7 @@ import org.json.*;
 
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.index.AutoIndexer;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.BatchInserterIndexProvider;
 import org.neo4j.helpers.collection.MapUtil;
@@ -125,6 +126,7 @@ public class neo4jImport {
         BatchInserterIndex nodeIdx = indexProvider.nodeIndex(nodeType+"Idx", MapUtil.stringMap("type", "exact"));
         BatchInserterIndex generalIdx = indexProvider.nodeIndex("generalIdx", MapUtil.stringMap("type", "exact"));
 
+
         try {
             BufferedReader vertexFile = new BufferedReader(new FileReader(nodeFile));
             String vertexLine = vertexFile.readLine();
@@ -166,6 +168,7 @@ public class neo4jImport {
             BatchInserterIndex relIdx = indexProvider.relationshipIndex(edgeType+"Idx", MapUtil.stringMap("type", "exact"));
             BatchInserterIndex sourceNodeIdx = indexProvider.nodeIndex(sourceNodeType+"Idx", MapUtil.stringMap("type","exact"));
             BatchInserterIndex targetNodeIdx = indexProvider.nodeIndex(targetNodeType+"Idx", MapUtil.stringMap("type","exact"));
+            BatchInserterIndex genRelIdx = indexProvider.relationshipIndex("genRelIdx",MapUtil.stringMap("type","exact"));
 
             try{
                 BufferedReader relFile = new BufferedReader(new FileReader(edgeFile));
@@ -202,8 +205,10 @@ public class neo4jImport {
                         for(int i=2; i< relInfo.length; i++){
                             properties.put(columns[i],relInfo[i]);
                         }
+                        properties.put("type",edgeType);
                         long rel = inserter.createRelationship(sourceNode, targetNode, edgeTypes.get(edgeType),properties);
-                        relIdx.add(rel, properties);
+                       // relIdx.add(rel, properties);
+                        genRelIdx.add(rel,properties);
                     }
                 }
 

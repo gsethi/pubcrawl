@@ -761,7 +761,7 @@ Ext.onReady(function() {
                             },{
             fieldLabel: 'Include Nodes',
               xtype: 'checkboxgroup',
-                items:[{boxLabel: 'Standalone',name: 'standalone-cb', id: 'standalone-cb', checked: true},
+                items:[{boxLabel: 'Orphan',name: 'standalone-cb', id: 'standalone-cb', checked: false},
                     {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: true}]
               },{
             fieldLabel: 'Include Edges',
@@ -1107,7 +1107,7 @@ var patientTablePanel = new Ext.Panel({
                     name : 'deNovoTerms-panel',
                     title : 'Completed Denovo Search Terms',
                     monitorResize : true,
-                    autoScroll : false,
+                    autoScroll : true,
                     flex: 4,
                     collapsible : false,
                     items : [
@@ -1238,8 +1238,8 @@ var patientTablePanel = new Ext.Panel({
                 autoScroll: true,
                 collapsible: true,
                 deferredRender: false,
-                tbar:[ '->',{text: 'Redraw',width:40, ctCls:'rightBtn',handler: function(){ redraw();}},{xtype: 'tbspacer'},
-                    {text: 'Reset', width:40, ctCls: 'rightBtn',handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
+                tbar:[ '->',{text: 'Redraw',width:40, id: 'redrawBtn', ctCls:'rightBtn', disabled: true, handler: function(){ redraw();}},{xtype: 'tbspacer'},
+                    {text: 'Reset', width:40, id: 'resetBtn', ctCls: 'rightBtn', disabled: true, handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
               ],
                 items:[configPanel, patientPanel,nodeFilterPanel,edgeFilterPanel]
             });

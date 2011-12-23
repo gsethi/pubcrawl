@@ -61,7 +61,7 @@ public class SingleCountCrawl {
             SingleCountItem totalResults = null;
             SolrQuery query = new SolrQuery();
             query.setQuery("*:*");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 
             for(int i=0; i< term1Array.size(); i++){
@@ -292,8 +292,8 @@ public class SingleCountCrawl {
 
                     while (rs.next()) {
                         int newtermId = rs.getInt(1);
-                        String termName = rs.getString(2);
-                        String aliasName = rs.getString(3);
+                        String termName = rs.getString(2).trim();
+                        String aliasName = rs.getString(3).trim();
 
                         if (newtermId != termId) {
                             //starting new term to concatenate, put old one in the list
@@ -364,7 +364,7 @@ public class SingleCountCrawl {
         String[] finalItems = new String[termItems.length];
 
         for (int i = 0; i < termItems.length; i++) {
-            finalItems[i] = replace(termItems[i], "\"", "\\\"").toLowerCase();
+            finalItems[i] = replace(termItems[i], "\"", "\\\"").trim().toLowerCase();
         }
         return finalItems;
     }

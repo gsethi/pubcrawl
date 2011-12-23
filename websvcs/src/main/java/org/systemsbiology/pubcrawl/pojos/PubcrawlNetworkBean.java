@@ -1,5 +1,6 @@
 package org.systemsbiology.pubcrawl.pojos;
 
+import groovy.sql.DataSet;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ public class PubcrawlNetworkBean {
     private static final Logger log = Logger.getLogger(PubcrawlNetworkBean.class.getName());
 
     private final String uri;
+    private final String dataSet;
     private final String node;
     private final Boolean alias;
 
@@ -47,6 +49,8 @@ public class PubcrawlNetworkBean {
                 this.alias = false;
             }
         }
+
+        this.dataSet = request.getParameter("dataset");
     }
 
     public String getUri() {
@@ -60,5 +64,9 @@ public class PubcrawlNetworkBean {
 
     public Boolean getAlias() {
         return alias;
+    }
+
+    public String getDataSet(){
+        return dataSet;
     }
 }

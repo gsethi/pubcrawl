@@ -64,7 +64,7 @@ public class Pubcrawl {
             NGDItem totalResults = null;
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 
             for(int i=0; i< term1Array.size(); i++){
@@ -145,7 +145,7 @@ public class Pubcrawl {
                 double term2_log = Math.log10(this.term2count);
                 double combo_log = Math.log10(this.combocount);
 
-                this.ngd = (Math.max(term1_log, term2_log) - combo_log) / (Math.log10(10289743) - Math.min(term1_log, term2_log));
+                this.ngd = (Math.max(term1_log, term2_log) - combo_log) / (Math.log10(10813257) - Math.min(term1_log, term2_log));
             }
 
         }
@@ -269,7 +269,7 @@ public class Pubcrawl {
             jdbcTemplate.query(sql, new ResultSetExtractor() {
                 public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
                     while (rs.next()) {
-                        String geneName = rs.getString(1);
+                        String geneName = rs.getString(1).trim();
                         int count = rs.getInt(2);
                         singleCountMap.put(geneName.toLowerCase(), count);
                         if (count > 0) {
@@ -321,7 +321,7 @@ public class Pubcrawl {
             FileReader inputReader = new FileReader(inputFileName);
             BufferedReader bufReader = new BufferedReader(inputReader);
             String fileSearchTerm = bufReader.readLine();
-            SearchTermAndList searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, true);
+            SearchTermAndList searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, false);
             Long searchTermCount = getTermCount(server, singleCountMap, searchTermArray, filterGrayList, keepGrayList);
 
             //do this once with a lower amount of threads, in case we are running on a server where new caching is taking place
@@ -348,7 +348,7 @@ public class Pubcrawl {
             pool = Executors.newFixedThreadPool(32);
             fileSearchTerm = bufReader.readLine();
             while (fileSearchTerm != null) {
-                searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, true);
+                searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, false);
                 searchTermCount = getTermCount(server, singleCountMap, searchTermArray, filterGrayList, keepGrayList);
                 secondTime = currentTimeMillis();
                 for (String secondTerm : term2List) {
@@ -392,7 +392,7 @@ public class Pubcrawl {
             //didn't find it in map, so need to go get count
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
-            query.addFilterQuery("+pub_date_year:[1991 TO 2011]");
+            query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 
             for(int i=0; i< searchTerms.size(); i++){
@@ -478,7 +478,7 @@ public class Pubcrawl {
 
         String[] finalItems = new String[termItems.length];
         for (int i = 0; i < termItems.length; i++) {
-            finalItems[i] = replace(termItems[i], "\"", "\\\"").toLowerCase();
+            finalItems[i] = replace(termItems[i], "\"", "\\\"").trim().toLowerCase();
         }
         return finalItems;
     }

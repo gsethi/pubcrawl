@@ -115,6 +115,8 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
                     Ext.getCmp('nodeFilterPanel').enable();
                     Ext.getCmp('edgeFilterPanel').enable();
+                    Ext.getCmp('resetBtn').enable();
+                    Ext.getCmp('redrawBtn').enable();
                      model_def['mutations'] = json.mutations;
                     Ext.getCmp('domainOnly-cb').setValue(true);
                     Ext.getCmp('domainOnly-cb').enable();
@@ -125,7 +127,7 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('showDrugs-cb').enable();
                     Ext.getCmp('showDrugs-cb').setValue(true);
                     Ext.getCmp('standalone-cb').enable();
-                    Ext.getCmp('standalone-cb').setValue(true);
+                    Ext.getCmp('standalone-cb').setValue(false);
                     filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
                     Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),Ext.getCmp('pairwiseOnly-cb').getValue(),json.nodes,json.edges);
                     query_window.hide();
