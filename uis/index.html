@@ -1,0 +1,79 @@
+d3 string <html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Pubcrawl</title>
+    <link rel="stylesheet" type="text/css" href="https://informatics-apps.systemsbiology.net/ext-js-3.3.1/resources/css/ext-all.css"/>
+    <link rel="stylesheet" type="text/css" href="https://informatics-apps.systemsbiology.net/ext-js-3.3.1/resources/css/xtheme-slate.css"/>
+
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/ext-js-3.3.1/adapter/ext/ext-base.js"></script>
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/ext-js-3.3.1/ext-all.js"></script>
+
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/google-code.js"></script>
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/protovis-r3.3.1.js"></script>
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/visquick-utils.js"></script>
+    <script type="text/javascript" src="http://vis.systemsbiology.net/js/d3/d3.js"></script>
+
+    <script type="text/javascript" src="js/data_render_v2.js"></script>
+    <script type="text/javascript" src="js/data_retrieval_v2.js"></script>
+    <script type="text/javascript" src="js/flexscrollBar.js"></script>
+
+    <!-- JSON support for IE (needed to use JS API) -->
+    <script type="text/javascript" src="http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/js/min/json2.min.js"></script>
+    <!-- Flash embedding utility (needed to embed Cytoscape Web) -->
+    <script type="text/javascript" src="http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/js/min/AC_OETags.min.js"></script>
+    <!-- Cytoscape Web JS API (needed to reference org.cytoscapeweb.Visualization) -->
+    <script type="text/javascript" src="http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/js/min/cytoscapeweb.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/stylesheet.css"/>
+</head>
+<body>
+
+<!--[if lt IE 9]>
+<script type="text/javascript"
+        src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+
+<style>
+    .chromeFrameInstallDefaultStyle {
+        width: 100%; /* default is 800px */
+        border: 5px solid blue;
+    }
+</style>
+<div id="notice"></div>
+<div id="prompt"></div>
+
+<script>
+    function displayGCFText() {
+        document.getElementById('notice').innerHTML = "Internet Explorer has been detected." +
+                "Please install the Google Chrome Frame if it is not already installed.  This will enable" +
+                "HTML5 features necessary for the web application.<p>" +
+                "If the install panel does not appear, please enable Compatibility mode in your browser and reload this page.";
+    }
+    ;
+    // The conditional ensures that this code will only execute in IE,
+    // Therefore we can use the IE-specific attachEvent without worry
+    window.attachEvent("onload", function() {
+        CFInstall.check({
+            mode: "inline", // the default
+            node: "prompt"
+        });
+    });
+</script>
+<![endif]-->
+<script>
+var vis;
+var vis_mask;
+var vis_ready=false;
+var firstload=true;
+var dataTable_window,dataTable_window_mask;
+var details_window,details_window_mask;
+
+</script>
+<script type="text/javascript" src="js/viewport.js"></script>
+
+<iframe id="frame" height=0 width=0></iframe>
+<div id="home"></div>
+<div id="cytoscapeweb"></div>
+<div id="msgWindow"></div>
+</body>
+</html>
