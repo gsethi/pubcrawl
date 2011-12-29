@@ -368,9 +368,10 @@ public class PubcrawlServiceController {
 
     private JSONArray createGraphJSON(GraphQuery gQuery, List<Relationship> sortedDrugNGDList, Map<String, List<Relationship>> relMap, Map<String, Node> drugMap, JSONArray geneArray, Map<String, List<String>> patientMutMap, JSONArray edgeArray) throws JSONException {
         JSONObject edgeJson = new JSONObject();
-        boolean first = true;
+
         JSONArray edgeListArray = new JSONArray();
         for (List<Relationship> itemList : relMap.values()) {
+            boolean first = true;
             for (Relationship item : itemList) {
                 first = createRelationshipJSON(gQuery.getDataSet(),gQuery.getAlias(), edgeJson, first, edgeListArray, item);
 
@@ -385,7 +386,6 @@ public class PubcrawlServiceController {
             }
             edgeJson = new JSONObject();
             edgeListArray = new JSONArray();
-            first = true;
         }
 
         //go thru and do mutations
@@ -449,7 +449,7 @@ public class PubcrawlServiceController {
                 first = false;
             }
 
-            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType")) || edgeJson.getString("connType").equals("domine")) {
                 edgeJson.put("connType", "domine");
             } else {
                 edgeJson.remove("connType");
@@ -485,7 +485,7 @@ public class PubcrawlServiceController {
                 }
             }
 
-            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType")) || edgeJson.getString("connType").equals("rface")) {
                 edgeJson.put("connType", "rface");
             } else {
                 edgeJson.remove("connType");
@@ -520,7 +520,7 @@ public class PubcrawlServiceController {
             }
 
 
-            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType"))) {
+            if (!edgeJson.has("connType") || isEmpty(edgeJson.getString("connType")) || edgeJson.getString("connType").equals("pairwise")) {
                 edgeJson.put("connType", "pairwise");
             } else {
                 edgeJson.remove("connType");
@@ -713,8 +713,8 @@ public class PubcrawlServiceController {
 
             getEdgesForNode(gQuery.getDataSet(), gQuery.getAlias(), relIdx, geneMap, relMap, termNode);
             JSONObject edgeJson = new JSONObject();
-            boolean first = true;
             for (List<Relationship> itemList : relMap.values()) {
+                boolean first = true;
                 for (Relationship item : itemList) {
                     first = createRelationshipJSON(gQuery.getDataSet(), gQuery.getAlias(), edgeJson, first, edgeArray, item);
 
@@ -741,6 +741,7 @@ public class PubcrawlServiceController {
             Node termNode = nodeIdx.get("name", rQuery.getNode()).getSingle();
             Node term2Node = nodeIdx.get("name", rQuery.getNode2()).getSingle();
             JSONArray edgeArray = new JSONArray();
+            JSONArray edgeListArray = new JSONArray();
 
             if (rQuery.getEdgeType() != null && !rQuery.getEdgeType().isEmpty()) {
                 if (!(termNode == null) && !(term2Node == null)) {
@@ -785,11 +786,19 @@ public class PubcrawlServiceController {
                 geneMap.put(rQuery.getNode().toUpperCase(),termNode);
                 getEdgesForNode(rQuery.getDataSet(), rQuery.getAlias(), relIdx, geneMap, relMap, term2Node);
                 JSONObject edgeJson = new JSONObject();
-                boolean first = true;
                 for(List<Relationship> itemList : relMap.values()){
+                    boolean first = true;
                     for(Relationship rel : itemList){
-                        first = createRelationshipJSON(rQuery.getDataSet(),rQuery.getAlias(),edgeJson,first,edgeArray,rel);
+                        first = createRelationshipJSON(rQuery.getDataSet(),rQuery.getAlias(),edgeJson,first,edgeListArray,rel);
                     }
+
+                    if (edgeJson.has("id")) {
+                        edgeJson.put("edgeList", edgeListArray);
+                        edgeArray.put(edgeJson);
+                    }
+
+                    edgeJson = new JSONObject();
+                    edgeListArray = new JSONArray();
 
                 }
 

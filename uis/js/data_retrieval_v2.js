@@ -17,12 +17,26 @@ var edgeNGDPlotData;
 var ccPlotData;
 var domainCountData;
 var nodeNGDScrollUpdate;
+var nodeNGDStartValueUpdate;
+var nodeNGDEndValueUpdate;
 var edgeNGDScrollUpdate;
+var edgeNGDStartValueUpdate;
+var edgeNGDEndValueUpdate;
 var nodeCCScrollUpdate;
+var nodeCCStartValueUpdate;
+var nodeCCEndValueUpdate;
 var edgeCCScrollUpdate;
+var edgeCCStartValueUpdate;
+var edgeCCEndValueUpdate;
 var edgeDCScrollUpdate;
+var edgeDCStartValueUpdate;
+var edgeDCEndValueUpdate;
 var edgeImportanceScrollUpdate;
+var edgeImportanceStartValueUpdate;
+var edgeImportanceEndValueUpdate;
 var edgeCorrelationScrollUpdate;
+var edgeCorrelationStartValueUpdate;
+var edgeCorrelationEndValueUpdate;
 var dataSet;
 
 
@@ -83,11 +97,13 @@ function loadModel(term1, alias,deNovo, callback) {
     model_def['alias'] = alias;
     model_def['deNovo'] = deNovo;
     urlString="/pubcrawl_svc/graph/";
+    Ext.Ajax.timeout = 60000;
     Ext.Ajax.request({
             method:"GET",
             url: urlString + term1.toLowerCase(),
             params: {
-                alias: alias
+                alias: alias,
+                dataset: dataSet
             },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);

@@ -129,7 +129,7 @@ vq.FlexScrollBar.prototype.render = function() {
         var startX = pv.max( [ pv.min(x.domain()), minX] );
         var halfX = (endX - startX) / 2;
         var scaleX = 2 * halfX / scrollWidth;
-        return { x: new Number(d.x *scaleX + startX).toFixed(3)  , dx : (isWindowWidthFixed) ? Math.round(windowWidth * scaleX) : ( new Number(d.dx * scaleX).toFixed(3))   };
+        return { x: new Number(d.x *scaleX + startX).toFixed(4)  , dx : (isWindowWidthFixed) ? Math.round(windowWidth * scaleX) : ( new Number(d.dx * scaleX).toFixed(4))   };
     };
 
     var translateAndScale = function(d) {

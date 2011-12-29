@@ -1,8 +1,10 @@
 
 function updateCCRange(start,width){
     if(!nodeCCScrollUpdate){
-      Ext.getCmp('node_cc_start').setValue(new Number(start).toFixed());
-      Ext.getCmp('node_cc_end').setValue(new Number(start+width).toFixed());
+        nodeCCStartValueUpdate=true;
+        nodeCCEndValueUpdate=true;
+      Ext.getCmp('node_cc_start').setValue(start);
+      Ext.getCmp('node_cc_end').setValue(new Number(start+width).toFixed(0));
     }
     else{
         nodeCCScrollUpdate=false;
@@ -15,6 +17,8 @@ function updateCCRange(start,width){
 
 function updateNGDRange(start,width){
     if(!nodeNGDScrollUpdate){
+        nodeNGDStartValueUpdate=true;
+        nodeNGDEndValueUpdate=true;
       Ext.getCmp('node_ngd_start').setValue(start);
       Ext.getCmp('node_ngd_end').setValue(new Number(start+width).toFixed(2));
     }
@@ -29,6 +33,8 @@ function updateNGDRange(start,width){
 
 function updateEdgeNGDRange(start,width){
     if(!edgeNGDScrollUpdate){
+        edgeNGDStartValueUpdate=true;
+        edgeNGDEndValueUpdate=true;
       Ext.getCmp('edge_ngd_start').setValue(start);
       Ext.getCmp('edge_ngd_end').setValue(new Number(start+width).toFixed(2));
     }
@@ -44,8 +50,10 @@ function updateEdgeNGDRange(start,width){
 
 function updateEdgeCCRange(start,width){
     if(!edgeCCScrollUpdate){
-      Ext.getCmp('edge_cc_start').setValue(new Number(start).toFixed());
-      Ext.getCmp('edge_cc_end').setValue(new Number(start+width).toFixed());
+        edgeCCEndValueUpdate=true;
+        edgeCCStartValueUpdate=true;
+      Ext.getCmp('edge_cc_start').setValue(start);
+      Ext.getCmp('edge_cc_end').setValue(new Number(start+width).toFixed(0));
     }
     else{
         edgeCCScrollUpdate=false;
@@ -59,8 +67,10 @@ function updateEdgeCCRange(start,width){
 
 function updateEdgeImportanceRange(start,width){
     if(!edgeImportanceScrollUpdate){
+      edgeImportanceStartValueUpdate=true;
+        edgeImportanceEndValueUpdate=true;
       Ext.getCmp('edge_importance_start').setValue(start);
-      Ext.getCmp('edge_importance_end').setValue(new Number(start+width).toFixed(3));
+      Ext.getCmp('edge_importance_end').setValue(new Number(start+width).toFixed(4));
     }
     else{
         edgeImportanceScrollUpdate=false;
@@ -74,6 +84,8 @@ function updateEdgeImportanceRange(start,width){
 
 function updateEdgeCorrelationRange(start,width){
     if(!edgeCorrelationScrollUpdate){
+        edgeCorrelationStartValueUpdate=true;
+        edgeCorrelationEndValueUpdate=true;
       Ext.getCmp('edge_correlation_start').setValue(start);
       Ext.getCmp('edge_correlation_end').setValue(new Number(start+width).toFixed(2));
     }
@@ -89,10 +101,11 @@ function updateEdgeCorrelationRange(start,width){
 
 function updateDCRange(start,width){
     if(!edgeDCScrollUpdate){
-    var starta=Math.round(start);
-    var enda = Math.round(width)+starta;
-    Ext.getCmp('f1_dc_start').setValue(starta);
-      Ext.getCmp('f1_dc_end').setValue(enda);
+        edgeDCStartValueUpdate=true;
+        edgeDCEndValueUpdate=true;
+
+    Ext.getCmp('f1_dc_start').setValue(start);
+      Ext.getCmp('f1_dc_end').setValue(new Number(start+width).toFixed(0));
     }
     else{
         edgeDCScrollUpdate=false;
@@ -716,21 +729,15 @@ function renderModel() {
 
 function retrieveEdgeDetails(node1,node2,type){
     if(type == "edge"){
-        nodevar=node2.toLowerCase();
-        searchtermvar="";
+        requesturl = "/pubcrawl_svc/relationships/" + node1.toLowerCase();
     }
     else{
-        searchtermvar=node2.toLowerCase();
-        nodevar="";
+        requesturl = "/pubcrawl_svc/graph/" + node1.toLowerCase();
     }
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl_svc/relationships/" + node1.toLowerCase(),
-            params: {
-                    node: nodevar,
-                    searchterm: searchtermvar,
-                alias: model_def['alias']
-            },
+            url: requesturl + "/node/" + node2.toLowerCase(),
+            params: { node: node2.toLowerCase(), alias: model_def['alias'], dataset: dataSet},
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
                   var selectedDomineEdgeData=[];
@@ -741,17 +748,18 @@ function retrieveEdgeDetails(node1,node2,type){
                 }
                 else{
                      for(var i=0; i < json.edges.length; i++){
-
-                         if(json.edges[i].relType == "domine"){
-                      selectedDomineEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].pf1, pf2: json.edges[i].pf2,
-                          uni1:json.edges[i].uni1,uni2:json.edges[i].uni2,type:json.edges[i].type,pf1_count:json.edges[i].pf1_count,pf2_count:json.edges[i].pf2_count});
+                         for(var j=0; j< json.edges[i].edgeList.length; j++){
+                         if(json.edges[i].edgeList[j].edgeType == "domine"){
+                      selectedDomineEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].edgeList[j].pf1, pf2: json.edges[i].edgeList[j].pf2,
+                          uni1:json.edges[i].edgeList[j].uni1,uni2:json.edges[i].edgeList[j].uni2,type:json.edges[i].edgeList[j].type,pf1_count:json.edges[i].edgeList[j].pf1_count,pf2_count:json.edges[i].edgeList[j].pf2_count});
                          }
-                         if(json.edges[i].relType.indexOf("rface") > -1){
-                            selectedRFACEEdgeData.push( {featureid1: json.edges[i].featureid1, featureid2: json.edges[i].featureid2,pvalue: json.edges[i].pvalue, correlation: json.edges[i].correlation,
-                          importance:json.edges[i].importance});
+                         if(json.edges[i].edgeList[j].edgeType.indexOf("rface") > -1){
+                            selectedRFACEEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target, featureid1: json.edges[i].edgeList[j].featureid1, featureid2: json.edges[i].edgeList[j].featureid2,pvalue: json.edges[i].edgeList[j].pvalue, correlation: json.edges[i].edgeList[j].correlation,
+                          importance:json.edges[i].edgeList[j].importance});
                          }
-                         if(json.edges[i].relType.indexOf("pairwise") > -1){
-                            selectedPairwiseEdgeData.push( {featureid1: json.edges[i].featureid1, featureid2: json.edges[i].featureid2,pvalue: json.edges[i].pvalue, correlation: json.edges[i].correlation});
+                         if(json.edges[i].edgeList[j].edgeType.indexOf("pairwise") > -1){
+                            selectedPairwiseEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target, featureid1: json.edges[i].edgeList[j].featureid1, featureid2: json.edges[i].edgeList[j].featureid2,pvalue: json.edges[i].edgeList[j].pvalue, correlation: json.edges[i].edgeList[j].correlation});
+                         }
                          }
                      }
                 }

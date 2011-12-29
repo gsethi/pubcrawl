@@ -39,11 +39,16 @@ Ext.onReady(function() {
                                      listeners:{
                                     valid: function(field){
                                         if(nodeNGDScroll != undefined){
+                                            if(nodeNGDStartValueUpdate != undefined && !nodeNGDStartValueUpdate){
                                         nodeNGDScrollUpdate=true;
                                         istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
                                         var end = iend-istart;
                                         nodeNGDScroll.set_position(istart, end);
+                                            }
+                                            else{
+                                                nodeNGDStartValueUpdate=false;
+                                            }
                                         }
                                 }}
                                 }]
@@ -72,11 +77,15 @@ Ext.onReady(function() {
                                      listeners:{
                                     valid: function(field){
                                         if(nodeNGDScroll != undefined){
+                                            if(nodeNGDEndValueUpdate != undefined && !nodeNGDEndValueUpdate){
                                         nodeNGDScrollUpdate=true;
                                         istart= parseFloat(Ext.getCmp('node_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('node_ngd_end').getValue());
                                         var end = iend-istart;
                                         nodeNGDScroll.set_position(istart, end);
+                                            }else{
+                                                nodeNGDEndValueUpdate=false;
+                                            }
                                         }
                                 }}
                                 }]
@@ -120,11 +129,15 @@ Ext.onReady(function() {
                                      listeners:{
                                     valid: function(field){
                                         if(edgeNGDScroll != undefined){
+                                            if(edgeNGDStartValueUpdate != undefined && !edgeNGDStartValueUpdate){
                                         edgeNGDScrollUpdate=true;
                                         istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
                                         var end = iend-istart;
                                         edgeNGDScroll.set_position(istart, end);
+                                            }else{
+                                                edgeNGDStartValueUpdate=false;
+                                            }
                                         }
                                 }}
                                 }]
@@ -153,11 +166,15 @@ Ext.onReady(function() {
                                      listeners:{
                                     valid: function(field){
                                         if(edgeNGDScroll != undefined){
+                                            if(edgeNGDEndValueUpdate != undefined && !edgeNGDEndValueUpdate){
                                         edgeNGDScrollUpdate=true;
                                         istart= parseFloat(Ext.getCmp('edge_ngd_start').getValue());
                                         iend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
                                         var end = iend-istart;
                                         edgeNGDScroll.set_position(istart, end);
+                                            }else{
+                                                edgeNGDEndValueUpdate=false;
+                                            }
                                         }
                                 }}
                                 }]
@@ -181,7 +198,7 @@ Ext.onReady(function() {
                                    id: 'edge_importance_start',
                                    name: 'edge_importance_start',
                                    allowNegative: false,
-                                   decimalPrecision: 3,
+                                   decimalPrecision: 4,
                                    invalidText: 'This value is not valid.',
                                    tabIndex: 2,
                                    validateOnBlur: true,
@@ -200,11 +217,17 @@ Ext.onReady(function() {
                                     listeners:{
                                    valid: function(field){
                                        if(edgeImportanceScroll != undefined){
+                                           if(edgeImportanceStartValueUpdate != undefined && !edgeImportanceStartValueUpdate){
                                        edgeImportanceScrollUpdate=true;
+
                                        istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
                                        iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
                                        var end = iend-istart;
                                        edgeImportanceScroll.set_position(istart, end);
+                                           }
+                                           else{
+                                               edgeImportanceStartValueUpdate=false;
+                                           }
                                        }
                                }}
                                }]
@@ -214,7 +237,7 @@ Ext.onReady(function() {
                                    id: 'edge_importance_end',
                                    name: 'edge_importance_end',
                                    allowNegative: false,
-                                   decimalPrecision: 3,
+                                   decimalPrecision: 4,
                                    invalidText: 'This value is not valid.',
                                    tabIndex: 2,
                                    validateOnBlur: true,
@@ -233,11 +256,16 @@ Ext.onReady(function() {
                                     listeners:{
                                    valid: function(field){
                                        if(edgeImportanceScroll != undefined){
+                                           if(edgeImportanceEndValueUpdate != undefined && !edgeImportanceEndValueUpdate){
                                        edgeImportanceScrollUpdate=true;
                                        istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
                                        iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
                                        var end = iend-istart;
                                        edgeImportanceScroll.set_position(istart, end);
+                                       }
+                                           else{
+                                               edgeImportanceEndValueUpdate=false;
+                                           }
                                        }
                                }}
                                }]
@@ -280,11 +308,15 @@ Ext.onReady(function() {
                                        listeners:{
                                       valid: function(field){
                                           if(edgeCorrelationScroll != undefined){
+                                              if(edgeCorrelationStartValueUpdate != undefined && !edgeCorrelationStartValueUpdate){
                                           edgeCorrelationScrollUpdate=true;
                                           istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
                                           iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
                                           var end = iend-istart;
                                           edgeCorrelationScroll.set_position(istart, end);
+                                              }else{
+                                                  edgeCorrelationStartValueUpdate=false;
+                                              }
                                           }
                                   }}
                                   }]
@@ -313,11 +345,15 @@ Ext.onReady(function() {
                                        listeners:{
                                       valid: function(field){
                                           if(edgeCorrelationScroll != undefined){
+                                              if(edgeCorrelationEndValueUpdate != undefined && !edgeCorrelationEndValueUpdate){
                                           edgeCorrelationScrollUpdate=true;
                                           istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
                                           iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
                                           var end = iend-istart;
                                           edgeCorrelationScroll.set_position(istart, end);
+                                              }else{
+                                                  edgeCorrelationEndValueUpdate=false;
+                                              }
                                           }
                                   }}
                                   }]
@@ -360,11 +396,15 @@ Ext.onReady(function() {
                                         listeners:{
                                             valid: function(field){
                                                 if(nodeCCScroll != undefined){
+                                                    if(nodeCCStartValueUpdate != undefined && !nodeCCStartValueUpdate){
                                                     nodeCCScrollUpdate=true;
                                                     istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
                                                     iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
                                                     var end = iend-istart;
                                                     nodeCCScroll.set_position(istart, end);
+                                                    }else{
+                                                        nodeCCStartValueUpdate=false;
+                                                    }
                                                 }
                                         }}
                                     }]
@@ -393,11 +433,15 @@ Ext.onReady(function() {
                                         listeners:{
                                             valid: function(field){
                                                 if(nodeCCScroll != undefined){
+                                                    if(nodeCCEndValueUpdate != undefined && !nodeCCEndValueUpdate){
                                                     nodeCCScrollUpdate=true;
                                                     istart= parseFloat(Ext.getCmp('node_cc_start').getValue());
                                                     iend = parseFloat(Ext.getCmp('node_cc_end').getValue());
                                                     var end = iend-istart;
                                                     nodeCCScroll.set_position(istart, end);
+                                                    }else{
+                                                        nodeCCEndValueUpdate=false;
+                                                    }
                                                 }
                                         }}
                                     }]
@@ -440,11 +484,15 @@ Ext.onReady(function() {
                                         listeners:{
                                             valid: function(field){
                                                 if(edgeCCScroll != undefined){
+                                                    if(edgeCCStartValueUpdate != undefined && !edgeCCStartValueUpdate){
                                                     edgeCCScrollUpdate=true;
                                                     istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
                                                     iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
                                                     var end = iend-istart;
                                                     edgeCCScroll.set_position(istart, end);
+                                                    }else{
+                                                        edgeCCStartValueUpdate=false;
+                                                    }
                                                 }
                                         }}
                                       }]
@@ -473,11 +521,15 @@ Ext.onReady(function() {
                                             listeners:{
                                                 valid: function(field){
                                                     if(edgeCCScroll != undefined){
+                                                        if(edgeCCStartValueUpdate != undefined && !edgeCCStartValueUpdate){
                                                         edgeCCScrollUpdate=true;
                                                         istart= parseFloat(Ext.getCmp('edge_cc_start').getValue());
                                                         iend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
                                                         var end = iend-istart;
                                                         edgeCCScroll.set_position(istart, end);
+                                                        }else{
+                                                            edgeCCStartValueUpdate=false;
+                                                        }
                                                     }
                                             }}
                                       }]
@@ -521,11 +573,15 @@ Ext.onReady(function() {
                                     listeners:{
                                                 valid: function(field){
                                                     if(edgeDCScroll != undefined){
+                                                        if(edgeDCStartValueUpdate != undefined && !edgeDCStartValueUpdate){
                                                         edgeDCScrollUpdate=true;
                                                         istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
                                                         iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
                                                         var end = iend-istart;
                                                         edgeDCScroll.set_position(istart, end);
+                                                        }else{
+                                                            edgeDCStartValueUpdate=false;
+                                                        }
                                                     }
                                             }}
                                 }]
@@ -554,11 +610,15 @@ Ext.onReady(function() {
                                     listeners:{
                                                 valid: function(field){
                                                     if(edgeDCScroll != undefined){
+                                                        if(edgeDCEndValueUpdate != undefined && !edgeDCEndValueUpdate){
                                                         edgeDCScrollUpdate=true;
                                                         istart= parseFloat(Ext.getCmp('f1_dc_start').getValue());
                                                         iend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
                                                         var end = iend-istart;
                                                         edgeDCScroll.set_position(istart, end);
+                                                        }else{
+                                                            edgeDCEndValueUpdate=false;
+                                                        }
                                                     }
                                             }}
                                 }]
@@ -878,7 +938,7 @@ var patientTablePanel = new Ext.Panel({
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    renderDetailsWindow(record.get('term1'),model_def['term']);
+                                    renderDetailsWindow(record.get('term1'),model_def['term'],"node");
                                 }
                             }
                         }]
