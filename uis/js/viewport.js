@@ -742,7 +742,7 @@ Ext.onReady(function() {
                             labelSeparator: '',
                             defaultType: 'textfield',
                             autoHeight:true,
-                            title: 'RF-ACE Importance',
+                            title: 'RF-ACE Importance  10^-3',
                             items:[edgeImportanceFields,
                                 {xtype: 'panel', id: 'edge-importance', x:20, y:20}
                             ]
@@ -789,7 +789,11 @@ Ext.onReady(function() {
                             xtype: 'displayfield',
                             id: 'alias-dfield',
                             name: 'alias-dfield',
-                            fieldLabel: 'Use Alias:'},
+                            fieldLabel: 'Use Alias:'},{
+                            xtype: 'displayfield',
+                            id: 'dataset-dfield',
+                            name: 'dataset-dfield',
+                            fieldLabel: 'Dataset:'},
                             {
                                 xtype: 'combo',
                                 id: 'layout-config',
@@ -859,7 +863,7 @@ var patientTablePanel = new Ext.Panel({
                             cm : new Ext.grid.ColumnModel({
                                 columns: [  sm,
                                     { header: "Patient Id", width: 100,  id:'patientId', dataIndex:'patientId',groupName:'Node'},
-                                    { header: "Cancer", width:75 , id:'cancer', dataIndex:'cancer',groupName:'Node'},
+                                    { header: "Dataset", width:75 , id:'dataset', dataIndex:'dataset',groupName:'Node'},
                                     { header: "Subtype", width: 100, id: 'subtype', dataIndex:'subtype',groupName:'Node'}
                                 ],
                                 defaults: {
@@ -871,7 +875,7 @@ var patientTablePanel = new Ext.Panel({
                             store : new Ext.data.JsonStore({
                                 autoLoad:false,
                                 storeId:'patient_grid_store',
-                                fields : ['patientId','cancer','subtype']
+                                fields : ['patientId','dataset','subtype']
                             }),
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
@@ -1320,22 +1324,25 @@ var patientTablePanel = new Ext.Panel({
                 cls: 'x-panel-header-noborder',
                 border: false,
                 tbar:[{ id:'dataSetMenu',
-                    text:'DataSet',
+                    text:'Data',
                     labelStyle: 'font-weight:bold;',
                     menu: [{
                         text: 'GBM',
                         checked: true,
                         value: 'gbm_1031',
+                        group: 'dataset',
                         checkHandler: setDataSet
 
                     },{
                         text: 'COAD/READ',
                         checked: false,
+                        group: 'dataset',
                         checkHandler: setDataSet,
                         value: 'coad_read_1111'
                     },{
                         text: 'BRCA/OV',
                         checked: false,
+                        group: 'dataset',
                         checkHandler: setDataSet,
                         value: 'brca_ov_1113'
                     }]},

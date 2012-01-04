@@ -45,6 +45,8 @@ vq.FlexScrollBar.prototype._setOptionDefaults = function(options) {
 
     if (options.min_position != null) { this.min_position(options.min_position); }
 
+    if (options.bins != null) { this.bins(options.bins);}
+
     if (options.height != null) { this.height(options.height); }
 
     if (options.width != null) { this.width(options.width); }
@@ -105,6 +107,10 @@ vq.FlexScrollBar.prototype.render = function() {
 
     }
     this.xScale = x;
+    var histbins = pv.histogram(this.data.data_array.map(function(node){return node.ngd;})).bins(x.ticks(bins));
+
+    var yScale = pv.Scale.linear(0,pv.max(bins, function(d){ return d.y})).range(0,h2-this.vertical_padding()-17);
+
 
     var notify_dblclick = function(d) {
         var window = translateFocus(d);
@@ -173,11 +179,6 @@ vq.FlexScrollBar.prototype.render = function() {
         that.notifier(window.x ,window.dx );
     };
 
-    var countArray = this.data.data_array.map(function(node){return node.count;});
-
-    var maxPosY = Math.round(parseFloat(pv.max(countArray)))+1;
-    var yScale = pv.Scale.linear(0,maxPosY ).range(0,h2-this.vertical_padding()-12);
-
 
     var vis = new pv.Panel()
             .width(w)
@@ -189,7 +190,7 @@ vq.FlexScrollBar.prototype.render = function() {
             .left(this.horizontal_padding()+10)
             .width(scrollWidth )
             .top(this.vertical_padding())
-            .bottom(12)
+            .bottom(17)
             .events("all")
             .def ("active", false);
 
@@ -217,27 +218,34 @@ vq.FlexScrollBar.prototype.render = function() {
             .left(function(d) { return d.x + (d.dx/2) - 10;} )
             .text(function(d) { return translateFocus(d).dx});
     panel.add(pv.Bar)
-            .data(that.data.data_array)
+            .data(histbins)
             .fillStyle(function (d) { return that.fillstyle(d);})
             .bottom(0)
-            .width(function(c) { return that.xScale(c.end)-that.xScale(c.start);})
-            .height(function(d){return yScale(d.count);})
-            .left(function(d) {return that.xScale(d.start)});
+            .width(function(d) { return that.xScale(d.dx);})
+            .height(function(d){return yScale(d.y);})
+            .left(function(d) {return that.xScale(d.x)})
+            .lineWidth(1)
+            .antialias(false);
 
     scroll.add(pv.Rule)
             .data(function() { return x.ticks(); })
             .left(x)
+            .bottom(-5)
+            .height(5)
             .strokeStyle("gainsboro")
             .anchor("bottom").add(pv.Label)
             .text( x.tickFormat );
 
        /* Y- axis */
     scroll.add(pv.Rule)
-            .data(function() { return yScale.ticks();})
+            .data(function() { return yScale.ticks(5);})
             .bottom(yScale)
             .strokeStyle("gainsboro")
            .anchor("left").add(pv.Label)
             .text(yScale.tickFormat);
+
+    scroll.add(pv.Rule)
+            .bottom(0);
 
     if(!isWindowWidthFixed) {
         scroll.add(pv.Bar)
@@ -301,6 +309,7 @@ vq.models.FlexScrollBarData.prototype.setDataModel = function () {
         {label: 'horizontal_padding', id: 'PLOT.horizontal_padding',cast : Number,  defaultValue: 10},
         {label: 'min_position', id: 'PLOT.min_position', cast : Number, defaultValue: 0},
         {label: 'max_position', id: 'PLOT.max_position',cast : Number,  defaultValue: 100},
+        {label: 'bins', id: 'PLOT.bins', cast: Number, defaultValue: 100},
         {label: 'scale_multiplier', id: 'PLOT.scale_multiplier',cast : Number, defaultValue : 1},
         {label: 'fixed_window_width', id: 'PLOT.fixed_window_width',cast : Number, defaultValue : -1},
         {label: 'interval', id: 'PLOT.interval', cast : Number, optional : true},
