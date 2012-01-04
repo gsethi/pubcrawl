@@ -148,8 +148,8 @@ function filterVis(){
             var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
          var corrstart = parseFloat(Ext.getCmp('edge_correlation_start').getValue());
             var corrend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
-         var impstart = parseFloat(Ext.getCmp('edge_importance_start').getValue());
-            var impend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+         var impstart = parseFloat(Ext.getCmp('edge_importance_start').getValue()) * .01;
+            var impend = parseFloat(Ext.getCmp('edge_importance_end').getValue()) *.01;
 
         if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
          return false;
@@ -261,11 +261,10 @@ function getAvg(valueArray,countArray){
 function renderNodeNGDHistogramData(istart,iend){
 
       nodeNGDScrollUpdate=false;
-      var ngdArray = ngdPlotData['data'].map(function(node){return node.count;});
 
-  var maxPosY = pv.max(ngdArray)+1;
   var ngdValueArray = ngdPlotData['data'].map(function(node){return node.ngd;});
-  var maxPosValueX = parseFloat(pv.max(ngdValueArray))+.1;
+  var maxPosValueX = pv.max(ngdValueArray);
+    var minValueX = pv.min(ngdValueArray);
 
     var data_obj = function(){ return {
         PLOT: {
@@ -277,8 +276,8 @@ function renderNodeNGDHistogramData(istart,iend){
             horizontal_padding:10,
             container: document.getElementById('node-ngd'),
             data_array: ngdPlotData['data'],
-            interval: maxPosValueX,
-            fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
+            interval: maxPosValueX
+           // fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateNGDRange,
         callback_always: false
@@ -297,24 +296,22 @@ function renderNodeNGDHistogramData(istart,iend){
 function renderEdgeNGDHistogramData(istart,iend){
       edgeNGDScrollUpdate = false;
 
-      var ngdArray = edgeNGDPlotData['data'].map(function(node){return node.count;});
-
-  var maxPosY = pv.max(ngdArray)+1;
-  var ngdValueArray = ngdPlotData['data'].map(function(node){return node.ngd;});
-  var maxPosValueX = parseFloat(pv.max(ngdValueArray))+.1;
+  var ngdValueArray = edgeNGDPlotData['data'].map(function(node){return node.ngd;});
+  var maxPosValueX = pv.max(ngdValueArray);
+  var minValueX = pv.min(ngdValueArray);
 
     var data_obj = function(){ return {
         PLOT: {
             height: 100,
-            width: 350,
+            width: 400,
             min_position:0,
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
             container: document.getElementById('edge-ngd'),
             data_array: edgeNGDPlotData['data'],
-            interval: maxPosValueX,
-            fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
+            interval: maxPosValueX
+           // fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateEdgeNGDRange,
         callback_always: false
@@ -332,24 +329,21 @@ function renderEdgeNGDHistogramData(istart,iend){
 
 function renderDCHistogramData(dcPlotData,istart,iend){
 
-
-      var dcArray = domainCountData['data'].map(function(node){return node.count;});
-
-  var maxPosY = pv.max(dcArray)+1;
-  var dcValueArray = domainCountData['data'].map(function(node){return node.ngd;});
-  var maxPosValueX = pv.max(dcValueArray)+1;
+  var dcValueArray = dcPlotData.map(function(node){return node.ngd;});
+  var maxPosValueX = pv.max(dcValueArray);
+  var minValueX=pv.min(dcValueArray);
 
 
     var data_obj = function(){ return {
         PLOT: {
             height: 100,
-            width: 350,
+            width: 400,
             min_position:0,
             max_position: maxPosValueX,
             vertical_padding: 10,
             horizontal_padding:10,
             container: document.getElementById('linear-dc'),
-            data_array: domainCountData['data'],
+            data_array: dcPlotData,
             interval: maxPosValueX
         },
         notifier: updateDCRange,
@@ -368,18 +362,18 @@ function renderDCHistogramData(dcPlotData,istart,iend){
 
 function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
 
-  var ccArray = ccData.map(function(node){ return node.count;});
-  var maxPosY = pv.max(ccArray)+1;
   var ngdValueArray = ccData.map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(ngdValueArray);
+  var minValueX=pv.min(ngdValueArray);
 
 
     var data_obj = function(){ return {
         PLOT: {
             height: 100,
-            width: 350,
+            width: 400,
             min_position:0,
             max_position: maxPosValueX,
+            bins: 100,
             vertical_padding: 10,
             horizontal_padding:10,
             container: document.getElementById(elementId),
