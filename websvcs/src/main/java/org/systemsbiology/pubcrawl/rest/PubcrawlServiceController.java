@@ -748,12 +748,21 @@ public class PubcrawlServiceController {
 
             getEdgesForNode(gQuery.getDataSet(), gQuery.getAlias(), relIdx, geneMap, relMap, termNode);
             JSONObject edgeJson = new JSONObject();
+            JSONArray edgeListArray = new JSONArray();
             for (List<Relationship> itemList : relMap.values()) {
                 boolean first = true;
                 for (Relationship item : itemList) {
-                    first = createRelationshipJSON(gQuery.getDataSet(), gQuery.getAlias(), edgeJson, first, edgeArray, item);
+                    first = createRelationshipJSON(gQuery.getDataSet(), gQuery.getAlias(), edgeJson, first, edgeListArray, item);
 
                 }
+
+                if (edgeJson.has("id")) {
+                        edgeJson.put("edgeList", edgeListArray);
+                        edgeArray.put(edgeJson);
+                    }
+
+                    edgeJson = new JSONObject();
+                    edgeListArray = new JSONArray();
             }
 
             json.put("edges", edgeArray);
