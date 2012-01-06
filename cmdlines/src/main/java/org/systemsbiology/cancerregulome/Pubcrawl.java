@@ -194,7 +194,6 @@ public class Pubcrawl {
                 solrServerHost = line.getOptionValue("s");
             }
             if (line.hasOption("term")) {
-                //get the server host name
                 searchTerm = line.getOptionValue("term");
             }
             if (line.hasOption("a")) {

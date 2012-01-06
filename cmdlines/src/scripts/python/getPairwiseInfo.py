@@ -32,7 +32,7 @@ def processLine(line,outFile):
 	sourceNode=getNode(rfaceInfo[0]);
 	targetNode=getNode(rfaceInfo[1]);
 
-     if(sourceNode==None or targetNode==None or sourceNode=="" or targetNode==""):
+	if(sourceNode==None or targetNode==None or sourceNode=="" or targetNode==""):
 		return;
 
 	if(rfaceInfo[4]=="-inf"):
