@@ -518,7 +518,7 @@ function visReady(){
             fullTerm2=getSolrCombinedTerm(term2Node);
         }
 
-       renderDetailsWindow(fullTerm1,fullTerm2,"node");
+       renderDetailsWindow(fullTerm2,fullTerm1,"node");
     });
 
     vis.addContextMenuItem("Remove Node", "nodes", function(evt){
@@ -723,14 +723,14 @@ function renderModel() {
 
 function retrieveEdgeDetails(node1,node2,type){
     if(type == "edge"){
-        requesturl = "/pubcrawl_svc/relationships/" + node1.toLowerCase();
+        requesturl = "/pubcrawl_svc/relationships/" + node1.toLowerCase() + "/node/" + node2.toLowerCase();
     }
     else{
-        requesturl = "/pubcrawl_svc/graph/" + node1.toLowerCase();
+        requesturl = "/pubcrawl_svc/graph/" + node1.toLowerCase() + "/relationships/" + node2.toLowerCase();
     }
     Ext.Ajax.request({
             method:"GET",
-            url: requesturl + "/node/" + node2.toLowerCase(),
+            url: requesturl,
             params: { node: node2.toLowerCase(), alias: model_def['alias'], dataset: dataSet},
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
