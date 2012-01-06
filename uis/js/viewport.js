@@ -1,6 +1,7 @@
 Ext.onReady(loadDeNovoSearches);
 Ext.onReady(loadPatients);
 
+
 Ext.onReady(function() {
 
     var nodeNgdValueFields = new Ext.Panel({
@@ -742,7 +743,7 @@ Ext.onReady(function() {
                             labelSeparator: '',
                             defaultType: 'textfield',
                             autoHeight:true,
-                            title: 'RF-ACE Importance  10^-3',
+                            title: 'RF-ACE Importance  10<sup>-2</sup>',
                             items:[edgeImportanceFields,
                                 {xtype: 'panel', id: 'edge-importance', x:20, y:20}
                             ]
@@ -793,7 +794,8 @@ Ext.onReady(function() {
                             xtype: 'displayfield',
                             id: 'dataset-dfield',
                             name: 'dataset-dfield',
-                            fieldLabel: 'Dataset:'},
+                            fieldLabel: 'Dataset:',
+                            value: 'gbm_1031'},
                             {
                                 xtype: 'combo',
                                 id: 'layout-config',
@@ -942,7 +944,7 @@ var patientTablePanel = new Ext.Panel({
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    renderDetailsWindow(record.get('term1'),model_def['term'],"node");
+                                    renderDetailsWindow(model_def['term'],record.get('term1'),"node");
                                 }
                             }
                         }]
@@ -1330,6 +1332,7 @@ var patientTablePanel = new Ext.Panel({
                         text: 'GBM',
                         checked: true,
                         value: 'gbm_1031',
+                        id: 'datasetMenu_gbm',
                         group: 'dataset',
                         checkHandler: setDataSet
 
@@ -1337,12 +1340,14 @@ var patientTablePanel = new Ext.Panel({
                         text: 'COAD/READ',
                         checked: false,
                         group: 'dataset',
+                        id: 'datasetMenu_coad_read',
                         checkHandler: setDataSet,
                         value: 'coad_read_1111'
                     },{
                         text: 'BRCA/OV',
                         checked: false,
                         group: 'dataset',
+                        id: 'datasetMenu_brca_ov',
                         checkHandler: setDataSet,
                         value: 'brca_ov_1113'
                     }]},
