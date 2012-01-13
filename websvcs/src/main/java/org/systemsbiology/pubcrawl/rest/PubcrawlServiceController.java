@@ -137,7 +137,7 @@ public class PubcrawlServiceController {
 
     }
 
-    @RequestMapping(value = "/deNovo/{nodeName}/", method = RequestMethod.POST)
+    @RequestMapping(value = "/deNovo/{nodeName}", method = RequestMethod.POST)
     protected ModelAndView handleNodeInsert(HttpServletRequest request, @PathVariable("nodeName") String nodeName) throws Exception {
         String requestUri = request.getRequestURI();
         log.info(requestUri);
@@ -236,17 +236,16 @@ public class PubcrawlServiceController {
     //TODO: Do we need to manually remove from indexes as well?
     protected JSONObject deleteNode(String nodeName) {
         JSONObject json = new JSONObject();
+        Transaction tx = graphDB.beginTx();
         try {
             IndexManager indexMgr = graphDB.index();
             Index<Node> nodeIdx = indexMgr.forNodes("genNodeIdx");
-            Node deleteNode = nodeIdx.get("name",nodeName).getSingle();
+            Node deleteNode = nodeIdx.get("name",nodeName.toLowerCase()).getSingle();
 
-            log.info("got the delete node: " + deleteNode.getProperty("id"));
             if (deleteNode != null) {
                 for (Relationship relConnection : deleteNode.getRelationships()) {
                     if (relConnection != null) {
                         relConnection.delete();
-                        log.info("delete relationship");
                     }
 
                 }
@@ -254,10 +253,13 @@ public class PubcrawlServiceController {
 
             log.info("deleted the relationships");
             deleteNode.delete();
+            tx.success();
             json.put("success", "true");
         } catch (Exception e) {
             log.info("exception occurred: " + e.getMessage());
             return new JSONObject();
+        } finally{
+            tx.finish();
         }
         return json;
     }
@@ -919,10 +921,10 @@ public class PubcrawlServiceController {
                 while ((vertexLine = vertexFile.readLine()) != null) {
                     //for the first line we need to get the term value, then get relationships
                     String[] vertexInfo = vertexLine.split("\t");
+                    Node searchNode = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
                     if (first) {
                         first = false;
                         log.info("on first - check if already exists: " + vertexInfo[0].toLowerCase());
-                        Node searchNode = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
                         if (searchNode == null) {
                             //then go ahead and insert and continue
                             log.info("search node was null, inserting: " + vertexInfo[0].toLowerCase());
@@ -941,6 +943,7 @@ public class PubcrawlServiceController {
                                 n.setProperty("termcount", Integer.parseInt(vertexInfo[2]));
                                 nodeIdx.add(n,"termcount", ValueContext.numeric(Integer.parseInt(vertexInfo[2])));
                             }
+                            searchNode=n;
 
                         } else {
                             //need to set whatever properties weren't set before
@@ -948,12 +951,12 @@ public class PubcrawlServiceController {
                                 //doing alias - and it isn't set - so we are good
                                 log.info("going to insert the alias into existing term");
                                 searchNode.setProperty("aliases", vertexInfo[1]);
-                                searchNode.setProperty("termcount_alias", vertexInfo[4]);
+                                searchNode.setProperty("termcount_alias", Integer.parseInt(vertexInfo[4]));
                                 nodeIdx.add(searchNode,"aliases", vertexInfo[1]);
                                 nodeIdx.add(searchNode,"termcount_alias", ValueContext.numeric(Integer.parseInt(vertexInfo[4])));
                             } else{
                                 log.info("Doing the non-alias version, going to insert termcount");
-                                searchNode.setProperty("termcount", vertexInfo[2]);
+                                searchNode.setProperty("termcount", Integer.parseInt(vertexInfo[2]));
                                 nodeIdx.add(searchNode,"termcount", ValueContext.numeric(Integer.parseInt(vertexInfo[2])));
                             }
                         }
@@ -964,53 +967,59 @@ public class PubcrawlServiceController {
                     if (alias) {
 
                         String gene1Name = vertexInfo[0].toLowerCase();
-                        String gene2Name = vertexInfo[2].toLowerCase();
-                        Node gene1 = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
+                        String gene2Name = vertexInfo[2].toLowerCase();;
                         Node gene2 = nodeIdx.get("name", vertexInfo[2].toLowerCase()).getSingle();
+                        if(gene2 != null){
                         if (!gene1Name.equals(gene2Name)) {
                             Double ngd = new Double(vertexInfo[7]);
                             if (ngd >= 0) {
-                                Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd_alias"));
-                                r.setProperty("ngd", vertexInfo[7]);
-                                r.setProperty("combocount", vertexInfo[6]);
+                                Relationship r = searchNode.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd_alias"));
+                                r.setProperty("ngd", Double.parseDouble(vertexInfo[7]));
+                                r.setProperty("combocount", Integer.parseInt(vertexInfo[6]));
                                 relIdx.add(r,"relType","ngd_alias");
                                 relIdx.add(r,"ngd",ValueContext.numeric(Double.parseDouble(vertexInfo[7])));
                                 relIdx.add(r,"combocount",ValueContext.numeric(Integer.parseInt(vertexInfo[6])));
 
-                                Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd_alias"));
-                                r2.setProperty("ngd", vertexInfo[7]);
-                                r2.setProperty("combocount", vertexInfo[6]);
+                                Relationship r2 = gene2.createRelationshipTo(searchNode, DynamicRelationshipType.withName("ngd_alias"));
+                                r2.setProperty("ngd", Double.parseDouble(vertexInfo[7]));
+                                r2.setProperty("combocount", Integer.parseInt(vertexInfo[6]));
                                 relIdx.add(r2,"relType","ngd_alias");
                                 relIdx.add(r2,"ngd",ValueContext.numeric(Double.parseDouble(vertexInfo[7])));
                                 relIdx.add(r2,"combocount",ValueContext.numeric(Integer.parseInt(vertexInfo[6])));
                             }
                         }
+                        }else{
+                            log.info("found nothing for: " + vertexInfo[2].toLowerCase());
+                        }
                     } else {
 
                         String gene1Name = vertexInfo[0].toLowerCase();
                         String gene2Name = vertexInfo[1].toLowerCase();
-                        Node gene1 = nodeIdx.get("name", vertexInfo[0].toLowerCase()).getSingle();
                         Node gene2 = nodeIdx.get("name", vertexInfo[1].toLowerCase()).getSingle();
+                        if(gene2 != null){
                         if (!gene1Name.equals(gene2Name)) {
 
                             Double ngd = new Double(vertexInfo[5]);
                             if (ngd >= 0) {
-                                Relationship r = gene1.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd"));
-                                r.setProperty("ngd", vertexInfo[5]);
-                                r.setProperty("combocount", vertexInfo[4]);
+                                Relationship r = searchNode.createRelationshipTo(gene2, DynamicRelationshipType.withName("ngd"));
+                                r.setProperty("ngd", Double.parseDouble(vertexInfo[5]));
+                                r.setProperty("combocount", Integer.parseInt(vertexInfo[4]));
                                 relIdx.add(r,"relType","ngd");
                                 relIdx.add(r,"ngd",ValueContext.numeric(Double.parseDouble(vertexInfo[5])));
                                 relIdx.add(r,"combocount",ValueContext.numeric(Integer.parseInt(vertexInfo[4])));
 
-                                Relationship r2 = gene2.createRelationshipTo(gene1, DynamicRelationshipType.withName("ngd"));
-                                r2.setProperty("ngd", vertexInfo[5]);
-                                r2.setProperty("combocount", vertexInfo[4]);
+                                Relationship r2 = gene2.createRelationshipTo(searchNode, DynamicRelationshipType.withName("ngd"));
+                                r2.setProperty("ngd", Double.parseDouble(vertexInfo[5]));
+                                r2.setProperty("combocount", Integer.parseInt(vertexInfo[4]));
                                 relIdx.add(r2,"relType","ngd");
                                 relIdx.add(r2,"ngd",ValueContext.numeric(Double.parseDouble(vertexInfo[5])));
                                 relIdx.add(r2,"combocount",ValueContext.numeric(Integer.parseInt(vertexInfo[4])));
 
 
                             }
+                        }
+                        }else{
+                            log.info("found nothing for: " + vertexInfo[1].toLowerCase());
                         }
                     }
 

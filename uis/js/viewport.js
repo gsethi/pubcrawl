@@ -1016,6 +1016,7 @@ var patientTablePanel = new Ext.Panel({
                               },
                               cm : new Ext.grid.ColumnModel({
                                   columns: [
+                                      new Ext.grid.RowNumberer(),
                                       {header : "featureid1", width:110,  id:'featureid1', dataIndex:'featureid1', groupName: 'Edge'},
                                       { header: "featureid2", width: 110,  id:'featureid2', dataIndex:'featureid2',groupName:'Edge'},
                                       { header: "pvalue", width: 110, id:'pvalue',dataIndex:'pvalue',groupName:'Edge'},
@@ -1027,6 +1028,13 @@ var patientTablePanel = new Ext.Panel({
                                       width: 100
                                   }
                               }),
+                              listeners: {
+                                rowdblclick : function(grid,rowIndex,event) {
+                                    var record = grid.getStore().getAt(rowIndex);
+                                    record.get('featureid1');
+                                    record.get('featureid2');
+                                }
+                            },
                               store : new Ext.data.JsonStore({
                                   autoLoad:false,
                                   storeId:'dataRFACEEdge_grid_store',
@@ -1034,6 +1042,8 @@ var patientTablePanel = new Ext.Panel({
                               })
                           }]
                   });
+
+
 
         var dataPairwiseEdgeTablePanel = new Ext.Panel({
                       id:'dataPairwiseEdge-panel',
@@ -1442,6 +1452,8 @@ var patientTablePanel = new Ext.Panel({
     });
 
 
+
+
     new Ext.Viewport({
         layout: {
             type: 'border',
@@ -1466,66 +1478,6 @@ var patientTablePanel = new Ext.Panel({
         renderTo:Ext.getBody()
     });
 
-
-    query_window =
-          new Ext.Window({
-              id: 'query-window',
-              renderTo: 'networkviz-acc',
-              modal: false,
-              width: 600,
-              closeAction: 'hide',
-              title: "Search",
-              closable: true,
-              layoutConfig:{
-                animate: true
-              },
-              maximizable: false,
-                      items :[
-            { xtype:'form',
-                id :'search_panel',
-                name :'search_panel',
-                defaults:{anchor:'100%'},
-                border : false,
-                labelAlign : 'right',
-                labelWidth: 75,
-                defaultType:'textfield',
-                monitorValid: true,
-                items : [{xtype:'fieldset',
-                        defaults:{anchor:'100%',border: false},
-                        border: false,
-                        labelSeparator : '',
-                        defaultType:'textfield',
-                        autoHeight:true,
-                        items: [ {name: 'f1_term_value',
-                                id: 'f1_term_value',
-                                emptyText: 'Input Term...',
-                                tabIndex: 1,
-                                selectOnFocus:true,
-                                fieldLabel: 'Term'
-                                },{
-                                fieldLabel: 'Use Alias',
-                                xtype: 'checkbox',
-                                name: 'f2_alias_value',
-                                id: 'f2_alias_value'
-                        }],
-                        buttons:[{ text: '<font color="black">Search</font>',
-                                formBind: true,
-                                id: 'search_button',
-                                name: 'search_button',
-                                listeners: {
-                                    click: function(button, e) {
-                                      var term = Ext.getCmp('f1_term_value').getValue();
-                                      var alias = Ext.getCmp('f2_alias_value').getValue();
-                                      generateNetworkRequest(term,alias,false);
-                                    }
-                                }
-                            }]
-                    }]
-            }]
-
-
-    });
-    query_window.hide();
 
     denovo_window = 
           new Ext.Window({

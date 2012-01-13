@@ -127,7 +127,7 @@
             </build>
         </profile>
         <profile>
-            <id>neo4jImport</id>
+            <id>GeneInteractionRetrieval</id>
             <build>
                 <plugins>
                     <plugin>
@@ -137,10 +137,10 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <finalName>neo4jImport</finalName>
+                            <finalName>RetrieveGeneInteractions</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>org.systemsbiology.cancerregulome.neo4jImport</mainClass>
+                                    <mainClass>org.systemsbiology.cancerregulome.GeneInteractionRetrieval</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>

@@ -84,6 +84,7 @@ function loadPatients(){
                     return{patientId: row.name.toLowerCase(), dataset: row.dataset.toLowerCase(), subtype: row.subtype.toLowerCase()};
                 });
                 Ext.StoreMgr.get('patient_grid_store').loadData(patients['searches']);
+                Ext.getCmp('patient_grid').getSelectionModel().selectAll();
 
             },
             failure: function(o) {
@@ -155,7 +156,6 @@ function loadModel(term1, alias,deNovo, callback) {
                     Ext.getCmp('standalone-cb').setValue(false);
                     filterData(Ext.getCmp('domainOnly-cb').getValue(),Ext.getCmp('rfaceOnly-cb').getValue(),
                     Ext.getCmp('showDrugs-cb').getValue(),Ext.getCmp('standalone-cb').getValue(),Ext.getCmp('pairwiseOnly-cb').getValue(),json.nodes,json.edges);
-                    query_window.hide();
                     denovo_window.hide();
                     populateData(json.allnodes);
                 }
