@@ -20,7 +20,7 @@ public class DbUtils {
 
     public static JdbcTemplate getJdbcTemplate() {
         try {
-            Resource r = new FileSystemResource("pubcrawl.properties");
+            Resource r = new FileSystemResource("/titan/cancerregulome9/workspaces/pubcrawl/pubcrawl.properties");
             Properties prop = new Properties();
             prop.load(r.getInputStream());
 
@@ -54,7 +54,7 @@ public class DbUtils {
     public static SolrServer getSolrServer(String solrServerHost) {
         try {
             if (isEmpty(solrServerHost)) {
-                Resource r = new FileSystemResource("pubcrawl.properties");
+                Resource r = new FileSystemResource("/titan/cancerregulome9/workspaces/pubcrawl/pubcrawl.properties");
                 Properties prop = new Properties();
                 prop.load(r.getInputStream());
                 solrServerHost = prop.getProperty("solr_server");

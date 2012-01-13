@@ -6,7 +6,6 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.jaxen.expr.Expr;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -27,10 +26,9 @@ import java.util.logging.Logger;
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.replace;
-import static org.apache.commons.lang.StringUtils.strip;
 import static org.systemsbiology.cancerregulome.DbUtils.getJdbcTemplate;
 import static org.systemsbiology.cancerregulome.DbUtils.getSolrServer;
-import static scala.actors.threadpool.Arrays.asList;
+
 
 /**
  * @author aeakin

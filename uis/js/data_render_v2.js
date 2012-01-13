@@ -773,10 +773,6 @@ function retrieveEdgeDetails(node1,node2,type){
 
 }
 
-function launchQueryWindow(){
-    query_window.show();
-
-}
 
 function launchDenovoWindow(){
     denovo_window.show();
@@ -826,4 +822,180 @@ function redraw(){
     populateData(completeData['nodes']);
     renderModel();
 }
+
+/*
+ renderScatterPlot
+ should be wrapped in an event listener external to the ui layout code
+ */
+function renderScatterPlot() {
+    var regression_type = Ext.getCmp('scatterplot_regression_radiogroup').getValue().getRawValue();
+    var reverse_axes = Ext.getCmp('scatterplot_axes_checkbox').getValue();
+    var discretize_x = Ext.getCmp('scatterplot_discrete_x_checkbox').getValue();
+    var discretize_y = Ext.getCmp('scatterplot_discrete_y_checkbox').getValue();
+    var event_obj =  {
+        div:document.getElementById('scatterplot_panel'),
+        regression_type:regression_type,
+        reverse_axes:reverse_axes,
+        discretize_x : discretize_x,
+        discretize_y :discretize_y
+    };
+    if (arguments.length ==1)  //data passed into function
+        event_obj['data'] = arguments[0];
+
+    Ext.getCmp('details-tabpanel').layout.setActiveItem('scatterplot_parent');
+    Ext.getCmp('scatterplot_parent').show();
+    scatterplot_draw(event_obj);
+
+
+}
+
+
+var scatterplot_data;
+
+
+function scatterplot_draw(params) {
+    var data = params.data || scatterplot_data || {data:[]},
+        div = params.div || null,
+        regression_type = params.regression_type || 'none',
+        reverse_axes = params.reverse_axes || false,
+        discretize_x = params.discretize_x || false,
+        discretize_y = params.discretize_y || false;
+    scatterplot_data = data;
+
+    if (data === undefined) {return;}  //prevent null plot
+
+    var dataset_labels=getDatasetLabels();
+    var patient_labels = dataset_labels['patients'];
+    var f1 = data.f1id, f2 = data.f2id;
+    var f1label = data.f1alias, f2label = data.f2alias;
+    var f1values, f2values;
+
+    if (isNonLinear(f1label[0])) {
+        f1values = data.f1values.split(':');
+    } else {
+        f1values = data.f1values.split(':').map(function(val) {return parseFloat(val);});
+    }
+    if (isNonLinear(f2label[0])) {
+        f2values = data.f2values.split(':');
+    } else {
+        f2values = data.f2values.split(':').map(function(val) {return parseFloat(val);});
+    }
+
+    if (f1values.length != f2values.length) {
+        vq.events.Dispatcher.dispatch(new vq.events.Event('render_fail','scatterplot','Data cannot be rendered correctly.'));
+        return;
+    }
+    var data_array = [];
+    for (var i=0; i< f1values.length; i++) {
+        if (!isNAValue(f1label,f1values[i]) && !isNAValue(f2label,f2values[i]) ) {
+            var obj = {};
+            obj[f1] = f1values[i], obj[f2]=f2values[i], obj['patient_id'] = patient_labels[i];
+            data_array.push(obj);
+        }
+    }
+
+    function reverseAxes() {
+        config.CONTENTS.xcolumnid = f2;config.CONTENTS.ycolumnid=f1;config.CONTENTS.xcolumnlabel=f2label;config.CONTENTS.ycolumnlabel=f1label;
+        tooltip[data.f1alias]=f2;tooltip[data.f2alias]=f1;
+        config.CONTENTS.tooltip_items=tooltip;
+    }
+
+    var tooltip = {};
+    tooltip[data.f1alias] = f1,tooltip[data.f2alias] = f2,tooltip['Sample'] = 'patient_id';
+
+    if(discretize_x && f1label != 'B') {
+
+          var quartiles = pv.Scale.quantile(f1values).quantiles(4).quantiles();
+            //Freedman-Diaconis' choice for bin size
+            var setSize = 2 * (quartiles[3] - quartiles[1]) / Math.pow(f1values.length,0.33);
+        var firstBin = pv.min(f1values)+setSize/2;
+        var bins = pv.range(firstBin,pv.max(f1values)-setSize/2,setSize);
+        f1values=f1values.map(function(val) { return bins[Math.min(Math.max(Math.floor((val-firstBin) / setSize),0),f1values.length-1)];});
+    }
+    if(discretize_y && f2label != 'B') {
+    var f2hist = pv.histogram(f2values).frequencies(true).bins();
+    }
+    f1label = (discretize_x ? 'B' : f1label[0]) + f1label.slice(1);
+    f2label = (discretize_y ? 'B' : f2label[0]) + f2label.slice(1);
+    var violin = (isNonLinear(f1label[0]) ^ isNonLinear(f2label[0])); //one is nonlinear, one is not
+    var cubbyhole = isNonLinear(f1label[0]) && isNonLinear(f2label[0]);
+
+    var sp,config;
+    if (violin)     {
+        sp = new vq.ViolinPlot();
+        config ={DATATYPE : "vq.models.ViolinPlotData", CONTENTS : {
+            PLOT : {container: div,
+                width : 600,
+                height: 300,
+                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
+            data_array: data_array,
+            xcolumnid: f1,
+            ycolumnid: f2,
+            valuecolumnid: 'patient_id',
+            xcolumnlabel : f1label,
+            ycolumnlabel : f2label,
+            valuecolumnlabel : 'Sample Id',
+            tooltip_items : tooltip,
+            show_points : true,
+            regression :regression_type
+        }};
+        if (isNonLinear(f2label[0])) {
+            reverseAxes();
+        }
+        sp.draw(config);
+    }
+    else if(cubbyhole) {
+        sp = new vq.CubbyHole();
+        config ={DATATYPE : "vq.models.CubbyHoleData", CONTENTS : {
+            PLOT : {container: div,
+                width : 600,
+                height: 300,
+                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
+            data_array: data_array,
+            xcolumnid: f1,
+            ycolumnid: f2,
+            valuecolumnid: 'patient_id',
+            xcolumnlabel : f1label,
+            ycolumnlabel : f2label,
+            valuecolumnlabel : 'Sample Id',
+            tooltip_items : tooltip,
+            show_points : true,
+            radial_interval : 7
+        }};
+        if (reverse_axes) {
+            reverseAxes();
+        }
+        sp.draw(config);
+    }
+    else {
+        sp = new vq.ScatterPlot();
+
+        config ={DATATYPE : "vq.models.ScatterPlotData", CONTENTS : {
+            PLOT : {container: div,
+                width : 600,
+                height: 300,
+                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
+            data_array: data_array,
+            xcolumnid: f1,
+            ycolumnid: f2,
+            valuecolumnid: 'patient_id',
+            xcolumnlabel : f1label,
+            ycolumnlabel : f2label,
+            valuecolumnlabel : 'Sample Id',
+            tooltip_items : tooltip,
+            radial_interval : 7,
+            regression :regression_type
+        }};
+        if (reverse_axes) {
+            reverseAxes();
+        }
+        sp.draw(config);
+    }
+
+    var e = new vq.events.Event('render_complete','scatterplot',sp);
+    e.dispatch();
+    return sp;
+}
+
+
 

@@ -22,6 +22,7 @@ vq.FlexScrollBar = function(){
     this.max_position(100);
     this.min_position(0);
     this.interval(5);
+    this.bins(100);
     this.scale_multiplier(1);
     this.fixed_window_width(-1);
     this.callback_always(false);
@@ -33,6 +34,7 @@ vq.FlexScrollBar.prototype = pv.extend(vq.Vis);
 vq.FlexScrollBar.prototype
         .property('max_position',Number)
         .property('min_position',Number)
+        .property('bins',Number)
         .property('interval', Number)
         .property('scale_multiplier',Number)
         .property('callback_always', Boolean)
@@ -107,9 +109,9 @@ vq.FlexScrollBar.prototype.render = function() {
 
     }
     this.xScale = x;
-    var histbins = pv.histogram(this.data.data_array.map(function(node){return node.ngd;})).bins(x.ticks(bins));
+    var histbins = pv.histogram(this.data.data_array.map(function(node){return node.ngd;})).bins(x.ticks(this.bins()));
 
-    var yScale = pv.Scale.linear(0,pv.max(bins, function(d){ return d.y})).range(0,h2-this.vertical_padding()-17);
+    var yScale = pv.Scale.linear(0,pv.max(histbins, function(d){ return d.y})).range(0,h2-this.vertical_padding()-17);
 
 
     var notify_dblclick = function(d) {
