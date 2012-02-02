@@ -1,6 +1,6 @@
 package org.systemsbiology.pubcrawl.pojos;
 
-import groovy.sql.DataSet;
+
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
