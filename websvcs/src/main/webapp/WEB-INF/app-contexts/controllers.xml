@@ -4,7 +4,39 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
         <bean id="graphDB" class="org.neo4j.kernel.EmbeddedGraphDatabase" destroy-method="shutdown" lazy-init="false">
-        <constructor-arg type="java.lang.String" value="/local/neo4j-server/neo4j-community-1.6.M02/data/pubcrawl.db"/>
+        <constructor-arg type="java.lang.String" value="/local/graphdb/neo4j1/neo4j-enterprise-1.6/data/pubcrawl.db"/>
+        <constructor-arg type="java.util.Map">
+            <map>
+                <entry key="neostore.nodestore.db.mapped_memory">
+                    <value>500k</value>
+                </entry>
+                <entry key="neostore.relationshipstore.db.mapped_memory">
+                    <value>800M</value>
+                </entry>
+                <entry key="neostore.propertystore.db.mapped_memory">
+                    <value>800M</value>
+                </entry>
+                <entry key="ha.server_id">
+                    <value>1</value>
+                </entry>
+                <entry key="ha.server">
+                    <value>localhost:6001</value>
+                </entry>
+                <entry key="ha.coordinators">
+                    <value>localhost:2181,localhost:2182,localhost:2183</value>
+                </entry>
+                <entry key="org.neo4j.server.database.mode">
+                    <value>HA</value>
+                </entry>
+                <entry key="ha.pull_interval">
+                    <value>10</value>
+                </entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <bean id="executorService" class="java.util.concurrent.Executors" factory-method="newFixedThreadPool" destroy-method="shutdown" lazy-init="false">
+        <constructor-arg value="1"/>
     </bean>
 
     <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
