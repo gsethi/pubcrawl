@@ -45,6 +45,7 @@ function setDataSet(itemChecked){
     dataSet=itemChecked.value;
     Ext.getCmp('dataset-dfield').setValue(itemChecked.value);
     loadPatients();
+    generateNetworkRequest(model_def['term'],model_def['alias'],false);
 }
 
 
@@ -278,27 +279,11 @@ function populateData(allnodes){
 
         if(node.label.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
             if(graphNodes[node.label.toUpperCase()] != undefined){
-      //      if(comboCounts[node.cc] == undefined){
-        //        comboCounts[node.cc] = {start:node.cc - .5, end: node.cc + .5, label: 1, ngd: node.cc, count: 1};
-          //  }
-            //else{
-        //        comboCounts[node.cc].count= comboCounts[node.cc].count+1;
-        //        comboCounts[node.cc].label=comboCounts[node.cc].count;
-        //    }
                 ccPlotData['data'].push({ngd:node.cc});
 
         }
             var ngdtrunc = Math.round(node.ngd * 100)/100;
             ngdPlotData['data'].push({ngd: ngdtrunc});
-         //   var ngdtrunc = Math.round(node.ngd * 100)/100;
-         //   if (ngdSummary[ngdtrunc] == undefined){
-         //       ngdSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph: graphNodes[node.label.toUpperCase()] == undefined ? 0:1};
-         //   }
-         //   else{
-         //       ngdSummary[ngdtrunc].count = ngdSummary[ngdtrunc].count+1;
-         //       ngdSummary[ngdtrunc].value = ngdSummary[ngdtrunc].value +1;
-         //       ngdSummary[ngdtrunc].graph = ngdSummary[ngdtrunc].graph+  (graphNodes[node.label.toUpperCase()] == undefined ? 0:1);
-         //   }
         }
 
     }
@@ -341,40 +326,13 @@ function populateData(allnodes){
             domainCountData['data'].push({ngd: edgeDetail.pf1_count});
             domainCountData['data'].push({ngd: edgeDetail.pf2_count});
 
-            //var pf1_count = edgeDetail.pf1_count;
-           // var pf2_count = edgeDetail.pf2_count;
-
-           // if(domainCounts[pf1_count] == undefined){
-           //     domainCounts[pf1_count] = {start: pf1_count - .5, end: pf1_count + .5, label: 1,ngd: pf1_count, count:1};
-           // }
-           // else{
-           //     var count1 = domainCounts[pf1_count].count;
-           //     domainCounts[pf1_count]= {start: pf1_count - .5, end: pf1_count + .5, label: count1+1, count:count1+1, ngd: pf1_count};
-           // }
-           // if(domainCounts[pf2_count] == undefined){
-           //     domainCounts[pf2_count] = {start: pf2_count - .5, end: pf2_count + .5, label: 1, count:1, ngd: pf2_count};
-           // }
-           // else{
-           //     var count2 = domainCounts[pf2_count].count;
-           //     domainCounts[pf2_count]= {start: pf2_count - .5, end: pf2_count + .5, label: count2+1, count:count2+1, ngd: pf2_count};
-          //  }
         }
             if(edgeDetail.edgeType == 'rface'){
 
 
                 var importance = Math.round(Math.abs(edgeDetail.importance) *10000)/100;
                 edgeImportancePlotData['data'].push({ngd: importance});
-            //    if(edgeImportanceSummary[importance] == undefined){
-            //        if(importance-0.0005 < 0){
-            //            startimp=0;
-            //        }
-            //        edgeImportanceSummary[importance] = {start: (importance - .0005 <= 0)? 0 : importance - .0005, end: importance + .0005, label: 1, ngd: importance, count:1};
 
-            //    }
-            //    else{
-            //        var count = edgeImportanceSummary[importance].count;
-            //        edgeImportanceSummary[importance] = {start: (importance == 0)? 0 : importance - .0005, end: importance + .0005, label: count+1, count: count+1,ngd:importance};
-            //    }
             }
 
             if(edgeDetail.edgeType == 'pairwise'){
@@ -382,53 +340,23 @@ function populateData(allnodes){
 
                 var correlation = Math.round(Math.abs(edgeDetail.correlation) *1000)/1000;
                 edgeCorrelationPlotData['data'].push({ngd: correlation});
-              //  if(edgeCorrValueSummary[correlation] == undefined){
-              //      edgeCorrValueSummary[correlation] = {start: correlation - .005, end: correlation + .005, label: 1, ngd: correlation, count:1};
-              //  }
-              //  else{
-              //      var count = edgeCorrValueSummary[correlation].count;
-              //      edgeCorrValueSummary[correlation] = {start: correlation - .005, end: correlation + .005, label: count+1, ngd: correlation, count:count+1};
-              //  }
+
             }
 
         }
         }
 
         if(edge.ngd != undefined){
-          //  ngdtrunc = Math.round(edge.ngd * 100)/100;
             edgeNGDPlotData['data'].push({ngd: ngdtrunc});
             ngdtrunc = Math.round(edge.ngd * 100)/100;
-          //  if (edgeNGDSummary[ngdtrunc] == undefined){
-          //      edgeNGDSummary[ngdtrunc] = {start: ngdtrunc - .002, end: ngdtrunc + .002, value: 1, count: 1, ngd: ngdtrunc, options: "label=" + ngdtrunc, graph:1};
-          //  }
-          //  else{
-          //      edgeNGDSummary[ngdtrunc].count = edgeNGDSummary[ngdtrunc].count+1;
-          //      edgeNGDSummary[ngdtrunc].value = edgeNGDSummary[ngdtrunc].value +1;
-          //  }
         }
 
         if(edge.cc != undefined){
             edgeCCPlotData['data'].push({ngd: edge.cc});
-         //   if(edgeCCSummary[edge.cc] == undefined){
-         //       edgeCCSummary[edge.cc] = {start:edge.cc - .5, end: edge.cc + .5, label: 1, ngd: edge.cc, count: 1};
-         //   }
-         //   else{
-         //       edgeCCSummary[edge.cc].count= edgeCCSummary[edge.cc].count+1;
-         //       edgeCCSummary[edge.cc].label=edgeCCSummary[edge.cc].count;
-         //   }
         }
     }
 
-  //  var histData=[];
-  //  for(var domainItem in domainCounts){
-  //      histData.push(domainCounts[domainItem]);
-  //  }
 
-  //  var histedgeNGD=[];
-  //  for(var edgengdItem in edgeNGDSummary){
-  //      histedgeNGD.push(edgeNGDSummary[edgengdItem]);
-  //  }
-  //  edgeNGDPlotData['data'] =  histedgeNGD;
     initstart=-1;
     initend=-1;
     if(!firstload){
@@ -441,12 +369,6 @@ function populateData(allnodes){
     Ext.getCmp('edge_ngd_end').setMinValue(edgeNGDScroll.min_position());
     Ext.getCmp('edge_ngd_end').setMaxValue(edgeNGDScroll.max_position());
 
-   // edgeCCPlotData={data:null};
-  //  var histedgeCC=[];
-  //  for(var ccItem in edgeCCSummary){
-  //      histedgeCC.push(edgeCCSummary[ccItem]);
-  //  }
-  //  edgeCCPlotData['data']=histedgeCC;
     initstart=2;
     initend=-1;
     if(!firstload){
@@ -455,8 +377,6 @@ function populateData(allnodes){
     }
     edgeCCScroll=renderCCLinearBrowserData(edgeCCPlotData['data'],'edge-cc',updateEdgeCCRange,initstart,initend);
 
-  //  domainCountData={data:null};
-  //  domainCountData['data']=histData;
      initstart=-1;
     initend=60;
     if(!firstload){
@@ -465,12 +385,6 @@ function populateData(allnodes){
     }
     edgeDCScroll=renderDCHistogramData(domainCountData['data'],initstart,initend);
 
- //   edgeImportancePlotData={data:null};
- //   var histedgeImportance=[];
- //   for(var importanceItem in edgeImportanceSummary){
- //       histedgeImportance.push(edgeImportanceSummary[importanceItem]);
- //   }
- //   edgeImportancePlotData['data']=histedgeImportance;
      initstart=-1;
     initend=-1;
     if(!firstload){
@@ -479,12 +393,10 @@ function populateData(allnodes){
     }
     edgeImportanceScroll=renderCCLinearBrowserData(edgeImportancePlotData['data'],'edge-importance',updateEdgeImportanceRange,initstart,initend);
 
- //   edgeCorrelationPlotData={data:null};
- //     var histedgeCorrelation=[];
- //     for(var correlationItem in edgeCorrValueSummary){
- //         histedgeCorrelation.push(edgeCorrValueSummary[correlationItem]);
- //     }
- //     edgeCorrelationPlotData['data']=histedgeCorrelation;
+    if(edgeImportancePlotData['data'].length == 0){
+       Ext.getCmp('edge_importance_start').setValue(0);
+        Ext.getCmp('edge_importance_end').setValue(0);
+    }
      initstart=-1;
     initend=-1;
     if(!firstload){
@@ -492,6 +404,11 @@ function populateData(allnodes){
         initend=Ext.getCmp('edge_correlation_end').getValue();
     }
       edgeCorrelationScroll=renderCCLinearBrowserData(edgeCorrelationPlotData['data'],'edge-correlation',updateEdgeCorrelationRange,initstart,initend);
+
+     if(edgeCorrelationPlotData['data'].length == 0){
+       Ext.getCmp('edge_correlation_start').setValue(0);
+        Ext.getCmp('edge_correlation_end').setValue(0);
+    }
 
     Ext.StoreMgr.get('dataNode_grid_store').loadData(completeData['nodes']);
     firstload=false;

@@ -363,9 +363,18 @@ function renderDCHistogramData(dcPlotData,istart,iend){
 function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
 
   var ngdValueArray = ccData.map(function(node){return node.ngd;});
+
   var maxPosValueX = pv.max(ngdValueArray);
   var minValueX=pv.min(ngdValueArray);
+  var start = istart == -1 ? 0 : istart;
+  var end = iend == -1 ? maxPosValueX-start : iend-start;
 
+    if(ngdValueArray.length == 0){
+        maxPosValueX=0;
+        minValueX=0;
+        start=0;
+        end=0;
+    }
 
     var data_obj = function(){ return {
         PLOT: {
@@ -388,8 +397,6 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
   var ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
   ccScroll.draw(flexscroll_data);
-    var start = istart == -1 ? 0 : istart;
-    var end = iend == -1 ? maxPosValueX-start : iend-start;
     ccScroll.set_position(start, end);
   return ccScroll;
 

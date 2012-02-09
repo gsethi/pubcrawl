@@ -48,7 +48,7 @@ import static org.systemsbiology.addama.commons.web.utils.HttpIO.pipe_close;
 @Controller
 public class PubcrawlServiceController {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
-    private EmbeddedGraphDatabase graphDB;
+    private HighlyAvailableGraphDatabase graphDB;
     private ExecutorService executorService;
 
    private static class EdgeCallable implements Callable {
@@ -104,7 +104,10 @@ public class PubcrawlServiceController {
                         relList.add(connection);
                     }
 
-                    String drugTypeName = this.useAlias ? "drug_ngd_alias" : "drug_ngd";
+                }
+            }
+
+            String drugTypeName = this.useAlias ? "drug_ngd_alias" : "drug_ngd";
                     IndexHits<Relationship> drugHits = relIdx.get("relType", drugTypeName, null, geneNode);
                     for (Relationship connection : drugHits) {
                         drugRelList.add(connection);
@@ -116,8 +119,6 @@ public class PubcrawlServiceController {
                         Node startNode = connection.getStartNode();
                         patientList.add(((String) startNode.getProperty("name")).toUpperCase());
                     }
-                }
-            }
 
             return new EdgeListItem(relList,drugRelList,patientList,((String)geneNode.getProperty("name")).toUpperCase(),edgeCount);
 
@@ -1203,7 +1204,7 @@ public class PubcrawlServiceController {
         this.executorService.shutdown();
     }
 
-    public void setGraphDB(EmbeddedGraphDatabase graphDB) {
+    public void setGraphDB(HighlyAvailableGraphDatabase graphDB) {
         this.graphDB = graphDB;
 
     }
