@@ -741,6 +741,7 @@ Ext.onReady(function() {
                             xtype: 'fieldset',
                             defaults:{anchor:'100%'},
                             labelSeparator: '',
+                            id: 'edge-importance-fields',
                             defaultType: 'textfield',
                             autoHeight:true,
                             title: 'RF-ACE Importance  10<sup>-2</sup>',
@@ -1359,7 +1360,8 @@ var patientTablePanel = new Ext.Panel({
                         group: 'dataset',
                         id: 'datasetMenu_brca_ov',
                         checkHandler: setDataSet,
-                        value: 'brca_ov_1113'
+                        value: 'brca_ov_1113',
+                        disabled: true
                     }]},
                     {
                         id:'visDataMenu',
