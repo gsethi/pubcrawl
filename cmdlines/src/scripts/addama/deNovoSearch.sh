@@ -33,27 +33,28 @@ echo "- useAlias:[$var_useAlias]"
 
 if [ $var_useAlias == 'true' ]; then
     echo "Inserting into Search Term table"
-    var_success=$(/tools/bin/python2.5 insertDeNovoSearch.py -a -t "$var_searchTerm")
+    var_success=$(/tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertDeNovoSearch.py -a -t "$var_searchTerm")
     if [ $var_success == 'fail' ]; then
 	echo "error - duplicate search"
 	exit 2
     fi
 
     echo "Executing Single Count Crawl Script: singlecountcrawl.jar"
-    /tools/java/jdk/bin/java -jar singlecountcrawl-jar-with-dependencies.jar -a -term "$var_searchTerm" -o "${var_searchTerm}".sc.out
+    /tools/java/jdk/bin/java -jar /titan/cancerregulome9/workspaces/pubcrawl/singlecountcrawl-jar-with-dependencies.jar -a -term "$var_searchTerm" -o "${var_searchTerm}".sc.out
 
     echo "Executing DB Insertion Script: insertSingleTermCounts.py"
-    /tools/bin/python2.5 insertSingleTermCounts.py -a -d -f "${var_searchTerm}".sc.out
+    /tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertSingleTermCounts.py -a -d -f "${var_searchTerm}".sc.out
 
      echo "Executing Pubcrawl Script: pubcrawl.jar"
-     /tools/java/jdk/bin/java -jar pubcrawl-jar-with-dependencies.jar -a -term "$var_searchTerm" -o "${var_searchTerm}".out
+     /tools/java/jdk/bin/java -jar /titan/cancerregulome9/workspaces/pubcrawl/pubcrawl-jar-with-dependencies.jar -a -term "$var_searchTerm" -o "${var_searchTerm}".out
     
-     echo "Executing DB Insertion Script: insertNGDItems.py"
-     /tools/bin/python2.5 insertNGDItems.py -a -d -f "${var_searchTerm}".out
+     echo "Executing DB Insertion Script: insertNGDItems"
+     cp "${var_searchTerm}".out /local/neo4j-server/deNovo.out
+     /tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertDenovoNGD.py "${var_searchTerm}" true
 
 else
     echo "Inserting into Search term Table"
-    var_success=$(/tools/bin/python2.5 insertDeNovoSearch.py -t "$var_searchTerm")
+    var_success=$(/tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertDeNovoSearch.py -t "$var_searchTerm") 
   
     if [ $var_success == 'fail' ]; then
 	echo "error - duplicate search"
@@ -61,16 +62,17 @@ else
     fi
 
     echo "Executing Single Count Crawl Script: singlecountcrawl.jar"
-    /tools/java/jdk/bin/java -jar singlecountcrawl-jar-with-dependencies.jar -term "$var_searchTerm" -o "${var_searchTerm}".sc.out
+    /tools/java/jdk/bin/java -jar /titan/cancerregulome9/workspaces/pubcrawl/singlecountcrawl-jar-with-dependencies.jar -term "$var_searchTerm" -o "${var_searchTerm}".sc.out
 
     echo "Executing DB Insertion Script: insertSingleTermCounts.py"
-    /tools/bin/python2.5 insertSingleTermCounts.py -d -f "${var_searchTerm}".sc.out
+    /tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertSingleTermCounts.py -d -f "${var_searchTerm}".sc.out
 
      echo "Executing Pubcrawl Script: pubcrawl.jar" 
-     /tools/java/jdk/bin/java -jar pubcrawl-jar-with-dependencies.jar -term "$var_searchTerm" -o "${var_searchTerm}".out
+     /tools/java/jdk/bin/java -jar /titan/cancerregulome9/workspaces/pubcrawl/pubcrawl-jar-with-dependencies.jar -term "$var_searchTerm" -o "${var_searchTerm}".out
 
-     echo "Executing DB Insertion Script: insertNGDItems.py"
-     /tools/bin/python2.5 insertNGDItems.py -d -f "${var_searchTerm}".out
+     echo "Executing DB Insertion Script: insertDenovoNGD.py"
+     cp "${var_searchTerm}".out /local/neo4j-server/deNovo.out
+     /tools/bin/python2.5 /titan/cancerregulome9/workspaces/pubcrawl/insertDenovoNGD.py "${var_searchTerm}" false
 
 fi
 
