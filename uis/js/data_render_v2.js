@@ -695,7 +695,7 @@ function getModelDef(){
             edges: model_def['edges']
         }
     };
-};
+}
 
 function renderModel() {
     vis_mask.hide();
