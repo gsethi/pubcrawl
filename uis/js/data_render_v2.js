@@ -65,40 +65,6 @@ function updateEdgeCCRange(start,width){
 
 }
 
-function updateEdgeImportanceRange(start,width){
-    if(!edgeImportanceScrollUpdate){
-      edgeImportanceStartValueUpdate=true;
-        edgeImportanceEndValueUpdate=true;
-      Ext.getCmp('edge_importance_start').setValue(start);
-      Ext.getCmp('edge_importance_end').setValue(new Number(start+width).toFixed(4));
-    }
-    else{
-        edgeImportanceScrollUpdate=false;
-    }
-
-    if(vis_ready){
-    filterVis();
-    }
-
-}
-
-function updateEdgeCorrelationRange(start,width){
-    if(!edgeCorrelationScrollUpdate){
-        edgeCorrelationStartValueUpdate=true;
-        edgeCorrelationEndValueUpdate=true;
-      Ext.getCmp('edge_correlation_start').setValue(start);
-      Ext.getCmp('edge_correlation_end').setValue(new Number(start+width).toFixed(2));
-    }
-    else{
-        edgeCorrelationScrollUpdate=false;
-    }
-
-    if(vis_ready){
-    filterVis();
-    }
-
-}
-
 function updateDCRange(start,width){
     if(!edgeDCScrollUpdate){
         edgeDCStartValueUpdate=true;
@@ -131,14 +97,12 @@ function filterVis(){
         }
         else
             return true;
-    },true);
+    });
 
     vis.filter("edges", function(edge){
             var pdbChecked = Ext.getCmp('pdb-cb').getValue();
             var hcChecked = Ext.getCmp('hc-cb').getValue();
             var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
-            var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
-            var pairwiseOnlyChecked = Ext.getCmp('pairwiseOnly-cb').getValue();
             var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
             var dcstart = parseFloat(Ext.getCmp('f1_dc_start').getValue());
             var dcend = parseFloat(Ext.getCmp('f1_dc_end').getValue());
@@ -146,19 +110,10 @@ function filterVis(){
             var ngdend = parseFloat(Ext.getCmp('edge_ngd_end').getValue());
             var ccstart = parseFloat(Ext.getCmp('edge_cc_start').getValue());
             var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
-         var corrstart = parseFloat(Ext.getCmp('edge_correlation_start').getValue());
-            var corrend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
-         var impstart = parseFloat(Ext.getCmp('edge_importance_start').getValue()) * .01;
-            var impend = parseFloat(Ext.getCmp('edge_importance_end').getValue()) *.01;
+
 
         if(!domainOnlyChecked && edge.data.ngd == null && edge.data.connType == 'domine'){
          return false;
-    }
-    if(!rfaceOnlyChecked && edge.data.ngd == null && edge.data.connType == 'rface'){
-        return false;
-    }
-        if(!pairwiseOnlyChecked && edge.data.ngd == null && edge.data.connType == 'pairwise'){
-        return false;
     }
     if(!drugChecked && edge.data.connType == 'drugNGD'){
          return false;
@@ -170,16 +125,6 @@ function filterVis(){
                     if(edge.data.edgeList[i].edgeType == 'domine' && (((edge.data.edgeList[i].type == 'pdb' && pdbChecked) || (edge.data.edgeList[i].type == 'hc' && hcChecked)) &&
                         edge.data.edgeList[i].pf1_count >= dcstart && edge.data.edgeList[i].pf1_count <=dcend &&
                         edge.data.edgeList[i].pf2_count >= dcstart && edge.data.edgeList[i].pf2_count <=dcend)){
-
-                        keep=true;
-                    }
-                     if(edge.data.edgeList[i].edgeType == 'pairwise' &&
-                        (Math.abs(edge.data.edgeList[i].correlation) >= corrstart && Math.abs(edge.data.edgeList[i].correlation) <=corrend)){
-
-                        keep=true;
-                    }
-                    if(edge.data.edgeList[i].edgeType == 'rface' &&
-                        (Math.abs(edge.data.edgeList[i].importance) >= impstart && Math.abs(edge.data.edgeList[i].importance) <=impend)){
 
                         keep=true;
                     }
@@ -208,11 +153,6 @@ function filterVis(){
 
 }
 
-function getMutCountsData(){
-    setMutCount(model_def['nodes']);
-    return model_def['mutCounts'];
-
-}
 
 function trimModel(){
     var inclStandalone= Ext.getCmp('standalone-cb').getValue();
@@ -220,11 +160,14 @@ function trimModel(){
     var edgeModel=[];
     var inclDrug=Ext.getCmp('showDrugs-cb').getValue();
 
-    model_def['nodes']=setMutCount(model_def['nodes']);
     filterVis();
 
     var visNodes=vis.nodes();
     for(var n=0; n < visNodes.length; n++){
+        if(visNodes[n].data.id.toUpperCase() == model_def['term'].toUpperCase()) {
+            nodeModel.push(visNodes[n].data);
+            continue;
+        }
         if(visNodes[n].visible){
             if(!inclStandalone && vis.firstNeighbors([visNodes[n].data.id],true).neighbors.length == 0){
                 continue;
@@ -243,7 +186,7 @@ function trimModel(){
         }
     }
 
-    model_def['nodes']=setMutCount(nodeModel);
+    model_def['nodes']=nodeModel;
     model_def['edges']=edgeModel;
 
 }
@@ -277,7 +220,6 @@ function renderNodeNGDHistogramData(istart,iend){
             container: document.getElementById('node-ngd'),
             data_array: ngdPlotData['data'],
             interval: maxPosValueX
-           // fillstyle: function(data){if(data.graph > 0){  return "blue";} else{ return "red";}}
         },
         notifier: updateNGDRange,
         callback_always: false
@@ -332,7 +274,8 @@ function renderDCHistogramData(dcPlotData,istart,iend){
   var dcValueArray = dcPlotData.map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(dcValueArray);
   var minValueX=pv.min(dcValueArray);
-
+  if(iend > maxPosValueX)
+    iend=-1;
 
     var data_obj = function(){ return {
         PLOT: {
@@ -480,28 +423,14 @@ function visReady(){
                filterVis();
     });
     vis_ready = true;
-    filterVis();
+    trimModel();
     vis.addContextMenuItem("Edge Details","edges",function(evt){
        var source = evt.target.data.source;
        var target = evt.target.data.target;
        var sourceNode=vis.node(source);
        var targetNode=vis.node(target);
 
-        var fullTerm1='';
-        var fullTerm2='';
-        if(source.indexOf("(") == 0 && (source.lastIndexOf(")") == (source.length-1))){
-            fullTerm1=source;
-        }
-        else{
-           fullTerm1=getSolrCombinedTerm(sourceNode);
-        }
-        if(target.indexOf("(") == 0 && (target.lastIndexOf(")") == (target.length-1))){
-            fullTerm2=target;
-        }
-        else{
-            fullTerm2=getSolrCombinedTerm(targetNode);
-        }
-       renderDetailsWindow(fullTerm1,fullTerm2,"edge");
+       renderDetailsWindow(source,target,sourceNode.data.aliases,targetNode.data.aliases,"edge");
     });
         vis.addContextMenuItem("Node Details","nodes",function(evt){
 
@@ -510,22 +439,7 @@ function visReady(){
        var term1Node = vis.node(term1);
        var term2Node = vis.node(term2);
 
-        var fullTerm1='';
-        var fullTerm2='';
-        if(term1.indexOf("(") == 0 && (term1.lastIndexOf(")") == (term1.length-1))){
-            fullTerm1=term1;
-        }
-        else{
-           fullTerm1=getSolrCombinedTerm(term1Node);
-        }
-        if(term2.indexOf("(") == 0 && (term2.lastIndexOf(")") == (term2.length-1))){
-            fullTerm2=term2;
-        }
-        else{
-            fullTerm2=getSolrCombinedTerm(term2Node);
-        }
-
-       renderDetailsWindow(fullTerm2,fullTerm1,"node");
+       renderDetailsWindow(term2,term1,term2Node.data.aliases,term1Node.data.aliases,"node");
     });
 
     vis.addContextMenuItem("Remove Node", "nodes", function(evt){
@@ -548,9 +462,6 @@ function getVisualStyle(){
                  if(edgeDetails.edgeType == "domine"){
                      tooltip=tooltip + edgeDetails.pf1 + ' --- ' + edgeDetails.pf2 + '<br>';
                  }
-                 else if(edgeDetails.edgeType == "rface" || edgeDetails.edgeType == "pairwise"){
-                     tooltip=tooltip + edgeDetails.featureid1 + ' --- ' + edgeDetails.featureid2 + '<br>';
-                 }
 
             }
         }
@@ -569,16 +480,10 @@ function getVisualStyle(){
 
      return tooltip;
  };
-    var colorMap = d3.scale.linear()
-        .domain([pv.min(getMutCountsData()),pv.max(getMutCountsData())])
-        .range(["#F97BA2","#790663"]);
+
 
     vis["customNodeColor"] = function(data){
-        if(data.mutCount > 0){
-           
-            return colorMap(data.mutCount);
-        }
-        else if(data.drug){
+        if(data.drug){
             return "#58C0D2";
         }
         else
@@ -588,15 +493,6 @@ function getVisualStyle(){
         vis["customEdgeColor"] = function(data){
         if(data.connType == "drugNGD"){
             return "#58C0D2";//"#7ED8D2";
-        }
-        else if(data.connType == "rface"){
-            return "#10B622";//"#0F8C06"; //39485F";
-        }
-        else if(data.connType == "pairwise"){
-            return "#543C87";//"#0F8C06"; //39485F";
-        }
-        else if(data.connType == "combo"){
-              return "#CC00CC";
         }
         else {
                 return "#F9AF46";
@@ -625,10 +521,6 @@ function getVisualStyle(){
     };
 
     vis["customEdgeWidth"] = function(data){
-        if(data.connType == "combo"){
-            return 6;
-        }
-        else
             return 2;
     }
 
@@ -676,7 +568,6 @@ function getModelDef(){
                 {name: "drug", type: "boolean"},
                 {name: "somatic", type: "boolean"},
                 {name: "germline", type: "boolean"},
-                {name: "mutCount", type: "number"},
                 {name: "aliases", type: "string"},
                 {name: "termcount", type: "double"},
                 {name: "searchtermcount", type: "double"},
@@ -729,21 +620,23 @@ function renderModel() {
 }
 
 function retrieveEdgeDetails(node1,node2,type){
+    var term1 = node1.toLowerCase();
+    var term2 = node2.toLowerCase();
+
     if(type == "edge"){
-        requesturl = "/pubcrawl_svc/relationships/" + node1.toLowerCase() + "/node/" + node2.toLowerCase();
+        requesturl = "/pubcrawl_svc/relationships/" + term1 + "/node/" + term2;
     }
     else{
-        requesturl = "/pubcrawl_svc/graph/" + node1.toLowerCase() + "/relationships/" + node2.toLowerCase();
+        requesturl = "/pubcrawl_svc/graph/" + term1 + "/relationships/" + term2;
     }
     Ext.Ajax.request({
             method:"GET",
             url: requesturl,
-            params: { node: node2.toLowerCase(), alias: model_def['alias'], dataset: dataSet},
+            params: { node: term2, alias: model_def['alias']},
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
                   var selectedDomineEdgeData=[];
-                var selectedRFACEEdgeData=[];
-                var selectedPairwiseEdgeData=[];
+
                 if(json.edges == undefined || json.edges.length == 0){
                     //do nothing in this case - just send an empty selectedEdgeData to the table
                 }
@@ -754,20 +647,11 @@ function retrieveEdgeDetails(node1,node2,type){
                       selectedDomineEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target,pf1: json.edges[i].edgeList[j].pf1, pf2: json.edges[i].edgeList[j].pf2,
                           uni1:json.edges[i].edgeList[j].uni1,uni2:json.edges[i].edgeList[j].uni2,type:json.edges[i].edgeList[j].type,pf1_count:json.edges[i].edgeList[j].pf1_count,pf2_count:json.edges[i].edgeList[j].pf2_count});
                          }
-                         if(json.edges[i].edgeList[j].edgeType.indexOf("rface") > -1){
-                            selectedRFACEEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target, featureid1: json.edges[i].edgeList[j].featureid1, featureid2: json.edges[i].edgeList[j].featureid2,pvalue: json.edges[i].edgeList[j].pvalue, correlation: json.edges[i].edgeList[j].correlation,
-                          importance:json.edges[i].edgeList[j].importance});
-                         }
-                         if(json.edges[i].edgeList[j].edgeType.indexOf("pairwise") > -1){
-                            selectedPairwiseEdgeData.push( {term1: json.edges[i].source, term2: json.edges[i].target, featureid1: json.edges[i].edgeList[j].featureid1, featureid2: json.edges[i].edgeList[j].featureid2,pvalue: json.edges[i].edgeList[j].pvalue, correlation: json.edges[i].edgeList[j].correlation});
-                         }
                          }
                      }
                 }
 
                  Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
-                Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
-                Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
                 details_window_mask.hide();
 
             },
@@ -786,11 +670,18 @@ function launchDenovoWindow(){
     loadDeNovoSearches();
 }
 
-function renderDetailsWindow(term1,term2,type){
+function renderDetailsWindow(term1,term2,term1Alias,term2Alias,type){
     details_window_mask =  new Ext.LoadMask('details-window', {msg:"Loading Data..."});
-   // details_window_mask.show();
-    retrieveMedlineDocuments(term1,term2)
+
     retrieveEdgeDetails(term1,term2,type);
+
+    if(model_def["alias"]){
+        retrieveMedlineDocuments(term1Alias,term2Alias);
+    }
+    else{
+        retrieveMedlineDocuments(term1,term2);
+    }
+
      details_window.show();
     Ext.StoreMgr.get('dataDocument_grid_store').load({params:{start: 0, rows:20}});
 
@@ -814,13 +705,6 @@ function redraw(){
         Ext.getCmp('domainOnly-cb').disable();
     }
 
-    if(!Ext.getCmp('rfaceOnly-cb').getValue()){
-        Ext.getCmp('rfaceOnly-cb').disable();
-    }
-
-    if(!Ext.getCmp('pairwiseOnly-cb').getValue()){
-        Ext.getCmp('pairwiseOnly-cb').disable();
-    }
 
     if(!Ext.getCmp('showDrugs-cb').getValue()){
         Ext.getCmp('showDrugs-cb').disable();
@@ -829,180 +713,5 @@ function redraw(){
     populateData(completeData['nodes']);
     renderModel();
 }
-
-/*
- renderScatterPlot
- should be wrapped in an event listener external to the ui layout code
- */
-function renderScatterPlot() {
-    var regression_type = Ext.getCmp('scatterplot_regression_radiogroup').getValue().getRawValue();
-    var reverse_axes = Ext.getCmp('scatterplot_axes_checkbox').getValue();
-    var discretize_x = Ext.getCmp('scatterplot_discrete_x_checkbox').getValue();
-    var discretize_y = Ext.getCmp('scatterplot_discrete_y_checkbox').getValue();
-    var event_obj =  {
-        div:document.getElementById('scatterplot_panel'),
-        regression_type:regression_type,
-        reverse_axes:reverse_axes,
-        discretize_x : discretize_x,
-        discretize_y :discretize_y
-    };
-    if (arguments.length ==1)  //data passed into function
-        event_obj['data'] = arguments[0];
-
-    Ext.getCmp('details-tabpanel').layout.setActiveItem('scatterplot_parent');
-    Ext.getCmp('scatterplot_parent').show();
-    scatterplot_draw(event_obj);
-
-
-}
-
-
-var scatterplot_data;
-
-
-function scatterplot_draw(params) {
-    var data = params.data || scatterplot_data || {data:[]},
-        div = params.div || null,
-        regression_type = params.regression_type || 'none',
-        reverse_axes = params.reverse_axes || false,
-        discretize_x = params.discretize_x || false,
-        discretize_y = params.discretize_y || false;
-    scatterplot_data = data;
-
-    if (data === undefined) {return;}  //prevent null plot
-
-    var dataset_labels=getDatasetLabels();
-    var patient_labels = dataset_labels['patients'];
-    var f1 = data.f1id, f2 = data.f2id;
-    var f1label = data.f1alias, f2label = data.f2alias;
-    var f1values, f2values;
-
-    if (isNonLinear(f1label[0])) {
-        f1values = data.f1values.split(':');
-    } else {
-        f1values = data.f1values.split(':').map(function(val) {return parseFloat(val);});
-    }
-    if (isNonLinear(f2label[0])) {
-        f2values = data.f2values.split(':');
-    } else {
-        f2values = data.f2values.split(':').map(function(val) {return parseFloat(val);});
-    }
-
-    if (f1values.length != f2values.length) {
-        vq.events.Dispatcher.dispatch(new vq.events.Event('render_fail','scatterplot','Data cannot be rendered correctly.'));
-        return;
-    }
-    var data_array = [];
-    for (var i=0; i< f1values.length; i++) {
-        if (!isNAValue(f1label,f1values[i]) && !isNAValue(f2label,f2values[i]) ) {
-            var obj = {};
-            obj[f1] = f1values[i], obj[f2]=f2values[i], obj['patient_id'] = patient_labels[i];
-            data_array.push(obj);
-        }
-    }
-
-    function reverseAxes() {
-        config.CONTENTS.xcolumnid = f2;config.CONTENTS.ycolumnid=f1;config.CONTENTS.xcolumnlabel=f2label;config.CONTENTS.ycolumnlabel=f1label;
-        tooltip[data.f1alias]=f2;tooltip[data.f2alias]=f1;
-        config.CONTENTS.tooltip_items=tooltip;
-    }
-
-    var tooltip = {};
-    tooltip[data.f1alias] = f1,tooltip[data.f2alias] = f2,tooltip['Sample'] = 'patient_id';
-
-    if(discretize_x && f1label != 'B') {
-
-          var quartiles = pv.Scale.quantile(f1values).quantiles(4).quantiles();
-            //Freedman-Diaconis' choice for bin size
-            var setSize = 2 * (quartiles[3] - quartiles[1]) / Math.pow(f1values.length,0.33);
-        var firstBin = pv.min(f1values)+setSize/2;
-        var bins = pv.range(firstBin,pv.max(f1values)-setSize/2,setSize);
-        f1values=f1values.map(function(val) { return bins[Math.min(Math.max(Math.floor((val-firstBin) / setSize),0),f1values.length-1)];});
-    }
-    if(discretize_y && f2label != 'B') {
-    var f2hist = pv.histogram(f2values).frequencies(true).bins();
-    }
-    f1label = (discretize_x ? 'B' : f1label[0]) + f1label.slice(1);
-    f2label = (discretize_y ? 'B' : f2label[0]) + f2label.slice(1);
-    var violin = (isNonLinear(f1label[0]) ^ isNonLinear(f2label[0])); //one is nonlinear, one is not
-    var cubbyhole = isNonLinear(f1label[0]) && isNonLinear(f2label[0]);
-
-    var sp,config;
-    if (violin)     {
-        sp = new vq.ViolinPlot();
-        config ={DATATYPE : "vq.models.ViolinPlotData", CONTENTS : {
-            PLOT : {container: div,
-                width : 600,
-                height: 300,
-                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
-            data_array: data_array,
-            xcolumnid: f1,
-            ycolumnid: f2,
-            valuecolumnid: 'patient_id',
-            xcolumnlabel : f1label,
-            ycolumnlabel : f2label,
-            valuecolumnlabel : 'Sample Id',
-            tooltip_items : tooltip,
-            show_points : true,
-            regression :regression_type
-        }};
-        if (isNonLinear(f2label[0])) {
-            reverseAxes();
-        }
-        sp.draw(config);
-    }
-    else if(cubbyhole) {
-        sp = new vq.CubbyHole();
-        config ={DATATYPE : "vq.models.CubbyHoleData", CONTENTS : {
-            PLOT : {container: div,
-                width : 600,
-                height: 300,
-                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
-            data_array: data_array,
-            xcolumnid: f1,
-            ycolumnid: f2,
-            valuecolumnid: 'patient_id',
-            xcolumnlabel : f1label,
-            ycolumnlabel : f2label,
-            valuecolumnlabel : 'Sample Id',
-            tooltip_items : tooltip,
-            show_points : true,
-            radial_interval : 7
-        }};
-        if (reverse_axes) {
-            reverseAxes();
-        }
-        sp.draw(config);
-    }
-    else {
-        sp = new vq.ScatterPlot();
-
-        config ={DATATYPE : "vq.models.ScatterPlotData", CONTENTS : {
-            PLOT : {container: div,
-                width : 600,
-                height: 300,
-                vertical_padding : 40, horizontal_padding: 40, font :"14px sans"},
-            data_array: data_array,
-            xcolumnid: f1,
-            ycolumnid: f2,
-            valuecolumnid: 'patient_id',
-            xcolumnlabel : f1label,
-            ycolumnlabel : f2label,
-            valuecolumnlabel : 'Sample Id',
-            tooltip_items : tooltip,
-            radial_interval : 7,
-            regression :regression_type
-        }};
-        if (reverse_axes) {
-            reverseAxes();
-        }
-        sp.draw(config);
-    }
-
-    var e = new vq.events.Event('render_complete','scatterplot',sp);
-    e.dispatch();
-    return sp;
-}
-
 
 
