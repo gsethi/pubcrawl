@@ -13,18 +13,16 @@ public class GraphQuery {
     private static final Logger log = Logger.getLogger(GraphQuery.class.getName());
 
     private final String uri;
-    private final String dataSet;
     private final String searchNode;
     private final String relNode;
     private final Boolean alias;
 
     public GraphQuery(HttpServletRequest request, String searchNode, String relNode) {
         this.uri = request.getRequestURI();
-        this.dataSet = request.getParameter("dataset");
         this.alias = Boolean.parseBoolean(request.getParameter("alias"));
         this.searchNode = searchNode;
         this.relNode = relNode;
-        log.info("searchNode: " + searchNode + " dataSet: " + dataSet + " alias: " + alias + " relNode: " + relNode);
+        log.info("searchNode: " + searchNode + " alias: " + alias + " relNode: " + relNode);
 
     }
 
@@ -45,8 +43,5 @@ public class GraphQuery {
         return alias;
     }
 
-    public String getDataSet(){
-        return dataSet;
-    }
 
 }

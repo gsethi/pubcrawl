@@ -13,7 +13,6 @@ public class RelationshipQuery {
     private static final Logger log = Logger.getLogger(RelationshipQuery.class.getName());
 
     private final String uri;
-    private final String dataSet;
     private final String node;
     private final String node2;
     private final Boolean alias;
@@ -21,12 +20,11 @@ public class RelationshipQuery {
 
     public RelationshipQuery(HttpServletRequest request, String node, String node2) {
         this.uri = request.getRequestURI();
-        this.dataSet = request.getParameter("dataset");
         this.alias = Boolean.parseBoolean(request.getParameter("alias"));
         this.edgeType = request.getParameter("edgetype");
         this.node = node;
         this.node2 = node2;
-        log.info("node: " + node + " dataSet: " + dataSet + " alias: " + alias + " node2: " + node2);
+        log.info("node: " + node + " alias: " + alias + " node2: " + node2);
 
     }
 
@@ -47,9 +45,6 @@ public class RelationshipQuery {
         return alias;
     }
 
-    public String getDataSet(){
-        return dataSet;
-    }
 
     public String getEdgeType(){
         return edgeType;
