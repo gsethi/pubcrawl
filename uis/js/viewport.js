@@ -446,6 +446,95 @@ Ext.onReady(function() {
             }]
         });
 
+    var nodeNgdSelectionValueFields = new Ext.Panel({
+              // column layout with 2 columns
+               layout:'column',
+               border: false
+              ,defaults:{
+                   columnWidth:0.5
+                  ,layout:'form'
+                  ,border:false
+                  ,xtype:'panel'
+                  ,bodyStyle:'padding:0 50px 0 50px'
+              }
+              ,items:[{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'nodeSelection_ngd_start',
+                                      name: 'nodeSelection_ngd_start',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                                      validator: function(){
+                                         istart= parseFloat(Ext.getCmp('nodeSelection_ngd_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('nodeSelection_ngd_end').getValue());
+                                         if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(nodeNGDSelectionScroll != undefined){
+                                              if(nodeNGDSelectionStartValueUpdate != undefined && !nodeNGDSelectionStartValueUpdate){
+                                          nodeNGDSelectionScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('nodeSelection_ngd_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('nodeSelection_ngd_end').getValue());
+                                          var end = iend-istart;
+                                          nodeNGDSelectionScroll.set_position(istart, end);
+                                              }
+                                              else{
+                                                  nodeNGDSelectionStartValueUpdate=false;
+                                              }
+                                          }
+                                  }}
+                                  }]
+              },{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'nodeSelection_ngd_end',
+                                      name: 'nodeSelection_ngd_end',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                                      validator: function(){
+                                         istart= parseFloat(Ext.getCmp('nodeSelection_ngd_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('nodeSelection_ngd_end').getValue());
+                                          if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(nodeNGDSelectionScroll != undefined){
+                                              if(nodeNGDSelectionEndValueUpdate != undefined && !nodeNGDSelectionEndValueUpdate){
+                                          nodeNGDSelectionScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('nodeSelection_ngd_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('nodeSelection_ngd_end').getValue());
+                                          var end = iend-istart;
+                                          nodeNGDSelectionScroll.set_position(istart, end);
+                                              }else{
+                                                  nodeNGDSelectionEndValueUpdate=false;
+                                              }
+                                          }
+                                  }}
+                                  }]
+              }]
+          });
+
     var nodeFilterPanel = new Ext.Panel({
         id:'nodeFilterPanel',
         name:'nodeFilterPanel',
@@ -622,17 +711,24 @@ Ext.onReady(function() {
             fieldLabel: 'Include Nodes',
               xtype: 'checkboxgroup',
                 items:[{boxLabel: 'Orphan',name: 'standalone-cb', id: 'standalone-cb', checked: false},
-                    {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: true}]
+                    {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: false}],
+                listeners:{
+                                    change: function(combo,items){
+                                        filterVis();
+                                }}
               },{
             fieldLabel: 'Include Edges',
               xtype: 'checkboxgroup',
-              items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: true}]
+              items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: false},
+              {boxLabel: 'NGD Only', name: 'ngdOnly-cb', id: 'ngdOnly-cb', checked: false}],
+                                listeners:{
+                                    change: function(combo,items){
+                                        filterVis();
+                                }}
                }]
                 }]
             }]
     });
-
-    var sm = new Ext.grid.CheckboxSelectionModel();
 
     var dataNodeTablePanel = new Ext.Panel({
                     id:'dataNode-panel',
@@ -644,8 +740,10 @@ Ext.onReady(function() {
                     height: 650,
                     width:1050,
                     collapsible : false,
-                    items : [
-                        {
+                    items : [ { border: false,
+                                autoHeight:true,
+                                items:[{xtype: 'panel', id: 'nodeTotal-ngd',x:20, y:20}]
+                            },{
                             xtype:'grid',
                             id : 'dataNode_grid',
                             name : 'dataNode_grid',
@@ -678,12 +776,61 @@ Ext.onReady(function() {
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
                                     var record = grid.getStore().getAt(rowIndex);
-                                    renderDetailsWindow(model_def['term'],record.get('term1'),model_def['termAlias'],record.get('alias1'),"node");
+                                    renderDetailsWindow(model_def['term'],record.get('term1'),model_def['termAlias'],record.get('alias1'),"node",false);
                                 }
                             }
                         }]
                 });
 
+var sm = new Ext.grid.CheckboxSelectionModel();
+
+
+    var dataNodeSelectionTablePanel = new Ext.Panel({
+                      id:'dataNodeSelection-panel',
+                      name : 'dataNodeSelection-panel',
+                      title : 'Data Table',
+                      monitorResize : true,
+                      layout : 'fit',
+                       bodyStyle: 'padding:5px 5px 5px 5px',
+                      autoHeight:true,
+                      autoWidth: true,
+                      autoScroll: false,
+                      collapsible : false,
+                    border:false,
+                      items : [
+                          {
+                              xtype:'grid',
+                              id : 'dataNodeSelection_grid',
+                              name : 'dataNodeSelection_grid',
+                              autoScroll:true,
+                              monitorResize: true,
+                              autoWidth : true,
+                              height: 300,
+                              viewConfig: {
+                                          forceFit : true
+                              },
+                              cm : new Ext.grid.ColumnModel({
+                                  columns: [sm,
+                                      { header: "Term", width: 100,  id:'term1', dataIndex:'term1',groupName:'Node'},
+                                      { header: "Aliases", width: 150, id:'alias1', dataIndex: 'alias1',groupName:'Node'},
+                                      { header: "Term Single Count", width:50 , id:'term1count', dataIndex:'term1count',groupName:'Node'},
+                                      { header: "Term Combo Count", width:50, id:'combocount',dataIndex:'combocount',groupName:'Node'},
+                                      { header: "NGD", width:50, id:'ngd',dataIndex:'ngd',groupName:'Node'}
+                                  ],
+                                  defaults: {
+                                      sortable: true,
+                                      width: 100
+                                  }
+                              }),
+                              sm:sm,
+                              store : new Ext.data.JsonStore({
+                                  autoLoad:false,
+                                  storeId:'dataNodeSelection_grid_store',
+                                  fields : ['term1','alias1','term1count','combocount','ngd', 'tf','length']
+
+                              })
+                          }]
+                  });
 
     var dataDomineEdgeTablePanel = new Ext.Panel({
                     id:'dataEdge-panel',
@@ -1096,6 +1243,57 @@ Ext.onReady(function() {
     });
 
 
+        var nodeSelectionPanel = new Ext.Panel({
+         id:'nodeSelectionFilter',
+                autoScroll: true,
+                autoHeight: true,
+                border: false,
+                layout:'form',
+                items:[{xtype: 'textarea',
+                    border: false,
+                    anchor: '100%',
+                    hideLabel:true,
+                    height: 40,
+                    style: 'border:none;',
+                    readOnly: true,
+                     bodyStyle: 'padding:5px 5px 5px 5px',
+                    autoScroll: false,
+                    value:'Your search result returned more than 150 items.  Please select an NGD range to limit the resulting items to 150 or less.' +
+                        '  Or select a set of items in the data table manually.'},
+                    { xtype: 'panel',
+                        id: 'nodeSelection_filter_panel',
+                        name: 'nodeSelection_filter_panel',
+                        defaults:{anchor:'100%'},
+                        border:false,
+                        labelAlign: 'right',
+                        labelWidth: 100,
+                        labelSeparator:'',
+                        defaultType:'textfield',
+                        monitorValid: true,
+                        bodypadding: 10,
+                        items:[{ xtype: 'fieldset',
+                                defaults:{anchor:'100%'},
+                                labelSeparator: '',
+                                defaultType: 'textfield',
+                                autoHeight:true,
+                                title: 'NGD Histogram',
+                                items:[nodeNgdSelectionValueFields,
+                                    {xtype: 'panel', id: 'nodeSelection-ngd',x:20, y:20}
+                                ]
+                            }]
+                },{xtype: 'textarea',
+                    border: false,
+                        id:'totalItemsSelected-panel',
+                    anchor: '100%',
+                         style: 'border:none;',
+                       hideLabel:true,
+                         bodyStyle: 'padding:5px 5px 5px 5px',
+                        height: 20,
+                        readOnly:true,
+                        autoScroll: false,
+                    value:'Total Items Selected: '},dataNodeSelectionTablePanel]
+    });
+
     denovo_window = 
           new Ext.Window({
               id: 'denovo-window',
@@ -1115,6 +1313,55 @@ Ext.onReady(function() {
 
     });
     denovo_window.hide();
+
+    nodeSelection_window =
+          new Ext.Window({
+              id: 'nodeSelection-window',
+              renderTo: 'networkviz-acc',
+              modal: false,
+              width: 800,
+              height: 650,
+              closeAction: 'hide',
+              closable: true,
+              title: "Node Selection",
+              layoutConfig: {
+                animate: true
+              },
+              maximizable: false,
+              items:[nodeSelectionPanel],
+                buttons: [{
+                    text: '<font color="black">OK</font>',
+                     handler: function(){
+                        vis_mask.show();
+                  var nodeArray=[];
+                         var selectedNodes=[];
+                  var selections = Ext.getCmp('dataNodeSelection_grid').getSelectionModel().getSelections();
+                            for(var sIndex=0; sIndex < selections.length; sIndex++){
+                                var dataItem = selections[sIndex].data;
+                                nodeArray.push({name:dataItem.term1});
+                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,
+                                "cc": dataItem.combocount, "searchterm":model_def['term'],"tf":dataItem.tf,"drug":false,"aliases":dataItem.alias1,
+                                "termcount":dataItem.term1count,"length":dataItem.length});
+
+
+                            }
+                         completeData['nodes']=selectedNodes;
+                         callbackModelData['nodes']=true;
+
+                        loadEdges(nodeArray);
+                         nodeSelection_window.hide();
+                    }
+                },{
+                    text: '<font color="black">Cancel</font>',
+                    handler: function(){
+                        nodeSelection_window.hide();
+                    }
+                }]
+
+
+
+    });
+    nodeSelection_window.hide();
 
     details_window =
             new Ext.Window({

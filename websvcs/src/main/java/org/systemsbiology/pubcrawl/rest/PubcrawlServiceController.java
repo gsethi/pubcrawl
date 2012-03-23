@@ -6,6 +6,7 @@ import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.index.lucene.ValueContext;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.HighlyAvailableGraphDatabase;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +49,7 @@ import static org.systemsbiology.addama.commons.web.utils.HttpIO.pipe_close;
 @Controller
 public class PubcrawlServiceController {
     private static final Logger log = Logger.getLogger(PubcrawlServiceController.class.getName());
-    private HighlyAvailableGraphDatabase graphDB;
+    private AbstractGraphDatabase graphDB;
     private ExecutorService executorService;
 
    private static class EdgeCallable implements Callable {
@@ -909,6 +910,7 @@ public class PubcrawlServiceController {
             log.info("Now loading values with alias=" + alias);
             boolean first = true;
             Transaction tx = graphDB.beginTx();
+            log.info("now in transaction");
             try {
                 while ((vertexLine = vertexFile.readLine()) != null) {
                     //for the first line we need to get the term value, then get relationships
@@ -1041,7 +1043,7 @@ public class PubcrawlServiceController {
         this.executorService.shutdown();
     }
 
-    public void setGraphDB(HighlyAvailableGraphDatabase graphDB) {
+    public void setGraphDB(AbstractGraphDatabase graphDB) {
         this.graphDB = graphDB;
 
     }

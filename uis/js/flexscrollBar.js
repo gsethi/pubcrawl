@@ -179,6 +179,7 @@ vq.FlexScrollBar.prototype.render = function() {
 //if we're at the same place as last time, do nothing
         var window = translateAndScale(d);
         that.notifier(window.x ,window.dx );
+
     };
 
 
