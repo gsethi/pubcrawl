@@ -3,8 +3,8 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-        <bean id="graphDB" class="org.neo4j.kernel.HighlyAvailableGraphDatabase" destroy-method="shutdown" lazy-init="false">
-        <constructor-arg type="java.lang.String" value="/local/neo4j-server/neo4j1/neo4j-enterprise-1.6/data/test.db"/>
+        <bean id="graphDB" class="org.neo4j.kernel.EmbeddedGraphDatabase" destroy-method="shutdown" lazy-init="false">
+        <constructor-arg type="java.lang.String" value="/local/neo4j-server/neo4j1/neo4j-enterprise-1.6/data/pubcrawl.db"/>
         <constructor-arg type="java.util.Map">
             <map>
                 <entry key="neostore.nodestore.db.mapped_memory">
