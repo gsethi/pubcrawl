@@ -137,21 +137,13 @@ function loadModel(term1, alias,deNovo, callback) {
                         "tf":tf, "drug":false,"aliases": node.alias, "termcount": node.termcount,"length": node.length});
                     }
 
-                    vis_mask.hide();
-                    if(json.data.nodes.length > 150){
+                        vis_mask.hide();
                         launchNodeSelectionWindow(nodesArray,ngdTotalPlotData);
 
                     }
-                    else{
-                         completeData['nodes']=tempNodes;
-                        callbackModelData['nodes']=true;
-                        loadEdges(nodeNameArray);
-                    }
+
                     nodeTotalScroll=renderNGDHistogramData(ngdTotalPlotData,'nodeTotal-ngd',function doNothing(){},125,750,-1,-1);
                     Ext.StoreMgr.get('dataNode_grid_store').loadData(nodesArray);
-
-
-                }
 
             },
             failure: function(o) {
@@ -227,6 +219,7 @@ function loadEdges(nodeNameJsonArray){
                         edgeArray.push(edgeMap[key]);
                     }
                     completeData['edges']=edgeArray;
+                    model_def['edges']=edgeArray;
                     callbackModelData['edges']=true;
                 }
 

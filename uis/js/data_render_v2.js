@@ -122,12 +122,26 @@ function filterNode(node){
     var ccstart = parseFloat(Ext.getCmp('node_cc_start').getValue());
     var ccend = parseFloat(Ext.getCmp('node_cc_end').getValue());
 
+    var keep=true;
     if(node.ngd != null){
-        return ((node.ngd >= ngdstart && node.ngd <= ngdend) &&
+        keep = ((node.ngd >= ngdstart && node.ngd <= ngdend) &&
                 (node.cc >= ccstart && node.cc <= ccend));
     }
     else
-        return true;
+        keep = true;
+
+    var standaloneChecked = Ext.getCmp('standalone-cb').getValue();
+    if(!standaloneChecked){
+        var neighborObject = vis.firstNeighbors([node.id],true);
+        if(neighborObject.neighbors == null || neighborObject.neighbors.length == 0){
+            keep = false;
+        }
+
+    }
+
+    return keep;
+
+
 }
 
 function filterEdge(edge){
@@ -203,12 +217,12 @@ function filterEdgeViaConfig(edge){
 }
 
 function filterVis(){
-    vis.filter("nodes", function(node){
-        return filterNode(node.data);
-    });
 
     vis.filter("edges", function(edge){
           return filterEdge(edge.data);
+    });
+    vis.filter("nodes", function(node){
+        return filterNode(node.data);
     });
 
 }
@@ -423,6 +437,8 @@ function visReady(){
         vis.removeNode(evt.target.data.id);
     });
 
+    filterVis();
+
 }
 
 function getVisualStyle(){
@@ -559,9 +575,7 @@ function getModelDef(){
 }
 
 function renderModel() {
-    //filter out data in completeData to create the model_def, if this is the first load, then don't filter from
-    //histogram values.
-    createModelDef();
+
     //populate Histograms with the data that has been put into the model_def
     populateFilterHistograms();
 
@@ -778,12 +792,40 @@ function generateNetworkRequest(term,alias,deNovo){
 }
 
 function redraw(){
+
     model_def['edges']=[];
     model_def['nodes']=[];
 
     vis_ready=false;
     vis_mask = new Ext.LoadMask('cytoscape-web', {msg:"Redrawing..."});
     vis_mask.show();
+
+    var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
+    var ngdOnlyChecked = Ext.getCmp('ngdOnly-cb').getValue();
+    var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
+    if(!ngdOnlyChecked){
+        Ext.getCmp('ngdOnly-cb').disable();
+    }
+    if(!domainOnlyChecked){
+        Ext.getCmp('domainOnly-cb').disable();
+    }
+    if(!drugChecked){
+        Ext.getCmp('showDrugs-cb').disable();
+    }
+       //go thru and only get items that are visible.....and populate into completeData;
+    var nodes = vis.nodes();
+    for(var i=0; i< nodes.length; i++){
+        if(nodes[i].visible) {
+            model_def['nodes'].push(nodes[i].data);
+        }
+    }
+
+    var edges = vis.edges();
+    for(var i=0; i< edges.length; i++){
+        if(edges[i].visible){
+            model_def['edges'].push(edges[i].data);
+        }
+    }
 
     renderModel();
 }
