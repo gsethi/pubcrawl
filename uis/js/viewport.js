@@ -736,23 +736,29 @@ Ext.onReady(function() {
                     title : 'Data Table',
                     monitorResize : true,
                     autoScroll : false,
-                    layout : 'fit',
-                    height: 650,
-                    width:1050,
+                    layout : 'anchor',
                     collapsible : false,
                     items : [ { border: false,
-                                autoHeight:true,
-                                items:[{xtype: 'panel', id: 'nodeTotal-ngd',x:20, y:20}]
+                                layout:'hbox',
+                                layoutConfig:{
+                                    pack:'center',
+                                    align:'middle'
+                                },
+                                items:[{xtype: 'panel', id: 'nodeTotal-ngd'}]
                             },{
+                                xtype:'panel',
+                                layout: 'fit',
+                        anchor:'100% -125',
+                                border: false,
+                                items:[{
                             xtype:'grid',
                             id : 'dataNode_grid',
                             name : 'dataNode_grid',
                             autoScroll:true,
                             monitorResize: true,
-                            autoWidth : true,
-                            height: 650,
+                            autoExpandColumn:'alias1',
                             viewConfig: {
-                                        forceFit : true
+                                forceFit : true
                             },
                             cm : new Ext.grid.ColumnModel({
                                 columns: [
@@ -780,6 +786,7 @@ Ext.onReady(function() {
                                 }
                             }
                         }]
+    }]
                 });
 
 var sm = new Ext.grid.CheckboxSelectionModel();
@@ -1106,8 +1113,8 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                 autoScroll: true,
                 collapsible: true,
                 deferredRender: false,
-                tbar:[ '->',{text: 'Redraw',width:40, id: 'redrawBtn', ctCls:'rightBtn', disabled: true, handler: function(){ redraw();}},{xtype: 'tbspacer'},
-                    {text: 'Reset', width:40, id: 'resetBtn', ctCls: 'rightBtn', disabled: true, handler: function(){generateNetworkRequest(model_def['term'],model_def['alias'],false);}}
+                tbar:[ '->',{text: 'Trim & Redraw',width:40, id: 'redrawBtn', ctCls:'rightBtn', disabled: true, handler: function(){ redraw();}},{xtype: 'tbspacer'},
+                    {text: 'Reset', width:40, id: 'resetBtn', ctCls: 'rightBtn', disabled: true, handler: function(){model_def['nodes']=completeData['nodes']; model_def['edges']=completeData['edges']; renderModel();}}
               ],
                 items:[configPanel,nodeFilterPanel,edgeFilterPanel]
             });
@@ -1258,7 +1265,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                     readOnly: true,
                      bodyStyle: 'padding:5px 5px 5px 5px',
                     autoScroll: false,
-                    value:'Your search result returned more than 150 items.  Please select an NGD range to limit the resulting items to 150 or less.' +
+                    value:'Please select an NGD range to limit the resulting items to 150 or less.' +
                         '  Or select a set of items in the data table manually.'},
                     { xtype: 'panel',
                         id: 'nodeSelection_filter_panel',
@@ -1297,7 +1304,6 @@ var sm = new Ext.grid.CheckboxSelectionModel();
     denovo_window = 
           new Ext.Window({
               id: 'denovo-window',
-              renderTo: 'networkviz-acc',
               modal: false,
               width: 800,
               height: 410,
@@ -1317,7 +1323,6 @@ var sm = new Ext.grid.CheckboxSelectionModel();
     nodeSelection_window =
           new Ext.Window({
               id: 'nodeSelection-window',
-              renderTo: 'networkviz-acc',
               modal: false,
               width: 800,
               height: 650,
@@ -1331,6 +1336,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
               items:[nodeSelectionPanel],
                 buttons: [{
                     text: '<font color="black">OK</font>',
+                    enable: false,
                      handler: function(){
                         vis_mask.show();
                   var nodeArray=[];
@@ -1346,6 +1352,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
 
                             }
                          completeData['nodes']=selectedNodes;
+                         model_def['nodes']=selectedNodes;
                          callbackModelData['nodes']=true;
 
                         loadEdges(nodeArray);
@@ -1366,7 +1373,6 @@ var sm = new Ext.grid.CheckboxSelectionModel();
     details_window =
             new Ext.Window({
                 id          : 'details-window',
-                renderTo    : 'networkviz-acc',
                 modal       : false,
                 closeAction : 'hide',
                 layout      : 'anchor',
