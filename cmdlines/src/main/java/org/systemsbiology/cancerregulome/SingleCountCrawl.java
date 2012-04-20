@@ -59,6 +59,7 @@ public class SingleCountCrawl {
             SingleCountItem totalResults = null;
             SolrQuery query = new SolrQuery();
             query.setQuery("*:*");
+            query.set("qt", "distributed_select");
             query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 
@@ -234,7 +235,7 @@ public class SingleCountCrawl {
             bufReader.close();
         }
 
-        SolrServer server = getSolrServer(solrServerHost);
+        SolrServer[] servers = getSolrServer(solrServerHost);
         String logname = outputFileName + "_log.out";
         //create output files
         FileWriter logFileStream = new FileWriter(logname);
@@ -244,14 +245,19 @@ public class SingleCountCrawl {
 
         Set<Future<SingleCountItem>> set = new HashSet<Future<SingleCountItem>>();
 
-        ExecutorService pool = Executors.newFixedThreadPool(16);
+        ExecutorService pool = Executors.newFixedThreadPool(32);
         log.info("created threadpool");
         long firstTime = currentTimeMillis();
+        int serverNum=0;
         for (String aTermList : termList) {
             SearchTermAndList searchTermArray = getTermAndTermList(aTermList, useAlias);
-            Callable<SingleCountItem> callable = new SolrCallable(searchTermArray, server, useAlias, filterGrayList, keepGrayList);
+            Callable<SingleCountItem> callable = new SolrCallable(searchTermArray, servers[serverNum], useAlias, filterGrayList, keepGrayList);
             Future<SingleCountItem> future = pool.submit(callable);
             set.add(future);
+            serverNum++;
+            if(serverNum >= servers.length){
+                serverNum=0;
+            }
 
         }
 
@@ -372,7 +378,7 @@ public class SingleCountCrawl {
         options.addOption("a", false, "use Aliases");
         Option solrServerName = OptionBuilder.withArgName("solrServer")
                 .hasArg()
-                .withDescription("Server to query.  ex: solrhost:4080")
+                .withDescription("Server to query.  ex: solrhost:4080/solr")
                 .create("s");
         Option inputFileName = OptionBuilder.withArgName("inputFile")
                 .hasArg()

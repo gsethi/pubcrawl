@@ -2,6 +2,7 @@ package org.systemsbiology.cancerregulome;
 
 import org.apache.commons.cli.*;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -26,7 +27,7 @@ import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang.StringUtils.*;
 import static org.systemsbiology.cancerregulome.DbUtils.getJdbcTemplate;
 import static org.systemsbiology.cancerregulome.DbUtils.getSolrServer;
-import static scala.actors.threadpool.Arrays.asList;
+
 
 /**
  * @author aeakin
@@ -34,7 +35,7 @@ import static scala.actors.threadpool.Arrays.asList;
 public class Pubcrawl {
     private static final Logger log = Logger.getLogger(Pubcrawl.class.getName());
 
-    public static class SolrCallable implements Callable {
+    public class SolrCallable implements Callable {
         private String term1;
         private String term2;
         private long term1count;
@@ -63,7 +64,9 @@ public class Pubcrawl {
         public NGDItem call() {
             NGDItem totalResults = null;
             SolrQuery query = new SolrQuery();
+
             query.setQuery("+text:(*:*)");
+            query.set("qt", "distributed_select");
             query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 
@@ -77,6 +80,7 @@ public class Pubcrawl {
             }
 
             try {
+
                 QueryResponse rsp = this.server.query(query);
                 totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
             } catch (SolrServerException e) {
@@ -117,7 +121,7 @@ public class Pubcrawl {
         }
     }
 
-    public static class NGDItem {
+    public  class NGDItem {
         private double ngd;
         private long term1count;
         private long term2count;
@@ -246,7 +250,8 @@ public class Pubcrawl {
             bufReader.close();
         }
 
-        SolrServer server = getSolrServer(solrServerHost);
+        SolrServer[] servers = getSolrServer(solrServerHost);
+
         String logname = outputFileName + "_log.out";
         //create output files
         FileWriter logFileStream = new FileWriter(logname);
@@ -287,20 +292,25 @@ public class Pubcrawl {
                 searchTerm2 = bufReader2.readLine();
             }
         }
-
+        Pubcrawl p = new Pubcrawl();
         if (isEmpty(inputFileName)) { //entered term option, just have one to calculate
             SearchTermAndList searchTermArray = getTermAndTermList(searchTerm.trim(), useAlias, false);
-            Long searchTermCount = getTermCount(server, singleCountMap, searchTermArray, filterGrayList, keepGrayList);
+            Long searchTermCount = getTermCount(servers[0], singleCountMap, searchTermArray, filterGrayList, keepGrayList);
 
-            ExecutorService pool = Executors.newFixedThreadPool(16);
+            ExecutorService pool = Executors.newFixedThreadPool(32);
             Set<Future<NGDItem>> set = new HashSet<Future<NGDItem>>();
             Date firstTime = new Date();
+            int serverNum=0;
             for (String secondTerm : term2List) {
                 SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
-                long secondTermCount = getTermCount(server, singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
+                serverNum++;
+                if(serverNum >= servers.length){
+                    serverNum=0;
+                }
             }
 
             for (Future<NGDItem> future : set) {
@@ -321,18 +331,34 @@ public class Pubcrawl {
             BufferedReader bufReader = new BufferedReader(inputReader);
             String fileSearchTerm = bufReader.readLine();
             SearchTermAndList searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, false);
-            Long searchTermCount = getTermCount(server, singleCountMap, searchTermArray, filterGrayList, keepGrayList);
+            Long searchTermCount = getTermCount(servers[0], singleCountMap, searchTermArray, filterGrayList, keepGrayList);
 
             //do this once with a lower amount of threads, in case we are running on a server where new caching is taking place
-            ExecutorService pool = Executors.newFixedThreadPool(16);
-            Set<Future<NGDItem>> set = new HashSet<Future<NGDItem>>();
+            ExecutorService pool = Executors.newFixedThreadPool(32);
+            List<Future<NGDItem>> set = new ArrayList<Future<NGDItem>>();
             long firstTime = currentTimeMillis();
+            int count=0;
+            int serverNum=0;
             for (String secondTerm : term2List) {
+                count++;
                 SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
-                long secondTermCount = getTermCount(server, singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
+
+                if(count > 5000){
+                    for (Future<NGDItem> futureItem : set) {
+                        dataResultsOut.write(futureItem.get().printItem());
+                        futureItem = null;
+                    }
+                    count=0;
+                    set.clear();
+                }
+                serverNum++;
+                if(serverNum >= servers.length){
+                    serverNum=0;
+                }
             }
 
             for (Future<NGDItem> future : set) {
@@ -346,16 +372,30 @@ public class Pubcrawl {
 
             pool = Executors.newFixedThreadPool(32);
             fileSearchTerm = bufReader.readLine();
+            count=0;
             while (fileSearchTerm != null) {
                 searchTermArray = getTermAndTermList(fileSearchTerm, useAlias, false);
-                searchTermCount = getTermCount(server, singleCountMap, searchTermArray, filterGrayList, keepGrayList);
+                searchTermCount = getTermCount(servers[0], singleCountMap, searchTermArray, filterGrayList, keepGrayList);
                 secondTime = currentTimeMillis();
                 for (String secondTerm : term2List) {
                     SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
-                    long secondTermCount = getTermCount(server, singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                    Callable<NGDItem> callable = new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, server, useAlias, filterGrayList, keepGrayList);
+                    long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
+                    Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
                     Future<NGDItem> future = pool.submit(callable);
                     set.add(future);
+                    count++;
+                    if(count > 5000){
+                        for (Future<NGDItem> futureItem : set) {
+                            dataResultsOut.write(futureItem.get().printItem());
+                            futureItem = null;
+                        }
+                        count=0;
+                        set.clear();
+                    }
+                    serverNum++;
+                if(serverNum >= servers.length){
+                    serverNum=0;
+                }
                 }
 
                 for (Future<NGDItem> future : set) {
@@ -391,6 +431,7 @@ public class Pubcrawl {
             //didn't find it in map, so need to go get count
             SolrQuery query = new SolrQuery();
             query.setQuery("+text:(*:*)");
+            query.set("qt", "distributed_select");
             query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
             query.setParam("fl", "pmid");
 

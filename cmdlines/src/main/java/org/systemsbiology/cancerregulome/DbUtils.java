@@ -51,15 +51,22 @@ public class DbUtils {
         return null;
     }
 
-    public static SolrServer getSolrServer(String solrServerHost) {
+    public static SolrServer[] getSolrServer(String solrServerHost) {
         try {
             if (isEmpty(solrServerHost)) {
-                Resource r = new FileSystemResource("/titan/cancerregulome9/workspaces/pubcrawl/pubcrawl.properties");
+                Resource r = new FileSystemResource("pubcrawl.properties");
                 Properties prop = new Properties();
                 prop.load(r.getInputStream());
                 solrServerHost = prop.getProperty("solr_server");
             }
-            return new CommonsHttpSolrServer("http://" + solrServerHost + "/solr");
+            String[] servers = solrServerHost.split(",");
+            SolrServer[] serverArray = new SolrServer[servers.length];
+            for(int i =0; i<servers.length; i++){
+                System.out.println("servers: " + servers[i] );
+                SolrServer s =  new CommonsHttpSolrServer("http://" + servers[i]);
+                serverArray[i]=s;
+            }
+            return serverArray;
         } catch (Exception ex) {
             log.warning(ex.getMessage());
             System.exit(1);
