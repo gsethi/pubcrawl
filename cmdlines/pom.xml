@@ -97,36 +97,6 @@
             </build>
         </profile>
         <profile>
-            <id>denovoInsert</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.2-beta-4</version>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <finalName>denovoInsert</finalName>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.systemsbiology.cancerregulome.PubcrawlDeNovoInsert</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>attached</goal>
-                                </goals>
-                                <phase>package</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>GeneInteractionRetrieval</id>
             <build>
                 <plugins>
@@ -141,68 +111,6 @@
                             <archive>
                                 <manifest>
                                     <mainClass>org.systemsbiology.cancerregulome.GeneInteractionRetrieval</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <id>make-assembly</id>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>RE_Import</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.2-beta-4</version>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <finalName>RE_Import</finalName>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.systemsbiology.cancerregulome.RE_Import</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <id>make-assembly</id>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>GraphCluster</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.2-beta-4</version>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <finalName>GraphCluster</finalName>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.systemsbiology.cancerregulome.GraphTraversal_Clusters</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
@@ -265,6 +173,37 @@
                             <archive>
                                 <manifest>
                                     <mainClass>org.systemsbiology.cancerregulome.retrieveNGDMatrix</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <phase>package</phase>
+                                <id>make-assembly</id>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+          <profile>
+            <id>parseMedline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>2.2-beta-4</version>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>parseMedline</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.systemsbiology.cancerregulome.parseMedlineXml</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
