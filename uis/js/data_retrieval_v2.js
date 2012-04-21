@@ -56,8 +56,40 @@ function loadDeNovoSearches(){
   dn_query.send(handleDNTerms);
 }
 
+function loadGroupAssociations(nodeList,alias,callback){
+         vis_mask = new Ext.LoadMask('cytoscape-web', {msg:"Loading Data..."});
+    vis_mask.show();
+    completeData = {edges:null,nodes:null};
+    callbackModelData = {nodes:null,edges:null};
+    var modelDefTimer = new vq.utils.SyncDatasources(300, 3000, callback, callbackModelData);
+    modelDefTimer.start_poll();
 
-function loadModel(term1, alias,deNovo, callback) {
+    var nodeSet=[];
+                    var termList = nodeList.split(",");
+                    for(var i=0; i< termList.length; i++){
+                        nodeSet.push({name:termList[i]});
+                    }
+    firstload=true;
+
+    model_def['term'] = nodeList;
+    model_def['alias'] = alias;
+    model_def['deNovo'] = false;
+    model_def['type'] = "group";
+    preserveState();
+
+    var selectedNodes = [];
+    for(var i=0; i< nodeSet.length; i++){
+       selectedNodes.push({"id": nodeSet[i].name,"label": nodeSet[i].name});
+    }
+
+    model_def['nodes']= selectedNodes;
+    completeData['nodes']=selectedNodes;
+    callbackModelData['nodes']=true;
+
+    loadEdges(nodeSet);
+
+}
+function loadModel(term1, alias,deNovo, bypassSelection, callback) {
 
     vis_mask = new Ext.LoadMask('cytoscape-web', {msg:"Loading Data..."});
     vis_mask.show();
@@ -70,6 +102,8 @@ function loadModel(term1, alias,deNovo, callback) {
     model_def['term'] = term1;
     model_def['alias'] = alias;
     model_def['deNovo'] = deNovo;
+    model_def['type'] = "search";
+     preserveState();
         ngdTotalPlotData = {data:[]};
     urlString="/hukilau-svc/graphs/pubcrawl/nodes/query";
     var relType="ngd";
@@ -95,13 +129,18 @@ function loadModel(term1, alias,deNovo, callback) {
                             msg: 'No matching term was found.  Would you like to run a denovo search for the term: ' + model_def['term'] + ' ?',
                             width:400,
                             height: 200,
-                            buttons: Ext.Msg.OKCANCEL,
-                            fn: function(id){
-                                if(id == 'ok'){
+                            buttons:[{
+                                text: '<font color=black>Ok</font>',
+                                handler: function(){
                                     searchHandler();
+                                    this.close();
                                 }
-                                
-                            }
+                            },{
+                                text: '<font color=black>Cancel</font>',
+                                handler: function(){
+                                    this.close();
+                                }
+                            }]
                         });
                     vis_mask.hide();
                    
@@ -138,8 +177,37 @@ function loadModel(term1, alias,deNovo, callback) {
                     }
 
                         vis_mask.hide();
-                        launchNodeSelectionWindow(nodesArray,ngdTotalPlotData);
 
+                        if(bypassSelection){
+                            nodesArray.sort(function(a,b){ return a.ngd-b.ngd});
+                            var endIndex = nodesArray.length;
+                            if(nodesArray.length > 150){
+                                endIndex = 150;
+                            }
+
+                            var nodeArray=[];
+                            var selectedNodes=[];
+                             for(var sIndex=0; sIndex < endIndex; sIndex++){
+                                var dataItem = nodesArray[sIndex];
+                                nodeArray.push({name:dataItem.term1});
+                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,
+                                "cc": dataItem.combocount, "searchterm":model_def['term'],"tf":dataItem.tf,"drug":false,"aliases":dataItem.alias1,
+                                "termcount":dataItem.term1count,"length":dataItem.length});
+
+
+                            }
+
+                            completeData['nodes']=selectedNodes;
+                            model_def['nodes']=selectedNodes;
+                            callbackModelData['nodes']=true;
+
+                            vis_mask.show();
+                            loadEdges(nodeArray);
+
+                        }
+                    else{
+                        launchNodeSelectionWindow(nodesArray,ngdTotalPlotData);
+                        }
                     }
 
                     nodeTotalScroll=renderNGDHistogramData(ngdTotalPlotData,'nodeTotal-ngd',function doNothing(){},125,750,-1,-1);
@@ -239,6 +307,7 @@ function populateFilterHistograms(){
     edgeCCPlotData={data:[]};
     domainCountData={data:[]};
 
+    if(model_def['type'] != "group"){
     for (var nIndex=0; nIndex < model_def['nodes'].length; nIndex++){
         var ngdtrunc = Math.round(model_def['nodes'][nIndex].ngd * 100)/100;
         ngdPlotData['data'].push({ngd: ngdtrunc});
@@ -259,7 +328,7 @@ function populateFilterHistograms(){
         initend=Ext.getCmp('node_cc_end').getValue();
     }
     nodeCCScroll=renderCCLinearBrowserData(ccPlotData['data'],'node-cc',updateCCRange,initstart,initend);
-
+    }
 
     var domainCounts = {};
     for (var edgeIdx= 0; edgeIdx < model_def['edges'].length; edgeIdx++){
@@ -406,7 +475,7 @@ function checkJobStatus(){
                 Ext.MessageBox.hide();
                 denovo_window.hide();
                 loadDeNovoSearches();
-                generateNetworkRequest(model_def['term'],model_def['alias'],true);
+                generateNetworkRequest(model_def['term'],model_def['alias'],true,false);
             }
             else if(json.status == "pending" || json.status == "running" || json.status == "scheduled"){
                  setTimeout("checkJobStatus();", 1000);
