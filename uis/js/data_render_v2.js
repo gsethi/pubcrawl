@@ -38,8 +38,15 @@ function updateNodeSelectionNGDRange(start,width){
 
      });
 
+    Ext.getCmp('dataNodeSelection_grid').getSelectionModel().clearSelections(true);
     Ext.getCmp('dataNodeSelection_grid').getSelectionModel().selectRecords(selectedRecords,false);
     Ext.getCmp('totalItemsSelected-panel').setValue('Total Items Selected: ' +  selectedRecords.length);
+    if(selectedRecords.length <= 150){
+        Ext.getCmp('nodeSelOK-btn').enable();
+    }
+    else{
+        Ext.getCmp('nodeSelOK-btn').disable();
+    }
 
 }
 
@@ -494,6 +501,19 @@ function getVisualStyle(){
 
     };
 
+      vis["customEdgeStyle"] = function(data){
+        if(data.connType == "drugNGD" || data.connType == "ngd"){
+            return "EQUAL_DASH";
+        }
+        else if(data.connType == "domine"){
+                return "EQUAL_DASH";
+        }
+        else if(data.connType == "combo"){
+            return "SOLID";
+        }
+
+    };
+
         vis["customNodeShape"] = function(data){
         if(data.tf){
             return "diamond";
@@ -528,6 +548,7 @@ function getVisualStyle(){
         edges: {
             width: {customMapper:{functionName: "customEdgeWidth"}},
             color: {customMapper:{functionName: "customEdgeColor"}},
+            style: {customMapper:{functionName: "customEdgeStyle"}},
             tooltipText:{ customMapper: { functionName: "customTooltip"}},
             targetArrowShape: {discreteMapper:{attrName: "directed",
                             entries:[{attrValue: "true", value: "ARROW"},
@@ -583,7 +604,13 @@ function renderModel() {
     denovo_window.hide();
     Ext.getCmp('currentTerm-dfield').setValue(model_def['term']);
     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
-    Ext.getCmp('nodeFilterPanel').enable();
+
+    if(model_def['type'] != "group"){
+        Ext.getCmp('nodeFilterPanel').enable();
+    }
+    else{
+        Ext.getCmp('nodeFilterPanel').disable();
+    }
     Ext.getCmp('edgeFilterPanel').enable();
     Ext.getCmp('resetBtn').enable();
     Ext.getCmp('redrawBtn').enable();
@@ -703,7 +730,7 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
 
 
      Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
-    details_window_mask.hide();
+
     }
     else{
         Ext.Ajax.timeout = 1200000;
@@ -738,12 +765,12 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
                      }
 
                      Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
-                     details_window_mask.hide();
+
                  },
                  failure: function(o) {
                      Ext.MessageBox.alert('Error Retrieving Edges', o.statusText);
                      Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
-                     details_window_mask.hide();
+
                  }
              });
 
@@ -760,12 +787,16 @@ function launchDenovoWindow(){
 function launchNodeSelectionWindow(nodeTableArray,nodePlotData){
     nodeSelection_window.show();
     Ext.StoreMgr.get('dataNodeSelection_grid_store').loadData(nodeTableArray);
-    nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,-1);
+    nodePlotData['data'].sort(function(a,b){ return a.ngd-b.ngd});
+    var endIndex = nodePlotData['data'][nodePlotData['data'].length-1].ngd;
+    if(nodePlotData['data'].length > 150){
+         endIndex = nodePlotData['data'][149].ngd;
+    }
+    nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,endIndex);
 }
 
 function renderDetailsWindow(term1,term2,term1Alias,term2Alias,type,graphData){
-    details_window_mask =  new Ext.LoadMask('details-window', {msg:"Loading Data..."});
-
+    details_window.show();
     retrieveEdgeDetails(term1,term2,type,graphData);
 
     if(model_def["alias"]){
@@ -775,19 +806,36 @@ function renderDetailsWindow(term1,term2,term1Alias,term2Alias,type,graphData){
         retrieveMedlineDocuments(term1,term2);
     }
 
-     details_window.show();
     Ext.StoreMgr.get('dataDocument_grid_store').load({params:{start: 0, rows:20}});
 
 }
 
-function generateNetworkRequest(term,alias,deNovo){
+function generateNetworkRequest(term,alias,deNovo, bypassSelection){
         vis_ready=false;
         Ext.getCmp('domainOnly-cb').enable();
         Ext.getCmp('ngdOnly-cb').enable();
         Ext.getCmp('showDrugs-cb').enable();
+        Ext.getCmp('standalone-cb').enable();
+        Ext.getCmp('standalone-cb').setValue(true);
+        Ext.getCmp('domainOnly-cb').setValue(false);
+        Ext.getCmp('ngdOnly-cb').setValue(false);
+        Ext.getCmp('showDrugs-cb').setValue(false);
         model_def= {nodes: null,edges: null};
-        loadModel(term,alias,deNovo, renderModel);
+        loadModel(term,alias,deNovo, bypassSelection,renderModel);
+}
 
+function generateAssociationRequest(termSet,alias){
+     vis_ready=false;
+        Ext.getCmp('domainOnly-cb').enable();
+        Ext.getCmp('ngdOnly-cb').enable();
+        Ext.getCmp('showDrugs-cb').disable();
+        Ext.getCmp('standalone-cb').enable();
+        Ext.getCmp('standalone-cb').setValue(true);
+        Ext.getCmp('domainOnly-cb').setValue(false);
+        Ext.getCmp('ngdOnly-cb').setValue(false);
+        Ext.getCmp('showDrugs-cb').setValue(false);
+        model_def= {nodes: null,edges: null};
+        loadGroupAssociations(termSet,alias, renderModel);
 
 }
 
@@ -829,5 +877,87 @@ function redraw(){
 
     renderModel();
 }
+
+function extractURL() {
+    var json = null;
+    var url = location.search;
+    if (url.length > 1) json = Ext.urlDecode(url.slice(1));
+    return json;
+}
+
+function checkURL(){
+    var json = extractURL();
+    if(json != null){
+        if(json.dataset != undefined){
+
+        }
+        if(json.term != undefined){
+            if(json.alias == undefined){
+                json.alias = false;
+            }
+            else if(json.alias == "true"){
+                json.alias=true;
+            }
+            else{
+                json.alias = false;
+            }
+            if(json.type != undefined && json.type == "group"){
+
+                generateAssociationRequest(json.term,json.alias,false);
+
+            }
+            else{
+                generateNetworkRequest(json.term,json.alias,false,true);
+            }
+        }
+
+    }
+}
+
+function checkDatasetURL() {
+    var json = extractURL();
+    if (json != null && json.dataset !== undefined) {
+        selectDatasetByLabel(json.dataset);
+    }
+}
+
+function checkFormURL() {
+    var json = extractURL();
+    if (json != null) setFormState(json);
+}
+
+function preserveState() {
+    window.history.pushState(generateStateJSON(), '', '?' + Ext.urlEncode(generateStateJSON()));
+}
+
+function generateStateJSON() {
+  //  var json = getFilterSelections();
+    var obj = {};
+    obj.term = model_def['term'];
+    obj.type = model_def['type'];
+    obj.alias = model_def['alias'];
+    obj.dataset = model_def['dataset'];
+    return obj;
+}
+function setFormState(json) {
+    if(json['term'] != ""){
+
+    }
+   // ['t', 'p'].forEach(function(f) {
+   //     if (json[f + '_type'] == 'CLIN') {
+   //         json[f + '_clin'] = json[f + '_label'];
+   //         delete json[f + '_label']
+   //     }
+   // });
+   // Ext.iterate(json, setComponentState)
+}
+
+function setComponentState(key, value) {
+    var field = Ext.getCmp(key);
+    if (field !== undefined && 'setValue' in field) {
+        Ext.getCmp(key).setValue(value, true);
+    }
+}
+
 
 

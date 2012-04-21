@@ -1,6 +1,5 @@
 Ext.onReady(loadDeNovoSearches);
 
-
 Ext.onReady(function() {
 
     var nodeNgdValueFields = new Ext.Panel({
@@ -710,7 +709,7 @@ Ext.onReady(function() {
                             },{
             fieldLabel: 'Include Nodes',
               xtype: 'checkboxgroup',
-                items:[{boxLabel: 'Orphan',name: 'standalone-cb', id: 'standalone-cb', checked: false},
+                items:[{boxLabel: 'Orphan',name: 'standalone-cb', id: 'standalone-cb', checked: true},
                     {boxLabel: 'Drugs', name: 'showDrugs-cb', id: 'showDrugs-cb', checked: false}],
                 listeners:{
                                     change: function(combo,items){
@@ -789,7 +788,10 @@ Ext.onReady(function() {
     }]
                 });
 
-var sm = new Ext.grid.CheckboxSelectionModel();
+var sm = new Ext.grid.CheckboxSelectionModel({
+    sortable: true,
+    header:'<div>&nbsp;</div>'
+});
 
 
     var dataNodeSelectionTablePanel = new Ext.Panel({
@@ -984,6 +986,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                     monitorResize : true,
                     autoScroll : true,
                     flex: 4,
+                    layout:'fit',
                     collapsible : false,
                     items : [
                         {
@@ -992,8 +995,6 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                             name : 'deNovoTerms_grid',
                             autoScroll:true,
                             monitorResize: true,
-                            autoWidth : true,
-                            height: 500,
                             viewConfig: {
                                         forceFit : true
                             },
@@ -1022,7 +1023,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                                     if(aliasString == "false")
                                       alias=false;
                                     Ext.getCmp('aliasJobCheckbox').setValue(aliasString);
-                                    generateNetworkRequest(record.get('term_value'),alias,true);
+                                    generateNetworkRequest(record.get('term_value'),alias,true,false);
                                 }
                             }
                         }]
@@ -1032,73 +1033,60 @@ var sm = new Ext.grid.CheckboxSelectionModel();
       id:'deNovo-panel',
       name:'deNovo-panel',
       height: 400,
-      padding: 5,
+        frame:false,
       layout:{
-        type: 'vbox',
+        type: 'form',
         align: 'stretch'
         },
       iconCls: 'home',
-      defaults:{
-        animFloat: false,
-        floatable: false,
-          border: false,
-          anchor:'100%'
-        },
       items:[{
-      xtype: 'form',
-          id: 'searchPanel',
-          name: 'searchPanel',
-          flex: .5,
-          layout: 'column',
-          defaults:{
-                border: false,
-                anchor:'100%'
-          },
+          xtype: 'form',
+          labelWidth: 100,
+          border: false,
+          bodyStyle: 'padding: 5px 5px 0',
           items:[{
-            columnWidth: .6,
-            layout: 'form',
-            defaults:{
-                border: false,
-                anchor:'100%'
-          },
-          items:[{
-            fieldLabel: 'Search Term',
-            xtype:'textfield',
-            id:'jobSearchTerm',
-            name:'jobSearchTerm',
-            allowBlank: false,
-            width: 350
-            }]
-            },{
-            columnWidth: .2,
-            layout: 'form',
-            labelWidth: 75,
-            defaults:{
-                border: false,
-                anchor:'100%'
-          },
-            items:[{
-            fieldLabel: 'Use Alias',
-              xtype: 'checkbox',
-              name: 'aliasJobCheckbox',
-              id: 'aliasJobCheckbox'
-              }]
-            },{
-            columnWidth: .2,
-            layout: 'form',
-            align: 'left',
-           defaults:{          
-                border: false,
-                anchor:'100%'
-          },
-            items:[{
-              xtype: 'button',
-              width: 100,
-              text: '<font color="black">Submit</font>',
-              handler: function(){var term = Ext.getCmp('jobSearchTerm').getValue();
-                  var alias = Ext.getCmp('aliasJobCheckbox').getValue();
-                  generateNetworkRequest(term,alias,false);}}]}]
-              },deNovoSearchTablePanel]
+                  xtype:'radiogroup',
+                  id:'retrievalMode-rg',
+                  fieldLabel: 'Retrieval Mode',
+                  columns: [100,200],
+                  editable:false,
+                  items: [
+                      {boxLabel: 'Search', name: 'rb-auto', inputValue: 1, checked: true},
+                      {boxLabel: 'Group Associations', name: 'rb-auto', inputValue: 2}
+                  ]
+              },{
+                  xtype:'textfield',
+                  fieldLabel: 'Term',
+                  name:'jobSearchTerm',
+                  id:'jobSearchTerm',
+                  width: 500,
+                  emptyText: 'Input Search Term...',
+                  allowBlank: false
+              },{ fieldLabel: 'Use Alias',
+                  name:'aliasJobCheckbox',
+                  id:'aliasJobCheckbox',
+                  xtype:'checkbox'
+              }],
+          buttons:[{
+        text: '<font color=black>Submit</font>',
+        handler: function(){
+             if(Ext.getCmp('retrievalMode-rg').getValue().inputValue == 1){
+                    var term = Ext.getCmp('jobSearchTerm').getValue().toLowerCase();
+                    var alias = Ext.getCmp('aliasJobCheckbox').getValue();
+                    generateNetworkRequest(term,alias,false,false);
+                 denovo_window.hide();
+
+                }
+                else if(Ext.getCmp('retrievalMode-rg').getValue().inputValue == 2){
+                    var term = Ext.getCmp('jobSearchTerm').getValue().toLowerCase();
+                    var alias =  Ext.getCmp('aliasJobCheckbox').getValue();
+
+                    generateAssociationRequest(term,alias,false);
+                 denovo_window.hide();
+                }
+        }
+    }]
+},deNovoSearchTablePanel]
       });
 
     var toolTabPanel = new Ext.TabPanel({
@@ -1114,7 +1102,21 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                 collapsible: true,
                 deferredRender: false,
                 tbar:[ '->',{text: 'Trim & Redraw',width:40, id: 'redrawBtn', ctCls:'rightBtn', disabled: true, handler: function(){ redraw();}},{xtype: 'tbspacer'},
-                    {text: 'Reset', width:40, id: 'resetBtn', ctCls: 'rightBtn', disabled: true, handler: function(){model_def['nodes']=completeData['nodes']; model_def['edges']=completeData['edges']; renderModel();}}
+                    {text: 'Reset', width:40, id: 'resetBtn', ctCls: 'rightBtn', disabled: true,
+                        handler: function(){
+                            Ext.getCmp('domainOnly-cb').enable();
+                            Ext.getCmp('ngdOnly-cb').enable();
+                            Ext.getCmp('showDrugs-cb').enable();
+                            Ext.getCmp('standalone-cb').enable();
+                            Ext.getCmp('standalone-cb').setValue(true);
+                            Ext.getCmp('domainOnly-cb').setValue(false);
+                            Ext.getCmp('ngdOnly-cb').setValue(false);
+                            Ext.getCmp('showDrugs-cb').setValue(false);
+                            model_def['nodes']=completeData['nodes'];
+                            model_def['edges']=completeData['edges'];
+                            renderModel();
+                        }
+                    }
               ],
                 items:[configPanel,nodeFilterPanel,edgeFilterPanel]
             });
@@ -1189,8 +1191,8 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                                       iconCls:'gene_select',
                                         listeners: {
                                     click: function(button, e) {
-                                      var term = Ext.getCmp('f1_search_value').getValue();
-                                      generateNetworkRequest(term,false,false);
+                                      var term = Ext.getCmp('f1_search_value').getValue().toLowerCase();
+                                      generateNetworkRequest(term,false,false,false);
                                     }
                                 }},
                     {xtype:'tbspacer'}, {xtype:'tbspacer'},{xtype:'tbspacer'},
@@ -1246,6 +1248,11 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                 layout : 'fit'
             },networkvizPanel
             ],
+        listeners: {
+        afterrender: function(){
+            checkURL();
+        }
+        },
         renderTo:Ext.getBody()
     });
 
@@ -1267,6 +1274,17 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                     autoScroll: false,
                     value:'Please select an NGD range to limit the resulting items to 150 or less.' +
                         '  Or select a set of items in the data table manually.'},
+                    {xtype: 'textarea',
+                    border: false,
+                        id:'totalItemsSelected-panel',
+                    anchor: '100%',
+                         style: 'border:none;',
+                       hideLabel:true,
+                         bodyStyle: 'padding:5px 5px 5px 5px',
+                        height: 20,
+                        readOnly:true,
+                        autoScroll: false,
+                    value:'Total Items Selected: '},
                     { xtype: 'panel',
                         id: 'nodeSelection_filter_panel',
                         name: 'nodeSelection_filter_panel',
@@ -1288,17 +1306,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
                                     {xtype: 'panel', id: 'nodeSelection-ngd',x:20, y:20}
                                 ]
                             }]
-                },{xtype: 'textarea',
-                    border: false,
-                        id:'totalItemsSelected-panel',
-                    anchor: '100%',
-                         style: 'border:none;',
-                       hideLabel:true,
-                         bodyStyle: 'padding:5px 5px 5px 5px',
-                        height: 20,
-                        readOnly:true,
-                        autoScroll: false,
-                    value:'Total Items Selected: '},dataNodeSelectionTablePanel]
+                },dataNodeSelectionTablePanel]
     });
 
     denovo_window = 
@@ -1325,7 +1333,7 @@ var sm = new Ext.grid.CheckboxSelectionModel();
               id: 'nodeSelection-window',
               modal: false,
               width: 800,
-              height: 650,
+              height: 500,
               closeAction: 'hide',
               closable: true,
               title: "Node Selection",
@@ -1336,12 +1344,19 @@ var sm = new Ext.grid.CheckboxSelectionModel();
               items:[nodeSelectionPanel],
                 buttons: [{
                     text: '<font color="black">OK</font>',
-                    enable: false,
+                    id:'nodeSelOK-btn',
+                    name: 'nodeSelOK-btn',
                      handler: function(){
-                        vis_mask.show();
+
                   var nodeArray=[];
                          var selectedNodes=[];
                   var selections = Ext.getCmp('dataNodeSelection_grid').getSelectionModel().getSelections();
+                          if(selections.length > 150){
+                               Ext.MessageBox.alert('Error','Too many selections have been made.  Please narrow the selection count to be less than 150.');
+                              return;
+                         }
+
+                         selections.sort(function(a,b){ return a.data.ngd-b.data.ngd});
                             for(var sIndex=0; sIndex < selections.length; sIndex++){
                                 var dataItem = selections[sIndex].data;
                                 nodeArray.push({name:dataItem.term1});
@@ -1351,10 +1366,12 @@ var sm = new Ext.grid.CheckboxSelectionModel();
 
 
                             }
+
                          completeData['nodes']=selectedNodes;
                          model_def['nodes']=selectedNodes;
                          callbackModelData['nodes']=true;
 
+                         vis_mask.show();
                         loadEdges(nodeArray);
                          nodeSelection_window.hide();
                     }
@@ -1403,3 +1420,4 @@ var sm = new Ext.grid.CheckboxSelectionModel();
         });
     }
 });
+
