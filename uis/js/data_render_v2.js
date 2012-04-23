@@ -235,7 +235,7 @@ function filterVis(){
 }
 
 
-function renderNGDHistogramData(plotData,elementId,updateCallback,height,width,istart,iend){
+function renderNGDHistogramData(plotData,elementId,updateCallback,height,width,istart,iend,viewOnly){
 
   var ngdValueArray = plotData['data'].map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(ngdValueArray);
@@ -251,7 +251,8 @@ function renderNGDHistogramData(plotData,elementId,updateCallback,height,width,i
             horizontal_padding:10,
             container: document.getElementById(elementId),
             data_array: plotData['data'],
-            interval: maxPosValueX
+            interval: maxPosValueX,
+            viewOnly: viewOnly
         },
         notifier: updateCallback,
         callback_always: false
@@ -795,7 +796,7 @@ function launchNodeSelectionWindow(nodeTableArray,nodePlotData){
     if(nodePlotData['data'].length > 150){
          endIndex = nodePlotData['data'][149].ngd;
     }
-    nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,endIndex);
+    nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,endIndex,false);
 }
 
 function renderDetailsWindow(term1,term2,term1Alias,term2Alias,type,graphData){

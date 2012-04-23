@@ -25,6 +25,7 @@ vq.FlexScrollBar = function(){
     this.bins(100);
     this.scale_multiplier(1);
     this.fixed_window_width(-1);
+    this.viewOnly(false);
     this.callback_always(false);
 
 
@@ -38,7 +39,8 @@ vq.FlexScrollBar.prototype
         .property('interval', Number)
         .property('scale_multiplier',Number)
         .property('callback_always', Boolean)
-        .property('fixed_window_width',Number);
+        .property('fixed_window_width',Number)
+        .property('viewOnly', Boolean);
 
 
 vq.FlexScrollBar.prototype._setOptionDefaults = function(options) {
@@ -64,6 +66,8 @@ vq.FlexScrollBar.prototype._setOptionDefaults = function(options) {
     if (options.scale_multiplier != null) { this.scale_multiplier(options.scale_multiplier); }
 
     if (options.fixed_window_width != null) {this.fixed_window_width(options.fixed_window_width); }
+
+    if (options.viewOnly != null) this.viewOnly = options.viewOnly;
 
     if (options.container) { this.container(options.container); }
     if (options.notifier) { this.notifier= options.notifier; }
@@ -97,6 +101,7 @@ vq.FlexScrollBar.prototype.render = function() {
             x=pv.Scale.linear(this.min_position(), this.max_position()).range(0, scrollWidth),
             isWindowWidthFixed = (this.fixed_window_width() > 0),
             windowWidth = (isWindowWidthFixed) ? this.fixed_window_width() : this.interval(),
+            viewOnly = this.viewOnly,
             maxX = this.max_position(),
             minX = this.min_position(),
             halfX = (maxX - minX) / 2,
@@ -202,6 +207,8 @@ vq.FlexScrollBar.prototype.render = function() {
             .fillStyle("white")
             .events("all")
             .cursor("crosshair");
+
+    if(!viewOnly){
     var bar = scroll.add(pv.Bar)
             .data([that.window])
             .left(function(d) {return d.x;})
@@ -216,6 +223,7 @@ vq.FlexScrollBar.prototype.render = function() {
             .event("point", function() { this.parent.active(true); return vis.render(); } )
             .event("unpoint", function() { this.parent.active(false); return vis.render(); } )
             .event("dblclick", function(d) { notify_dblclick(d) } );
+    }
     panel.add(pv.Label)
             .top(2)
             .left(function(d) { return d.x + (d.dx/2) - 10;} )
@@ -250,7 +258,7 @@ vq.FlexScrollBar.prototype.render = function() {
     scroll.add(pv.Rule)
             .bottom(0);
 
-    if(!isWindowWidthFixed) {
+    if(!isWindowWidthFixed && !viewOnly) {
         scroll.add(pv.Bar)
                 .data([this.window])
                 .fillStyle("steelblue")
@@ -315,6 +323,7 @@ vq.models.FlexScrollBarData.prototype.setDataModel = function () {
         {label: 'bins', id: 'PLOT.bins', cast: Number, defaultValue: 100},
         {label: 'scale_multiplier', id: 'PLOT.scale_multiplier',cast : Number, defaultValue : 1},
         {label: 'fixed_window_width', id: 'PLOT.fixed_window_width',cast : Number, defaultValue : -1},
+        {label: 'viewOnly', id: 'PLOT.viewOnly', cast: Boolean, defaultvalue: false},
         {label: 'interval', id: 'PLOT.interval', cast : Number, optional : true},
         {label: 'notifier', id: 'notifier', defaultValue : function(a){return null;}},
         {label :'callback_always', id:'callback_always', cast : Boolean, defaultValue : true},
