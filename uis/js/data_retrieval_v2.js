@@ -210,7 +210,7 @@ function loadModel(term1, alias,deNovo, bypassSelection, callback) {
                         }
                     }
 
-                    nodeTotalScroll=renderNGDHistogramData(ngdTotalPlotData,'nodeTotal-ngd',function doNothing(){},125,750,-1,-1);
+                    nodeTotalScroll=renderNGDHistogramData(ngdTotalPlotData,'nodeTotal-ngd',function doNothing(){},125,750,-1,-1,true);
                     Ext.StoreMgr.get('dataNode_grid_store').loadData(nodesArray);
 
             },
@@ -314,7 +314,7 @@ function populateFilterHistograms(){
         ccPlotData['data'].push({ngd: model_def['nodes'][nIndex].cc});
     }
 
-    nodeNGDScroll=renderNGDHistogramData(ngdPlotData,'node-ngd',updateNGDRange,100,400,-1,-1);
+    nodeNGDScroll=renderNGDHistogramData(ngdPlotData,'node-ngd',updateNGDRange,100,400,-1,-1,false);
     Ext.getCmp('node_ngd_start').setMinValue(nodeNGDScroll.min_position());
     Ext.getCmp('node_ngd_start').setMaxValue(nodeNGDScroll.max_position());
     Ext.getCmp('node_ngd_end').setMinValue(nodeNGDScroll.min_position());
@@ -360,7 +360,7 @@ function populateFilterHistograms(){
         initstart=Ext.getCmp('edge_ngd_start').getValue();
         initend=Ext.getCmp('edge_ngd_end').getValue();
     }
-    edgeNGDScroll=renderNGDHistogramData(edgeNGDPlotData,'edge-ngd',updateEdgeNGDRange,100,400,initstart,initend);
+    edgeNGDScroll=renderNGDHistogramData(edgeNGDPlotData,'edge-ngd',updateEdgeNGDRange,100,400,initstart,initend,false);
     Ext.getCmp('edge_ngd_start').setMinValue(edgeNGDScroll.min_position());
     Ext.getCmp('edge_ngd_start').setMaxValue(edgeNGDScroll.max_position());
     Ext.getCmp('edge_ngd_end').setMinValue(edgeNGDScroll.min_position());
