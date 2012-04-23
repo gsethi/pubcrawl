@@ -38,7 +38,7 @@ function updateNodeSelectionNGDRange(start,width){
 
      });
 
-    Ext.getCmp('dataNodeSelection_grid').getSelectionModel().clearSelections(true);
+
     Ext.getCmp('dataNodeSelection_grid').getSelectionModel().selectRecords(selectedRecords,false);
     Ext.getCmp('totalItemsSelected-panel').setValue('Total Items Selected: ' +  selectedRecords.length);
     if(selectedRecords.length <= 150){
@@ -604,6 +604,7 @@ function renderModel() {
     denovo_window.hide();
     Ext.getCmp('currentTerm-dfield').setValue(model_def['term']);
     Ext.getCmp('alias-dfield').setValue(model_def['alias']);
+    Ext.getCmp('searchtype-dfield').setValue(model_def['type']);
 
     if(model_def['type'] != "group"){
         Ext.getCmp('nodeFilterPanel').enable();
@@ -777,7 +778,9 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
     }
 
 }
-
+function legendImageRenderer(val){
+    return '<img src='+val+' />';
+}
 
 function launchDenovoWindow(){
     denovo_window.show();
