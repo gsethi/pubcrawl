@@ -285,8 +285,6 @@ public class SingleCountCrawl {
         try {
             JdbcTemplate jdbcTemplate = getJdbcTemplate();
 
-            final StringBuilder builder = new StringBuilder();
-
             String sql = "Select m.term_id,m.term_value,a.value from term_mapping m, term_aliases a where m.exclude=0 and a.exclude=0 and m.term_id=a.alias_id order by term_id";
             jdbcTemplate.query(sql, new ResultSetExtractor() {
                 @Override
@@ -310,18 +308,18 @@ public class SingleCountCrawl {
                         }
 
                         if (!aliasName.trim().toLowerCase().equals(termName.trim().toLowerCase())) {
-                            builder.append(",").append(aliasName.trim().toLowerCase());
+                            termConcatList = termConcatList + "," + aliasName.trim().toLowerCase();
+                          
                         }
                     }
+
+                     if (!isEmpty(termConcatList)) {
+                termList.add(termConcatList);
+            }
                     return null;
                 }
             });
 
-            //end of loop, so add last termconcatlist
-            String termConcatList = builder.toString();
-            if (!isEmpty(termConcatList)) {
-                termList.add(termConcatList);
-            }
 
         } catch (Exception ex) {
             log.warning("Error retrieving terms from database. Reason: " + ex.getMessage());

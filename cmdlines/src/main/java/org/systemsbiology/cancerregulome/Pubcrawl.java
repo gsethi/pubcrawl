@@ -85,6 +85,7 @@ public class Pubcrawl {
                 totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
             } catch (SolrServerException e) {
                 log.warning(e.getMessage());
+                log.warning(e.getStackTrace().toString());
                 System.exit(1);
             }
             return totalResults;

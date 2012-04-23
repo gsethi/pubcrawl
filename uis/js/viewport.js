@@ -662,7 +662,10 @@ Ext.onReady(function() {
                 autoScroll: true,
                 autoHeight: true,
                 border: false,
-                layout: 'form',
+                 layout:{
+        type: 'form',
+        align: 'stretch'
+        },
                 items:[{xtype:'fieldset',
                         defaults:{anchor:'100%'},
                         labelSeparator : '',
@@ -678,6 +681,11 @@ Ext.onReady(function() {
                             id: 'alias-dfield',
                             name: 'alias-dfield',
                             fieldLabel: 'Use Alias:'},
+                                {
+                            xtype: 'displayfield',
+                            id: 'searchtype-dfield',
+                            name: 'searchtype-dfield',
+                            fieldLabel: 'Mode:'},
                             {
                                 xtype: 'combo',
                                 id: 'layout-config',
@@ -725,9 +733,66 @@ Ext.onReady(function() {
                                         filterVis();
                                 }}
                }]
-                }]
+                },{xtype: 'grid',
+                    id: 'legendNodeGrid',
+                    autoHeight: true,
+                    autoWidth: true,
+                    monitorResize: true,
+                    layout: 'fit',
+                    viewConfig: {
+                                          forceFit : true
+                              },
+                    store: new Ext.data.ArrayStore({
+                        fields:[
+                            {name: 'Description'},
+                            {name: 'legendImage'}]
+                    }),
+                    columns: [
+                        { id: 'Description',
+                            dataIndex: 'Description'},
+                        {id: 'legendImage',
+                            align:'center',
+                            renderer: legendImageRenderer,
+                            dataIndex: 'legendImage'}],
+                    border: false,
+                    hideLabel:true,
+                    title: 'Node Legend'}
+                ,{xtype: 'grid',
+                    id: 'legendEdgeGrid',
+                    autoHeight: true,
+                    monitorResize: true,
+                    layout: 'fit',
+                        viewConfig: {
+                                          forceFit : true
+                              },
+                    store: new Ext.data.ArrayStore({
+                        fields:[
+                            {name: 'Description'},
+                            {name: 'legendImage'}]
+                    }),
+                    columns: [
+                        { id: 'Description',
+                            border:false,
+                            dataIndex: 'Description'},
+                        {id: 'legendImage',
+
+                            border:false,
+                            renderer: legendImageRenderer,
+                            align:'center',
+                            dataIndex: 'legendImage'}],
+                    border: false,
+                    hideLabel:true,
+                    title: 'Edge Legend'}]
             }]
     });
+
+
+    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png']];
+    Ext.getCmp('legendNodeGrid').getStore().loadData(legendNodeData);
+
+    var legendEdgeData = [['NMD','images/ngd.png'],['Domine','images/domine.png'],['NGD+Domine','images/domine_ngd.png']];
+    Ext.getCmp('legendEdgeGrid').getStore().loadData(legendEdgeData);
+
 
     var dataNodeTablePanel = new Ext.Panel({
                     id:'dataNode-panel',
@@ -814,7 +879,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                               autoScroll:true,
                               monitorResize: true,
                               autoWidth : true,
-                              height: 300,
+                              height: 140,
                               viewConfig: {
                                           forceFit : true
                               },
@@ -1167,18 +1232,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                                 }]
                         }]
 
-        },{xtype: 'tbspacer'},{ id: 'legendMenu',
-                  text: 'Legend',
-                  labelStyle: 'font-weight:bold;',
-                  menu:[{
-                    text: 'Node Legend',
-                    menu:[{text: 'Gene or DeNovo Term', iconCls:'normalNode'},
-                        {text: 'Drug', iconCls:'drug'}]
-                    },{
-                    text: 'Edge Legend',
-                   menu:[{text:'Domine', iconCls:'domine'},
-                       {text: 'Drug', iconCls: 'drug'}]
-                    }]},'->',{name: 'f1_search_value',
+        },{xtype: 'tbspacer'},'->',{name: 'f1_search_value',
                                 id: 'f1_search_value',
                                 emptyText: 'Input Search Term...',
                                 tabIndex: 1,
