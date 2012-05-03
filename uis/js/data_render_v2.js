@@ -833,10 +833,11 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
         Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
         Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
 
+
     }
     else{
         Ext.Ajax.timeout = 1200000;
-        urlString="/hukilau-svc/graphs/pubcrawl/nodes/query";
+        urlString="/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/query";
          Ext.Ajax.request({
                  method:"GET",
                  url: urlString,
@@ -875,6 +876,56 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
 
                  }
              });
+         Ext.Ajax.timeout = 1200000;
+        urlString="/pubcrawl/hukilau-svc/graphs/" + dataSet + "/nodes/query";
+         Ext.Ajax.request({
+                 method:"GET",
+                 url: urlString,
+                 params: {
+                     nodeSet: "[{name:" + node2+ "}]",
+                     relationshipSet: "[{name:'rface'},{name:'pairwise'}]"
+                 },
+                 success: function(o) {
+                     var json = Ext.util.JSON.decode(o.responseText);
+                     var jsonStore = Ext.StoreMgr.get('dataNode_grid_store');
+                     if(json.data.edges != undefined && json.data.nodes != undefined){
+                         var nodeIdMappings={};
+                        //first go thru nodes and get their id/name mappings for this edge database
+                         for(var index=0; index < json.data.nodes.length; index++){
+                            nodeIdMappings[json.data.nodes[index].id] = json.data.nodes[index].name;
+                         }
+
+                         for(var i=0; i< json.data.edges.length; i++){
+                             var edge = json.data.edges[i];
+                             var sourceName=nodeIdMappings[edge.source];
+                             var targetName=nodeIdMappings[edge.target];
+
+                             if(jsonStore.findExact("term1",sourceName) > -1 && jsonStore.findExact("term1",targetName) > -1){
+                                if(edge.relType == "pairwise")
+                                selectedPairwiseEdgeData.push({term1: sourceName, term2: targetName,featureid1:edge.featureid1,featureid2:edge.featureid2,pvalue: edge.pvalue,correlation: edge.correlation});
+                            if(edge.relType == "rface")
+                                selectedRFACEEdgeData.push({term1: sourceName, term2: targetName,featureid1:edge.featureid1,featureid2:edge.featureid2,pvalue: edge.pvalue,correlation: edge.correlation, importance: edge.importance});
+                             }
+
+
+
+                         }
+                     }
+
+                      Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
+        Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+
+                 },
+                 failure: function(o) {
+                     Ext.MessageBox.alert('Error Retrieving Edges', o.statusText);
+                       Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
+        Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+
+
+                 }
+             });
+
+        vis_mask.hide();
 
     }
 
@@ -894,7 +945,12 @@ function launchNodeSelectionWindow(nodeTableArray,nodePlotData){
     nodePlotData['data'].sort(function(a,b){ return a.ngd-b.ngd});
     var endIndex = nodePlotData['data'][nodePlotData['data'].length-1].ngd;
     if(nodePlotData['data'].length > 150){
-         endIndex = nodePlotData['data'][149].ngd;
+        var i=149;
+        endIndex=nodePlotData['data'][149].ngd;
+         while(nodePlotData['data'][i].ngd == endIndex){
+             i--;
+         }
+         endIndex = nodePlotData['data'][i].ngd;
     }
     nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,endIndex,false);
 }

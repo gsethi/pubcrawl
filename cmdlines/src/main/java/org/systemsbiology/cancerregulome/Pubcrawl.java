@@ -40,6 +40,7 @@ public class Pubcrawl {
         private String term2;
         private long term1count;
         private long term2count;
+        private long totalDocCount;
         private List<String[]> term1Array;
         private List<String[]> term2Array;
         private SolrServer server;
@@ -48,7 +49,7 @@ public class Pubcrawl {
         private Map<String, String> keepGrayList;    //only keep the keys if the values occur with them
 
         public SolrCallable(SearchTermAndList stal1, SearchTermAndList stal2, long term1count, long term2count, SolrServer server, boolean useAlias,
-                            HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList) {
+                            HashMap<String, String> filterGrayList, HashMap<String, String> keepGrayList, long totalDocCount) {
             this.term1 = stal1.getTerm();
             this.term2 = stal2.getTerm();
             this.term1count = term1count;
@@ -59,6 +60,7 @@ public class Pubcrawl {
             this.useAlias = useAlias;
             this.filterGrayList = filterGrayList;
             this.keepGrayList = keepGrayList;
+            this.totalDocCount=totalDocCount;
         }
 
         public NGDItem call() {
@@ -82,7 +84,7 @@ public class Pubcrawl {
             try {
 
                 QueryResponse rsp = this.server.query(query);
-                totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias);
+                totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias, this.totalDocCount);
             } catch (SolrServerException e) {
                 log.warning(e.getMessage());
                 log.warning(e.getStackTrace().toString());
@@ -132,8 +134,9 @@ public class Pubcrawl {
         private List<String[]> term1Array;
         private List<String[]> term2Array;
         private boolean useAlias;
+        private long totalDocCount;
 
-        public NGDItem(long term1count, long term2count, String term1, String term2, List<String[]> term1Array, List<String[]> term2Array, long combocount, boolean useAlias) {
+        public NGDItem(long term1count, long term2count, String term1, String term2, List<String[]> term1Array, List<String[]> term2Array, long combocount, boolean useAlias, long totalDocCount) {
             this.term1count = term1count;
             this.term2count = term2count;
             this.term1 = term1;
@@ -142,6 +145,7 @@ public class Pubcrawl {
             this.term1Array = term1Array;
             this.term2Array = term2Array;
             this.useAlias = useAlias;
+            this.totalDocCount=totalDocCount;
 
             if (this.combocount == 0) {
                 this.ngd = -1;
@@ -150,7 +154,7 @@ public class Pubcrawl {
                 double term2_log = Math.log10(this.term2count);
                 double combo_log = Math.log10(this.combocount);
 
-                this.ngd = (Math.max(term1_log, term2_log) - combo_log) / (Math.log10(10813257) - Math.min(term1_log, term2_log));
+                this.ngd = (Math.max(term1_log, term2_log) - combo_log) / (Math.log10(this.totalDocCount) - Math.min(term1_log, term2_log));
             }
 
         }
@@ -293,6 +297,9 @@ public class Pubcrawl {
                 searchTerm2 = bufReader2.readLine();
             }
         }
+
+        Long totalDocCount = getTotalDocCount(servers[0]);
+        logFileOut.write("Total doc count: " + totalDocCount);
         Pubcrawl p = new Pubcrawl();
         if (isEmpty(inputFileName)) { //entered term option, just have one to calculate
             SearchTermAndList searchTermArray = getTermAndTermList(searchTerm.trim(), useAlias, false);
@@ -305,7 +312,7 @@ public class Pubcrawl {
             for (String secondTerm : term2List) {
                 SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
                 long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList,totalDocCount);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
                 serverNum++;
@@ -344,7 +351,7 @@ public class Pubcrawl {
                 count++;
                 SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
                 long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
+                Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList,totalDocCount);
                 Future<NGDItem> future = pool.submit(callable);
                 set.add(future);
 
@@ -381,7 +388,7 @@ public class Pubcrawl {
                 for (String secondTerm : term2List) {
                     SearchTermAndList secondTermArray = getTermAndTermList(secondTerm, useAlias, false);
                     long secondTermCount = getTermCount(servers[serverNum], singleCountMap, secondTermArray, filterGrayList, keepGrayList);
-                    Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList);
+                    Callable<NGDItem> callable = p.new SolrCallable(searchTermArray, secondTermArray, searchTermCount, secondTermCount, servers[serverNum], useAlias, filterGrayList, keepGrayList,totalDocCount);
                     Future<NGDItem> future = pool.submit(callable);
                     set.add(future);
                     count++;
@@ -478,6 +485,27 @@ public class Pubcrawl {
         }
         return searchTermCount;
     }
+
+    private static long getTotalDocCount(SolrServer server) {
+              long totalDocCount=0;
+
+              SolrQuery query = new SolrQuery();
+              query.setQuery("+text:(*:*)");
+              query.set("qt", "distributed_select");
+              query.addFilterQuery("+pub_date_year:[1990 TO 2012]");
+              query.setParam("fl", "pmid");
+
+              try {
+                  QueryResponse rsp = server.query(query);
+                  totalDocCount = rsp.getResults().getNumFound();
+              } catch (SolrServerException e) {
+                  //exit out if there is an error
+                  log.warning(e.getMessage());
+                  System.exit(1);
+              }
+
+          return totalDocCount;
+      }
 
     public static SearchTermAndList getTermAndTermList(String searchTerm, boolean useAlias, boolean tabDelimited) {
          SearchTermAndList terms;
