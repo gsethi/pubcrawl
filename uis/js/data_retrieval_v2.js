@@ -763,7 +763,7 @@ function populateFilterHistograms(){
     Ext.getCmp('node_ngd_end').setMaxValue(nodeNGDScroll.max_position());
 
 
-    var initstart=-1;
+    var initstart=2;
     var initend=-1;
     if(!firstload){
         initstart=Ext.getCmp('node_cc_start').getValue();
@@ -810,7 +810,7 @@ function populateFilterHistograms(){
     Ext.getCmp('edge_ngd_end').setMinValue(edgeNGDScroll.min_position());
     Ext.getCmp('edge_ngd_end').setMaxValue(edgeNGDScroll.max_position());
 
-    initstart=-1;
+    initstart=2;
     initend=-1;
     if(!firstload){
         initstart=Ext.getCmp('edge_cc_start').getValue();
@@ -867,7 +867,7 @@ function retrieveMedlineDocuments(term1,term2){
                         phraseIndex=term2.indexOf(")",startIndex);
                     }
                  }
-                 store.proxy.setUrl('/solr/core0/select/?qt=distributed_select&q='+termString+termString2+'&fq=%2Bpub_date_year%3A%5B1991 TO 2011%5D&wt=json' +
+                 store.proxy.setUrl('/solr/core0/select/?qt=distributed_select&q='+termString+termString2+'&fq=%2Bpub_date_year%3A%5B1990 TO 2012%5D&wt=json' +
                 '&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true');
              }
          }

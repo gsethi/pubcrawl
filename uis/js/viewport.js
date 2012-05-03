@@ -995,7 +995,7 @@ Ext.onReady(function() {
     });
 
 
-    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png'],['DeNovo','images/deNovo.png']];
+    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png'],['DeNovo','images/deNovo.png'],['Mutations','images/mutation.png']];
     Ext.getCmp('legendNodeGrid').getStore().loadData(legendNodeData);
 
     var legendEdgeData = [['NMD','images/ngd.png'],['Domine','images/domine.png'],['NGD+Domine','images/domine_ngd.png'],
@@ -1844,8 +1844,9 @@ var sm = new Ext.grid.CheckboxSelectionModel({
     function renderNetworkViz() {
 
         vis = new org.cytoscapeweb.Visualization("cytoscapeweb", {
-            swfPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/CytoscapeWeb",
-            flashInstallerPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/playerProductInstall"
+            swfPath : "http://cdn.cancerregulome.org/js/cytoscape_web/1.0/swf/CytoscapeWeb",
+            flashInstallerPath : "http://cdn.cancerregulome.org/js/cytoscape_web/1.0/swf/playerProductInstall"
+
         });
     }
 });
