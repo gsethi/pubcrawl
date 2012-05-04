@@ -126,7 +126,7 @@ function loadGroupAssociations(nodeList,alias,callback){
      ngdTotalPlotData = {data:[]};
     var modelDefTimer = new vq.utils.SyncDatasources(300, 3000, callback, callbackModelData);
     modelDefTimer.start_poll();
-
+                                                            var selectedNodes=[];
                     var nodeSet=[];
                     var termList = nodeList.split(",");
                     for(var i=0; i< termList.length; i++){
@@ -135,9 +135,9 @@ function loadGroupAssociations(nodeList,alias,callback){
                         Ext.Ajax.timeout = 1200000;
                            Ext.Ajax.request({
                                    method:"GET",
-                                   url: "/pubcrawl/hukilau-svc/graphs/pubcrawl/relationships/query",
+                                   url: "/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/query",
                                    params:{
-                                       relationshipSet: "[{'name':'ngd'}]",
+                                       relationshipSet: "[{'name':'fake'}]",
                                        nodeSet: Ext.util.JSON.encode(nodeSet)
 
                                    },
@@ -161,40 +161,17 @@ function loadGroupAssociations(nodeList,alias,callback){
                                        }
                                        else{
                                            var nodesArray=[];
-                                           var nodeNameArray=[];
 
-                                           var ngdMap={};
-                                           //get ngd distances first
-                                           for(var index=0; index < json.data.edges.length; index++){
-                                               var edge = json.data.edges[index];
-                                               ngdMap[edge.source]=[edge.ngd,edge.combocount];
-                                           }
                                            for(var index=0; index < json.data.nodes.length; index++){
                                                var node = json.data.nodes[index];
-                                               var ngd=0;
-                                               var cc=node.termcount;
-                                               if(node.name.toUpperCase() != model_def['term'].toUpperCase()){
-                                                  ngd=ngdMap[node.id][0];
-                                                  cc=ngdMap[node.id][1];
-                                               }
+
                                                var tf = node.tf == 0 ? false : true;
-                                                 nodesArray.push({"term1":node.label,"alias1": node.aliases, "term1count": node.termcount,"combocount":cc,
-                                                 "ngd":ngd, "label": node.label, "nodeType":node.nodeType,"tf":tf, "length":node.length == null ? 0 : node.length});
-
-                                               if(node.name.toUpperCase() != model_def['term'].toUpperCase()){ //don't want to include the search term count in this histogram
-                                                   var ngdtrunc = Math.round(ngd * 100)/100;
-                                                   ngdTotalPlotData['data'].push({ngd: ngdtrunc});
-                                               }
-                                               nodeNameArray.push({"name":node.name});
-
+                                               nodesArray.push({"term1":node.label,"alias1": node.aliases, "term1count": node.termcount, "label": node.label, "nodeType":node.nodeType,"tf":tf, "length":node.length == null ? 0 : node.length});
                                            }
 
 
-                                                   var nodeArray=[];
-                                                   var selectedNodes=[];
                                                     for(var sIndex=0; sIndex < nodesArray.length; sIndex++){
                                                        var dataItem = nodesArray[sIndex];
-                                                       nodeArray.push({name:dataItem.term1});
                                                        selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,
                                                        "cc": dataItem.combocount, "searchterm":model_def['term'],"tf":dataItem.tf,"nodeType":dataItem.nodeType,"aliases":dataItem.alias1,
                                                        "termcount":dataItem.term1count,"length":dataItem.length});
@@ -202,16 +179,15 @@ function loadGroupAssociations(nodeList,alias,callback){
 
                                                    }
 
-                                                   completeData['nodes']=selectedNodes;
-                                                   model_def['nodes']=selectedNodes;
-                                                   callbackModelData['nodes']=true;
 
-                                                   loadEdges(nodeArray);
+                                            model_def['nodes']= selectedNodes;
+    completeData['nodes']=selectedNodes;
+    callbackModelData['nodes']=true;
 
+    loadEdges(nodeSet);
                                            }
+                                       
 
-                                           nodeTotalScroll=renderNGDHistogramData(ngdTotalPlotData,'nodeTotal-ngd',function doNothing(){},125,750,-1,-1,true);
-                                           Ext.StoreMgr.get('dataNode_grid_store').loadData(nodesArray);
 
                                    },
                                    failure: function(o) {
@@ -226,6 +202,7 @@ function loadGroupAssociations(nodeList,alias,callback){
     model_def['deNovo'] = false;
     model_def['type'] = "group";
     preserveState();
+
 
 }
 
@@ -437,13 +414,15 @@ function setMutCount(nodes){
             var count=0;
             var patientMutList = undefined;
             for(var mIndex=0; mIndex < model_def['mutations'].length; mIndex++){
-                if(model_def['mutations'][mIndex].gene == nodes[nIndex].id)
+                if(model_def['mutations'][mIndex].gene == nodes[nIndex].id){
                     patientMutList=model_def['mutations'][mIndex].patients;
+                    break;
+                }
             }
 
             if(patientMutList != undefined){
             for(var pIndex=0; pIndex < patientMutList.length; pIndex++){
-                if(selectionDict[patientMutList[pIndex].id] != undefined){
+                if(selectionDict[patientMutList[pIndex]] != undefined){
                     count=count+1;
                 }
             }
@@ -461,6 +440,8 @@ function setMutCount(nodes){
     }
     model_def['mutCounts']=mutCounts;
     return nodes;
+
+    
 }
 
 function loadEdges(nodeNameJsonArray){
@@ -478,69 +459,85 @@ function loadEdges(nodeNameJsonArray){
                 var dataItem = patientSelections[sIndex].data;
                 patientNameJsonArray.push({name:dataItem.patientId});
             }
-            loadMutationEdges(patientNameJsonArray);
+            loadMutationEdges(patientNameJsonArray,nodeNameJsonArray);
         }
     }
 }
 
-function loadMutationEdges(nodeNameJsonArray){
+function loadMutationEdges(patientNameJsonArray,nodeNameJsonArray){
+        var str="";
+    for(var i=0; i< nodeNameJsonArray.length; i++){
+        if(i==0){
+            str=str+"{name:'" + nodeNameJsonArray[i].name+"'}";
+        }
+        else{
+            str=str+",{name:'" + nodeNameJsonArray[i].name+"'}";
+        }
+    }
+    var nodeString = str;
+
     Ext.Ajax.timeout = 1200000;
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl/hukilau-svc/graphs/"+dataSet+"/query",
+            url: "/pubcrawl/hukilau-svc/graphs/"+dataSet+"/nodes/query",
             params: {
-                nodeSet: "{'nodeType':'patient'}",
-                query: "{nodes:[{nodeType:gene}],relationships:[{type:mutation,direction:out}]}"
+                nodeSet: "[" + nodeString + "]",
+                relationshipSet: "[{name:mutation}]"
             },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
+                 var nodeIdMappings={};
 
-                if(json.data.edges == undefined || json.data.edges.length == 0){
-                    callbackModelData['mutations']=true;
-
-                }
-                else{
-                    var edgeArray = [];
-                    var nodeIdMappings={};
-                    var edgeMap={};
                     //first go thru nodes and get their id/name mappings for this edge database
                     for(var index=0; index < json.data.nodes.length; index++){
                          nodeIdMappings[json.data.nodes[index].id] = json.data.nodes[index].name;
                     }
+
+                if(json.data.edges == undefined || json.data.edges.length == 0){
+                    model_def['mutations']=[];
+                    callbackModelData['mutations']=true;
+                }
+                else{
+                    var mutationData={};
                     for(var index=0; index < json.data.edges.length; index++){
                         var edge = json.data.edges[index];
-                        var key = nodeIdMappings[edge.target];
-                        if(nodeIdMappings[edge.source] > nodeIdMappings[edge.target]){
-                            key = nodeIdMappings[edge.target] + "_" + nodeIdMappings[edge.source];
+                        var gene = nodeIdMappings[edge.target];
+                        var patient = nodeIdMappings[edge.source];
+
+                        if(gene in mutationData){
+                            mutationData[gene].push(patient);
+                        }
+                        else{
+                            mutationData[gene] = [patient];
                         }
 
-                            if(edgeMap[key] != null){
-                                var edgeItem = edgeMap[key];
-                                edgeItem.push({id:nodeIdMappings[edge.source]});
-
-                            }
-                            else{
-                                edgeMap[key]=[{id:nodeIdMappings[edge.source]}];
-                            }
                        
                     }
 
                     var mutationArray=[];
-                    for(key in edgeMap){
-                        mutationArray.push({gene:key,patients:edgeMap[key]});
+                    for(key in mutationData){
+                        mutationArray.push({gene:key,patients:mutationData[key]});
                     }
 
+                    
                     model_def['mutations']=mutationArray;
                     callbackModelData['mutations']=true;
+
                 }
+
 
             },
             failure: function(o) {
-                Ext.MessageBox.alert('Error Retrieving Network', o.statusText);
-                vis_mask.hide();
+                  Ext.MessageBox.alert('Error Retrieving Mutation Data', o.statusText);
+                  model_def['mutations']=[];
+                    callbackModelData['mutations']=true;
+               
+
             }
         });
+
 }
+
 function loadDataSetEdges(nodeNameJsonArray){
     Ext.Ajax.timeout = 1200000;
     Ext.Ajax.request({
