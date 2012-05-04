@@ -1772,7 +1772,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                             for(var sIndex=0; sIndex < selections.length; sIndex++){
                                 var dataItem = selections[sIndex].data;
                                 nodeArray.push({name:dataItem.term1});
-                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,
+                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,"nodeType":dataItem.nodeType,
                                 "cc": dataItem.combocount, "searchterm":model_def['term'],"tf":dataItem.tf,"drug":false,"aliases":dataItem.alias1,
                                 "termcount":dataItem.term1count,"length":dataItem.length});
 

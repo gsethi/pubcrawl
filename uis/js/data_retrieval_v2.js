@@ -444,7 +444,7 @@ function setMutCount(nodes){
 
             }
             else{
-                mutCount= count/nodes[nIndex].length/selections.length;
+                mutCount= ((count/selections.length)/nodes[nIndex].length) * 1000;
                 nodes[nIndex].mutCount=mutCount;
                 mutCounts.push(mutCount);
             }
