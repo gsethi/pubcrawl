@@ -1,0 +1,195 @@
+
+/* background positioning */
+.x-toolbar .rightBtn .x-btn-tr i, .x-btn-tl i, .x-btn-mr i, .x-btn-ml i, .x-btn-br i, .x-btn-bl i{
+    font-size:1px;
+    line-height:1px;
+    width:3px;
+    display:block;
+    overflow:hidden;
+}
+
+.x-toolbar .rightBtn .x-btn-tr i, .x-btn-tl i, .x-btn-br i, .x-btn-bl i{
+    height:3px;
+}
+
+.x-toolbar .rightBtn  .x-btn-tl{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: -6px 0;
+}
+
+.x-toolbar .rightBtn  .x-btn-tr{
+    background-position: -9px 0;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-tc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: 0 -9px;
+}
+
+.x-toolbar .rightBtn  .x-btn-ml{
+    background-position: -6px -24px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-mr{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: -9px -24px;
+}
+
+.x-toolbar .rightBtn  .x-btn-mc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+    background-position: 0 -2168px;
+}
+
+.x-toolbar .rightBtn  .x-btn-bl{
+    background-position: -6px -3px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn  .x-btn-br{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: -9px -3px;
+}
+.x-toolbar .rightBtn  .x-btn-bc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/slate/button/btn.gif);
+
+    background-position: 0 -18px;
+}
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tl{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: -6px 0;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tr{
+    background-position: -9px 0;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-tc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: 0 -9px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-ml{
+    background-position: -6px -24px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-mr{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: -9px -24px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-mc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+    background-position: 0 -2168px;
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-bl{
+    background-position: -6px -3px;
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+}
+
+.x-toolbar .rightBtn .x-btn-over  .x-btn-br{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: -9px -3px;
+}
+.x-toolbar .rightBtn .x-btn-over  .x-btn-bc{
+ background-image:url(http://vis.systemsbiology.net/extjs/3.4.0/resources/images/default/button/btn.gif);
+
+    background-position: 0 -18px;
+}
+
+.my-title-header {
+  background: #4B586C url(../images/isb_logo_title.png) left center no-repeat; 
+  background-position: 10px;
+  height: 75px;
+  font-size: 50px;
+  line-height:75px; 
+  font-family: helvetica, serif;
+  font-weight:bold;
+}
+
+/*icons*/
+.data {
+    background-image: url(../images/control_equalizer.png) !important
+}
+
+.advParameters {
+    background-image: url(../images/table_gear.png) !important
+}
+
+.home {
+    background-image: url(../images/house.png) !important
+}
+
+.mutation {
+    background-image: url(../images/mutation.png) !important
+}
+
+.drug {
+    background-image: url(../images/drug.png) !important
+}
+
+.normalNode {
+    background-image: url(../images/normalNode.png) !important
+}
+
+.combo {
+    background-image: url(../images/combo.png) !important
+}
+
+.domine {
+    background-image: url(../images/domine.png) !important
+}
+
+.circvis {
+    background-image: url(../images/color_wheel.png) !important
+}
+
+.fastbreak {
+    background-image: url(../images/link_break.png) !important
+}
+
+.gene_select {
+    background-image: url(../images/zoom.png) !important
+}
+
+.navigation {
+    background-image: url(../images/world.png) !important
+}
+
+.table {
+    background-image: url(../images/table.png) !important
+}
+
+.forest {
+    background-image: url(../images/forest.png) !important
+}
+
+.parallel_coordinates {
+    background-image: url(../images/control_equalizer.png) !important
+}
+
+.comparator {
+    background-image: url(../images/contrast.png) !important
+}
+
+.network_visualization {
+    background-image: url(../images/network_visualization.png) !important
+  }
+
+.deNovoSearch{
+  background-image: url(../images/deNovoSearch.png) !important
+}
