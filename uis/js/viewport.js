@@ -1829,9 +1829,8 @@ var sm = new Ext.grid.CheckboxSelectionModel({
     function renderNetworkViz() {
 
         vis = new org.cytoscapeweb.Visualization("cytoscapeweb", {
-            swfPath : "http://cdn.cancerregulome.org/js/cytoscape_web/1.0/swf/CytoscapeWeb",
-            flashInstallerPath : "http://cdn.cancerregulome.org/js/cytoscape_web/1.0/swf/playerProductInstall"
-
+            swfPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v1.0/swf/CytoscapeWeb",
+            flashInstallerPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v1.0/swf/playerProductInstall"
         });
     }
 });

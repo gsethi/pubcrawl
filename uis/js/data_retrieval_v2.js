@@ -1,8 +1,5 @@
-var base_query_url = '',
-        pubcrawl_base_query_uri = '/google-dsapi-svc/addama/datasources/pubcrawl',
-        pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
-        pubcrawl_basedb_query = '/hukilau-svc/graphs/pubcrawl/',
-        dataset_basedb_query = '/hukilau-svc/graphs/';
+var pubcrawl_basedb_query = 'addama/proxies/pubcrawl_graphs';
+var dataset_basedb_query = '/addama/graphs/';
 
 var nodeCCScroll;
 var nodeNGDScroll;
@@ -99,7 +96,7 @@ function loadPatients(){
 }
 
 function loadDeNovoSearches(){
-  var dn_query = new google.visualization.Query(base_query_url + pubcrawl_base_query_uri + pubcrawl_deNovoTerms_query);
+  var dn_query = new google.visualization.Query('/addama/proxies/pubcrawl_sqldb/denovo_search_terms/query');
   dn_query.setQuery("select term_value, term_alias,alias");
   var dnTerms={searches:null};
 
@@ -914,7 +911,7 @@ function searchHandler(){
 
         Ext.Ajax.request({
             method:"POST",
-            url: "/script-execution-svc/addama/tools/pubcrawl/jobs",
+            url: "/addama/proxies/pubcrawl_jobs/jobs",
             params: {
                 label: jobSearchTerm + " [useAlias=" + alias + "]",
                 searchTerm: jobSearchTerm,
