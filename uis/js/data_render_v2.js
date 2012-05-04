@@ -378,6 +378,9 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
   var start = istart == -1 ? 0 : istart;
   var end = iend == -1 ? maxPosValueX-start : iend-start;
 
+  var ccScroll = new vq.FlexScrollBar();
+
+
     if(ngdValueArray.length == 0){
         maxPosValueX=0;
         minValueX=0;
@@ -385,7 +388,7 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
         end=0;
     }
 
-    var data_obj = function(){ return {
+     var data_obj = function(){ return {
         PLOT: {
             height: 100,
             width: 400,
@@ -403,7 +406,6 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
         callback_always: false
     }};
 
-  var ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
   ccScroll.draw(flexscroll_data);
     ccScroll.set_position(start, end);
@@ -837,7 +839,7 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
     }
     else{
         Ext.Ajax.timeout = 1200000;
-        urlString="/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/query";
+        urlString=pubcrawl_basedb_query + "nodes/query";
          Ext.Ajax.request({
                  method:"GET",
                  url: urlString,
@@ -877,7 +879,7 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
                  }
              });
          Ext.Ajax.timeout = 1200000;
-        urlString="/pubcrawl/hukilau-svc/graphs/" + dataSet + "/nodes/query";
+        urlString=dataset_basedb_query + dataSet + "/nodes/query";
          Ext.Ajax.request({
                  method:"GET",
                  url: urlString,

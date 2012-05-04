@@ -830,6 +830,7 @@ Ext.onReady(function() {
                             defaults: {anchor: '100%'},
                             labelSeparator: '',
                             defaultType: 'textfield',
+                            id: 'rface-fs',
                             autoHeight: true,
                             title: 'RF-ACE Importance 10<sup>-2</sup>',
                             items:[ edgeImportanceValueFields,
@@ -841,6 +842,7 @@ Ext.onReady(function() {
                             defaults: {anchor: '100%'},
                             labelSeparator: '',
                             defaultType: 'textfield',
+                            id: 'pairwise-fs',
                             autoHeight: true,
                             title: 'Pairwise Correlation',
                             items:[ edgeCorrelationValueFields,
@@ -891,7 +893,7 @@ Ext.onReady(function() {
                             id: 'dataset-dfield',
                             name: 'dataset-dfield',
                             fieldLabel: 'Dataset:',
-                            value: 'gbm_1031'},
+                            value: 'itmi_freeze_2'},
                             {
                                 xtype: 'combo',
                                 id: 'layout-config',
@@ -995,11 +997,11 @@ Ext.onReady(function() {
     });
 
 
-    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png'],['DeNovo','images/deNovo.png'],['Mutations','images/mutation.png']];
+    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png'],['DeNovo','images/deNovo.png'],['Variants','images/mutation.png']];
     Ext.getCmp('legendNodeGrid').getStore().loadData(legendNodeData);
 
     var legendEdgeData = [['NMD','images/ngd.png'],['Domine','images/domine.png'],['NGD+Domine','images/domine_ngd.png'],
-                            ['RF-ACE','images/rface.png'],['Pairwise','images/pairwise.png'],['1+ edge type with RF-ACE or Pairwise','images/comboDataSet.png']];
+                            ['Pairwise','images/pairwise.png'],['1+ edge type with RF-ACE or Pairwise','images/comboDataSet.png']];
     Ext.getCmp('legendEdgeGrid').getStore().loadData(legendEdgeData);
 
 
@@ -1085,9 +1087,10 @@ Ext.onReady(function() {
                             },
                             cm : new Ext.grid.ColumnModel({
                                 columns: [  smPatient,
-                                    { header: "Patient Id", width: 100,  id:'patientId', dataIndex:'patientId',groupName:'Node'},
-                                    { header: "Dataset", width:75 , id:'dataset', dataIndex:'dataset',groupName:'Node'},
-                                    { header: "Subtype", width: 100, id: 'subtype', dataIndex:'subtype',groupName:'Node'}
+                                    { header: "Patient Id", width: 50,  id:'patientId', dataIndex:'patientId',groupName:'Node'},
+                                    { header: "Member", width: 75, id: 'member', dataIndex:'member',groupName:'Node'},
+                                        { header: "Classification", width: 75, id: 'subtype', dataIndex:'subtype',groupName:'Node'},
+                                        { header: "Dataset", width:75 , id:'dataset', dataIndex:'dataset',groupName:'Node'}
                                 ],
                                 defaults: {
                                     sortable: true,
@@ -1098,7 +1101,7 @@ Ext.onReady(function() {
                             store : new Ext.data.JsonStore({
                                 autoLoad:false,
                                 storeId:'patient_grid_store',
-                                fields : ['patientId','dataset','subtype']
+                                fields : ['patientId','dataset','subtype','member']
                             }),
                             listeners: {
                                 rowclick : function(grid,rowIndex,event) {
@@ -1556,25 +1559,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                 id: 'north-toolbar',
                 cls: 'x-panel-header-noborder',
                 border: false,
-                tbar:[{ id:'dataSetMenu',
-                    text:'Data',
-                    labelStyle: 'font-weight:bold;',
-                    menu: [{
-                        text: 'GBM',
-                        checked: false,
-                        value: 'gbm_1031',
-                        id: 'datasetMenu_gbm',
-                        group: 'dataset',
-                        checkHandler: setDataSet
-
-                    },{
-                        text: 'COAD/READ',
-                        checked: false,
-                        group: 'dataset',
-                        id: 'datasetMenu_coad_read',
-                        checkHandler: setDataSet,
-                        value: 'coad_read_1111'
-                    }]},
+                tbar:[
                     {
                         id:'visDataMenu',
                         text:'Export',
