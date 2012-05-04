@@ -1,6 +1,7 @@
 pubcrawl.iml
 pubcrawl.ipr
 pubcrawl.iws
+.idea
 cmdlines/target
 cmdlines/cmdlines.iml
 websvcs/target
