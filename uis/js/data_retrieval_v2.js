@@ -1,6 +1,8 @@
 var base_query_url = '',
-        pubcrawl_base_query_uri = '/pubcrawl/google-dsapi-svc/addama/datasources/pubcrawl',
-        pubcrawl_deNovoTerms_query = '/denovo_search_terms/query'
+        pubcrawl_base_query_uri = '/google-dsapi-svc/addama/datasources/pubcrawl',
+        pubcrawl_deNovoTerms_query = '/denovo_search_terms/query',
+        pubcrawl_basedb_query = '/hukilau-svc/graphs/pubcrawl/',
+        dataset_basedb_query = '/hukilau-svc/graphs/';
 
 var nodeCCScroll;
 var nodeNGDScroll;
@@ -35,7 +37,7 @@ var edgeCCEndValueUpdate;
 var edgeDCScrollUpdate;
 var edgeDCStartValueUpdate;
 var edgeDCEndValueUpdate;
-var dataSet='gbm_1031';
+var dataSet='itmi_freeze_2';
 var edgeImportanceScrollUpdate;
 var edgeImportanceStartValueUpdate;
 var edgeImportanceEndValueUpdate;
@@ -69,14 +71,21 @@ function loadPatients(){
 
         Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl/hukilau-svc/graphs/" + dataSet + "/nodes",
+            url:  dataset_basedb_query + dataSet + "/nodes",
             params:{
                 filter:"{'prop':'nodeType','value':'patient'}"
             },
             success: function(o) {
                 var nodes = Ext.util.JSON.decode(o.responseText).data.nodes;
                  patients['searches'] = nodes.map(function(row){
-                    return{patientId: row.name, dataset: dataSet, subtype: row.subtype};
+                     var fmember="Mother";
+                     if(row.name.indexOf("NB") > -1){
+                         fmember="Child";
+                     }
+                     if(row.name.indexOf("F") > -1){
+                         fmember="Father";
+                     }
+                    return{patientId: row.name, dataset: dataSet, subtype: row.classification, member: fmember};
                 });
                 Ext.StoreMgr.get('patient_grid_store').loadData(patients['searches']);
                 Ext.getCmp('patient_grid').getSelectionModel().selectAll();
@@ -135,7 +144,7 @@ function loadGroupAssociations(nodeList,alias,callback){
                         Ext.Ajax.timeout = 1200000;
                            Ext.Ajax.request({
                                    method:"GET",
-                                   url: "/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/query",
+                                   url: pubcrawl_basedb_query + "nodes/query",
                                    params:{
                                        relationshipSet: "[{'name':'fake'}]",
                                        nodeSet: Ext.util.JSON.encode(nodeSet)
@@ -285,7 +294,7 @@ function loadModel(term1, alias,deNovo, bypassSelection, callback) {
     model_def['type'] = "search";
      preserveState();
         ngdTotalPlotData = {data:[]};
-    urlString="/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/query";
+    urlString=pubcrawl_basedb_query + "nodes/query";
     var relType="ngd";
     if (alias){
         relType="ngd_alias";
@@ -413,6 +422,9 @@ function setMutCount(nodes){
         if(!nodes[nIndex].drug){
             var count=0;
             var patientMutList = undefined;
+            if(model_def['mutations'] == undefined){
+                model_def['mutations']=[];
+            }
             for(var mIndex=0; mIndex < model_def['mutations'].length; mIndex++){
                 if(model_def['mutations'][mIndex].gene == nodes[nIndex].id){
                     patientMutList=model_def['mutations'][mIndex].patients;
@@ -479,10 +491,10 @@ function loadMutationEdges(patientNameJsonArray,nodeNameJsonArray){
     Ext.Ajax.timeout = 1200000;
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl/hukilau-svc/graphs/"+dataSet+"/nodes/query",
+            url:  dataset_basedb_query +dataSet+"/nodes/query",
             params: {
                 nodeSet: "[" + nodeString + "]",
-                relationshipSet: "[{name:mutation}]"
+                relationshipSet: "[{name:substitution}]"
             },
             success: function(o) {
                 var json = Ext.util.JSON.decode(o.responseText);
@@ -542,7 +554,7 @@ function loadDataSetEdges(nodeNameJsonArray){
     Ext.Ajax.timeout = 1200000;
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl/hukilau-svc/graphs/"+dataSet+"/relationships/query",
+            url:  dataset_basedb_query+dataSet+"/relationships/query",
             params: {
                 nodeSet: Ext.util.JSON.encode(nodeNameJsonArray),
                 relationshipSet: "[{name:pairwise},{name:rface}]"
@@ -616,7 +628,7 @@ function loadPubcrawlEdges(nodeNameJsonArray){
     Ext.Ajax.timeout = 1200000;
     Ext.Ajax.request({
             method:"GET",
-            url: "/pubcrawl/hukilau-svc/graphs/pubcrawl/relationships/query",
+            url: pubcrawl_basedb_query + "relationships/query",
             params: {
                 nodeSet: Ext.util.JSON.encode(nodeNameJsonArray),
                 relationshipSet: "[{name:ngd},{name:domine}]"
@@ -687,7 +699,6 @@ function populateDataSetHistograms(){
      var edgeImportancePlotData={data:[]};
      var edgeCorrelationPlotData={data:[]};
 
-    var domainCounts = {};
        for (var edgeIdx= 0; edgeIdx < model_def['edges'].length; edgeIdx++){
            var edge = model_def['edges'][edgeIdx];
            if((edge.connType == "rface" || edge.connType == "pairwise" || edge.connType == 'comboDataSet') && edge.edgeList != undefined){
@@ -709,6 +720,8 @@ function populateDataSetHistograms(){
            }
        }
 
+    if(edgeImportancePlotData['data'].length != 0){
+        Ext.getCmp('rface-fs').getEl().show();
      initstart=-1;
     initend=-1;
     if(!firstload){
@@ -721,6 +734,13 @@ function populateDataSetHistograms(){
        Ext.getCmp('edge_importance_start').setValue(0);
         Ext.getCmp('edge_importance_end').setValue(0);
     }
+    }
+    else{
+        Ext.getCmp('rface-fs').getEl().hide();
+    }
+
+    if(edgeCorrelationPlotData['data'].length != 0){
+           Ext.getCmp('pairwise-fs').getEl().show();
      initstart=-1;
     initend=-1;
     if(!firstload){
@@ -732,6 +752,11 @@ function populateDataSetHistograms(){
      if(edgeCorrelationPlotData['data'].length == 0){
        Ext.getCmp('edge_correlation_start').setValue(0);
         Ext.getCmp('edge_correlation_end').setValue(0);
+    }
+    }
+    else{
+        Ext.getCmp('pairwise-fs').getEl().hide();
+
     }
 
 
@@ -935,11 +960,11 @@ function checkJobStatus(){
     });
 }
 function exportVisData(){
-   vis.exportNetwork(this.value, 'pubcrawl/hukilau-svc/exportGraph?type='+this.value);
+   vis.exportNetwork(this.value, '/hukilau-svc/exportGraph?type='+this.value);
 }
 
 function exportNodeData(){
-    document.getElementById('frame').src='http://' + window.location.host + encodeURI('/pubcrawl/hukilau-svc/graphs/pubcrawl/nodes/export/'+model_def['term']+'?alias='+model_def['alias']+ '&type=csv');
+    document.getElementById('frame').src='http://' + window.location.host + encodeURI(pubcrawl_basedb_query+ 'nodes/export/'+model_def['term']+'?alias='+model_def['alias']+ '&type=csv');
 
 }
 
