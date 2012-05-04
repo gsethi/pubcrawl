@@ -1,4 +1,4 @@
-var pubcrawl_basedb_query = 'addama/proxies/pubcrawl_graphs';
+var pubcrawl_basedb_query = 'addama/proxies/pubcrawl_graphs/';
 var dataset_basedb_query = '/addama/graphs/';
 
 var nodeCCScroll;
