@@ -81,14 +81,29 @@ public class Pubcrawl {
                 query.addFilterQuery("+text:(" + term2Combined + ")");
             }
 
+            boolean retry = false;
             try {
 
                 QueryResponse rsp = this.server.query(query);
                 totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias, this.totalDocCount);
             } catch (SolrServerException e) {
                 log.warning(e.getMessage());
-                log.warning(e.getStackTrace().toString());
-                System.exit(1);
+                e.printStackTrace();
+                retry=true;
+            }
+
+            if(retry){
+                log.warning("retrying query");
+                try {
+                        //retry once.....
+                    QueryResponse rsp = this.server.query(query);
+                    totalResults = new NGDItem(this.term1count, this.term2count, this.term1, this.term2, this.term1Array, this.term2Array, rsp.getResults().getNumFound(), useAlias, this.totalDocCount);
+                } catch (SolrServerException e) {
+                    log.warning(e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+
             }
             return totalResults;
         }
@@ -408,6 +423,7 @@ public class Pubcrawl {
 
                 for (Future<NGDItem> future : set) {
                     dataResultsOut.write(future.get().printItem());
+                    future=null;
                 }
 
                 logFileOut.write("Query took " + (currentTimeMillis() - secondTime) / 1000 + " seconds.\n");
@@ -475,6 +491,7 @@ public class Pubcrawl {
             try {
                 QueryResponse rsp = server.query(query);
                 searchTermCount = rsp.getResults().getNumFound();
+                singleCountMap.put(join(searchTerms.get(0), ","), Integer.parseInt(Long.toString(searchTermCount)));
             } catch (SolrServerException e) {
                 //exit out if there is an error
                 log.warning(e.getMessage());
