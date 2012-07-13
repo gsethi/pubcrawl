@@ -1,4 +1,5 @@
 Ext.onReady(loadDeNovoSearches);
+Ext.onReady(loadPatients);
 
 Ext.onReady(function() {
 
@@ -179,6 +180,184 @@ Ext.onReady(function() {
                                 }]
             }]
         });
+     var edgeImportanceValueFields = new Ext.Panel({
+           // column layout with 2 columns
+            layout:'column',
+            border: false
+           ,defaults:{
+                columnWidth:0.5
+               ,layout:'form'
+               ,border:false
+               ,xtype:'panel'
+               ,bodyStyle:'padding:0 50px 0 50px'
+           }
+           ,items:[{
+                defaults:{anchor:'100%'}
+               ,items:[{xtype: 'numberfield',
+                                   id: 'edge_importance_start',
+                                   name: 'edge_importance_start',
+                                   allowNegative: false,
+                                   decimalPrecision: 4,
+                                   invalidText: 'This value is not valid.',
+                                   tabIndex: 2,
+                                   validateOnBlur: true,
+                                   allowDecimals: true,
+                                   value:'',
+                                   hideLabel: true,
+                  validator: function(){
+                                      istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                           return false;
+                                       }
+                                       else
+                                           return true;
+                                   },
+                                    listeners:{
+                                   valid: function(field){
+                                       if(edgeImportanceScroll != undefined){
+                                           if(edgeImportanceStartValueUpdate != undefined && !edgeImportanceStartValueUpdate){
+                                       edgeImportanceScrollUpdate=true;
+
+                                       istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       var end = iend-istart;
+                                       edgeImportanceScroll.set_position(istart, end);
+                                           }
+                                           else{
+                                               edgeImportanceStartValueUpdate=false;
+                                           }
+                                       }
+                               }}
+                               }]
+           },{
+                defaults:{anchor:'100%'}
+               ,items:[{xtype: 'numberfield',
+                                   id: 'edge_importance_end',
+                                   name: 'edge_importance_end',
+                                   allowNegative: false,
+                                   decimalPrecision: 4,
+                                   invalidText: 'This value is not valid.',
+                                   tabIndex: 2,
+                                   validateOnBlur: true,
+                                   allowDecimals: true,
+                                   value:'',
+                                   hideLabel: true,
+                  validator: function(){
+                                      istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                           return false;
+                                       }
+                                       else
+                                           return true;
+                                   },
+                                    listeners:{
+                                   valid: function(field){
+                                       if(edgeImportanceScroll != undefined){
+                                           if(edgeImportanceEndValueUpdate != undefined && !edgeImportanceEndValueUpdate){
+                                       edgeImportanceScrollUpdate=true;
+                                       istart= parseFloat(Ext.getCmp('edge_importance_start').getValue());
+                                       iend = parseFloat(Ext.getCmp('edge_importance_end').getValue());
+                                       var end = iend-istart;
+                                       edgeImportanceScroll.set_position(istart, end);
+                                       }
+                                           else{
+                                               edgeImportanceEndValueUpdate=false;
+                                           }
+                                       }
+                               }}
+                               }]
+           }]
+       });
+
+    var edgeCorrelationValueFields = new Ext.Panel({
+              // column layout with 2 columns
+               layout:'column',
+               border: false
+              ,defaults:{
+                   columnWidth:0.5
+                  ,layout:'form'
+                  ,border:false
+                  ,xtype:'panel'
+                  ,bodyStyle:'padding:0 50px 0 50px'
+              }
+              ,items:[{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'edge_correlation_start',
+                                      name: 'edge_correlation_start',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                     validator: function(){
+                                         istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(edgeCorrelationScroll != undefined){
+                                              if(edgeCorrelationStartValueUpdate != undefined && !edgeCorrelationStartValueUpdate){
+                                          edgeCorrelationScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          var end = iend-istart;
+                                          edgeCorrelationScroll.set_position(istart, end);
+                                              }else{
+                                                  edgeCorrelationStartValueUpdate=false;
+                                              }
+                                          }
+                                  }}
+                                  }]
+              },{
+                   defaults:{anchor:'100%'}
+                  ,items:[{xtype: 'numberfield',
+                                      id: 'edge_correlation_end',
+                                      name: 'edge_correlation_end',
+                                      allowNegative: false,
+                                      decimalPrecision: 2,
+                                      invalidText: 'This value is not valid.',
+                                      tabIndex: 2,
+                                      validateOnBlur: true,
+                                      allowDecimals: true,
+                                      value:'',
+                                      hideLabel: true,
+                     validator: function(){
+                                         istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          if(isNaN(istart) || isNaN(iend) || iend < istart){
+                                              return false;
+                                          }
+                                          else
+                                              return true;
+                                      },
+                                       listeners:{
+                                      valid: function(field){
+                                          if(edgeCorrelationScroll != undefined){
+                                              if(edgeCorrelationEndValueUpdate != undefined && !edgeCorrelationEndValueUpdate){
+                                          edgeCorrelationScrollUpdate=true;
+                                          istart= parseFloat(Ext.getCmp('edge_correlation_start').getValue());
+                                          iend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+                                          var end = iend-istart;
+                                          edgeCorrelationScroll.set_position(istart, end);
+                                              }else{
+                                                  edgeCorrelationEndValueUpdate=false;
+                                              }
+                                          }
+                                  }}
+                                  }]
+              }]
+          });
 
     var nodeCCValueFields = new Ext.Panel({
                 // column layout with 2 columns
@@ -645,6 +824,30 @@ Ext.onReady(function() {
                             items:[ edgeCCValueFields,
                                 { xtype: 'panel', id: 'edge-cc', x:20, y:20}
                             ]
+                        },
+                        {
+                            xtype: 'fieldset',
+                            defaults: {anchor: '100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            id: 'rface-fs',
+                            autoHeight: true,
+                            title: 'RF-ACE Importance 10<sup>-2</sup>',
+                            items:[ edgeImportanceValueFields,
+                                { xtype: 'panel', id: 'edge-importance', x:20, y:20}
+                            ]
+                        },
+                        {
+                            xtype: 'fieldset',
+                            defaults: {anchor: '100%'},
+                            labelSeparator: '',
+                            defaultType: 'textfield',
+                            id: 'pairwise-fs',
+                            autoHeight: true,
+                            title: 'Pairwise Correlation',
+                            items:[ edgeCorrelationValueFields,
+                                { xtype: 'panel', id: 'edge-correlation', x:20, y:20}
+                            ]
                         }]
                 }]
         }]
@@ -685,7 +888,12 @@ Ext.onReady(function() {
                             xtype: 'displayfield',
                             id: 'searchtype-dfield',
                             name: 'searchtype-dfield',
-                            fieldLabel: 'Mode:'},
+                            fieldLabel: 'Mode:'},{
+                            xtype: 'displayfield',
+                            id: 'dataset-dfield',
+                            name: 'dataset-dfield',
+                            fieldLabel: 'Dataset:',
+                            value: 'itmi_freeze_2'},
                             {
                                 xtype: 'combo',
                                 id: 'layout-config',
@@ -727,7 +935,9 @@ Ext.onReady(function() {
             fieldLabel: 'Include Edges',
               xtype: 'checkboxgroup',
               items:[{boxLabel: 'Domain Only', name: 'domainOnly-cb', id: 'domainOnly-cb', checked: false},
-              {boxLabel: 'NGD Only', name: 'ngdOnly-cb', id: 'ngdOnly-cb', checked: false}],
+              {boxLabel: 'NGD Only', name: 'ngdOnly-cb', id: 'ngdOnly-cb', checked: false},
+              {boxLabel: 'RF-ACE Only', name: 'rfaceOnly-cb', id:'rfaceOnly-cb', checked: true },
+              {boxLabel: 'Pairwise Only', name: 'pairwiseOnly-cb', id:'pairwiseOnly-cb', checked: true }],
                                 listeners:{
                                     change: function(combo,items){
                                         filterVis();
@@ -787,10 +997,11 @@ Ext.onReady(function() {
     });
 
 
-    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png']];
+    var legendNodeData = [['Gene or Denovo','images/normalNode.png'],['Drug','images/drug.png'],['DeNovo','images/deNovo.png'],['Variants','images/mutation.png']];
     Ext.getCmp('legendNodeGrid').getStore().loadData(legendNodeData);
 
-    var legendEdgeData = [['NMD','images/ngd.png'],['Domine','images/domine.png'],['NGD+Domine','images/domine_ngd.png']];
+    var legendEdgeData = [['NMD','images/ngd.png'],['Domine','images/domine.png'],['NGD+Domine','images/domine_ngd.png'],
+                            ['Pairwise','images/pairwise.png'],['1+ edge type with RF-ACE or Pairwise','images/comboDataSet.png']];
     Ext.getCmp('legendEdgeGrid').getStore().loadData(legendEdgeData);
 
 
@@ -852,6 +1063,66 @@ Ext.onReady(function() {
                         }]
     }]
                 });
+
+    var smPatient = new Ext.grid.CheckboxSelectionModel();
+
+    var patientTablePanel = new Ext.Panel({
+                    id:'patientTable-panel',
+                    name : 'patientTable-panel',
+                    monitorResize : true,
+                    autoScroll : false,
+                    flex: 4,
+                    collapsible : false,
+                    items : [
+                        {
+                            xtype:'grid',
+                            id : 'patient_grid',
+                            name : 'patient_grid',
+                            autoScroll:true,
+                            monitorResize: true,
+                            autoWidth : true,
+                            autoHeight: true,
+                            viewConfig: {
+                                        forceFit : true
+                            },
+                            cm : new Ext.grid.ColumnModel({
+                                columns: [  smPatient,
+                                    { header: "Patient Id", width: 50,  id:'patientId', dataIndex:'patientId',groupName:'Node'},
+                                    { header: "Member", width: 75, id: 'member', dataIndex:'member',groupName:'Node'},
+                                        { header: "Classification", width: 75, id: 'subtype', dataIndex:'subtype',groupName:'Node'},
+                                        { header: "Dataset", width:75 , id:'dataset', dataIndex:'dataset',groupName:'Node'}
+                                ],
+                                defaults: {
+                                    sortable: true,
+                                    width: 100
+                                }
+                            }),
+                            sm:smPatient,
+                            store : new Ext.data.JsonStore({
+                                autoLoad:false,
+                                storeId:'patient_grid_store',
+                                fields : ['patientId','dataset','subtype','member']
+                            }),
+                            listeners: {
+                                rowclick : function(grid,rowIndex,event) {
+                                    var record = grid.getStore().getAt(rowIndex);
+
+                                }
+
+                            }
+                        }]
+                });
+
+    var patientPanel = new Ext.Panel({
+           id:'patientPanel',
+           name:'patientPanel',
+           autoScroll: true,
+           height:600,
+           autoWidth: true,
+           title: 'Patients',
+           border: false,
+           items: [patientTablePanel]
+       });
 
 var sm = new Ext.grid.CheckboxSelectionModel({
     sortable: true,
@@ -949,6 +1220,90 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                             })
                         }]
                 });
+
+      var dataRFACEEdgeTablePanel = new Ext.Panel({
+                      id:'dataRFACEEdge-panel',
+                      name : 'dataRFACEEdge-panel',
+                      title: 'RFACE Connections',
+                      layout : 'fit',
+                      collapsible : false,
+                      items : [
+                          {
+                              xtype:'grid',
+                              id : 'dataRFACEEdge_grid',
+                              name : 'dataRFACEEdge_grid',
+                              autoScroll:true,
+                              autoWidth : true,
+                              viewConfig: {
+                                          forceFit : true
+                              },
+                              cm : new Ext.grid.ColumnModel({
+                                  columns: [
+                                      new Ext.grid.RowNumberer(),
+                                      {header : "featureid1", width:180,  id:'featureid1', dataIndex:'featureid1', groupName: 'Edge'},
+                                      { header: "featureid2", width: 180,  id:'featureid2', dataIndex:'featureid2',groupName:'Edge'},
+                                      { header: "pvalue", width: 50, id:'pvalue',dataIndex:'pvalue',groupName:'Edge'},
+                                       { header: "importance", width: 50, id:'importance',dataIndex:'importance',groupName:'Edge'},
+                                      { header: "correlation", width: 50, id:'correlation',dataIndex:'correlation',groupName:'Edge'},
+                                  ],
+                                  defaults: {
+                                      sortable: true,
+                                      width: 100
+                                  }
+                              }),
+                              listeners: {
+                                rowdblclick : function(grid,rowIndex,event) {
+                                    var record = grid.getStore().getAt(rowIndex);
+                                    record.get('featureid1');
+                                    record.get('featureid2');
+                                }
+                            },
+                              store : new Ext.data.JsonStore({
+                                  autoLoad:false,
+                                  storeId:'dataRFACEEdge_grid_store',
+                                  fields : ['featureid1','featureid2','pvalue','importance','correlation']
+                              })
+                          }]
+                  });
+
+
+
+        var dataPairwiseEdgeTablePanel = new Ext.Panel({
+                      id:'dataPairwiseEdge-panel',
+                      name : 'dataPairwiseEdge-panel',
+                      title: 'Pairwise Connections',
+                      layout : 'fit',
+                      collapsible : false,
+                      items : [
+                          {
+                              xtype:'grid',
+                              id : 'dataPairwiseEdge_grid',
+                              name : 'dataPairwiseEdge_grid',
+                              autoScroll:true,
+                              autoWidth : true,
+                              viewConfig: {
+                                          forceFit : true
+                              },
+                              cm : new Ext.grid.ColumnModel({
+                                  columns: [
+                                      {header : "featureid1", width:200,  id:'featureid1', dataIndex:'featureid1', groupName: 'Edge'},
+                                      { header: "featureid2", width: 200,  id:'featureid2', dataIndex:'featureid2',groupName:'Edge'},
+                                      { header: "pvalue", width: 60, id:'pvalue',dataIndex:'pvalue',groupName:'Edge'},
+                                      { header: "correlation", width: 60, id:'correlation',dataIndex:'correlation',groupName:'Edge'},
+                                  ],
+                                  defaults: {
+                                      sortable: true,
+                                      width: 100
+                                  }
+                              }),
+                              store : new Ext.data.JsonStore({
+                                  autoLoad:false,
+                                  storeId:'dataPairwiseEdge_grid_store',
+                                  fields : ['featureid1','featureid2','pvalue','correlation']
+                              })
+                          }]
+                  });
+
 
     function renderPMID(value,p,record){
         return String.format('<b><a href="http://www.ncbi.nlm.nih.gov/pubmed/{0}" target="_blank">{0}</a></b>',record.data.pmid);
@@ -1051,6 +1406,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                     monitorResize : true,
                     autoScroll : true,
                     flex: 4,
+                    height: 400,
                     layout:'fit',
                     collapsible : false,
                     items : [
@@ -1177,13 +1533,15 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                             Ext.getCmp('domainOnly-cb').setValue(false);
                             Ext.getCmp('ngdOnly-cb').setValue(false);
                             Ext.getCmp('showDrugs-cb').setValue(false);
+                            Ext.getCmp('rfaceOnly-cb').setValue(true);
+                            Ext.getCmp('pairwiseOnly-cb').setValue(true);
                             model_def['nodes']=completeData['nodes'];
                             model_def['edges']=completeData['edges'];
                             renderModel();
                         }
                     }
               ],
-                items:[configPanel,nodeFilterPanel,edgeFilterPanel]
+                items:[configPanel,patientPanel,nodeFilterPanel,edgeFilterPanel]
             });
 
     var networkvizPanel = new Ext.Panel({
@@ -1304,7 +1662,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
             ],
         listeners: {
         afterrender: function(){
-            checkURL();
+            checkDatasetURL();
         }
         },
         renderTo:Ext.getBody()
@@ -1414,7 +1772,7 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                             for(var sIndex=0; sIndex < selections.length; sIndex++){
                                 var dataItem = selections[sIndex].data;
                                 nodeArray.push({name:dataItem.term1});
-                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,
+                                selectedNodes.push({"id": dataItem.term1, "ngd": dataItem.ngd,"label": dataItem.term1,"nodeType":dataItem.nodeType,
                                 "cc": dataItem.combocount, "searchterm":model_def['term'],"tf":dataItem.tf,"drug":false,"aliases":dataItem.alias1,
                                 "termcount":dataItem.term1count,"length":dataItem.length});
 
@@ -1460,17 +1818,19 @@ var sm = new Ext.grid.CheckboxSelectionModel({
                     xtype: 'tabpanel',
                     activeTab: 0,
                     height: 600,
-                    width: 600,
-                    items: [dataDocumentTablePanel,dataDomineEdgeTablePanel]
+                    width: 800,
+                    items: [dataDocumentTablePanel,dataDomineEdgeTablePanel,dataRFACEEdgeTablePanel,dataPairwiseEdgeTablePanel]
                 }]
             });
     details_window.hide();
 
+
+
     function renderNetworkViz() {
 
         vis = new org.cytoscapeweb.Visualization("cytoscapeweb", {
-            swfPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/CytoscapeWeb",
-            flashInstallerPath: "http://informatics-apps.systemsbiology.net/cytoscapeweb_v0.8/swf/playerProductInstall"
+            swfPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v1.0/swf/CytoscapeWeb",
+            flashInstallerPath: "https://informatics-apps.systemsbiology.net/cytoscapeweb_v1.0/swf/playerProductInstall"
         });
     }
 });

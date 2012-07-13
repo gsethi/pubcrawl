@@ -1,3 +1,36 @@
+function updateEdgeImportanceRange(start,width){
+    if(!edgeImportanceScrollUpdate){
+      edgeImportanceStartValueUpdate=true;
+        edgeImportanceEndValueUpdate=true;
+      Ext.getCmp('edge_importance_start').setValue(start);
+      Ext.getCmp('edge_importance_end').setValue(new Number(start+width).toFixed(4));
+    }
+    else{
+        edgeImportanceScrollUpdate=false;
+    }
+
+    if(vis_ready){
+    filterVis();
+    }
+
+}
+
+function updateEdgeCorrelationRange(start,width){
+    if(!edgeCorrelationScrollUpdate){
+        edgeCorrelationStartValueUpdate=true;
+        edgeCorrelationEndValueUpdate=true;
+      Ext.getCmp('edge_correlation_start').setValue(start);
+      Ext.getCmp('edge_correlation_end').setValue(new Number(start+width).toFixed(2));
+    }
+    else{
+        edgeCorrelationScrollUpdate=false;
+    }
+
+    if(vis_ready){
+    filterVis();
+    }
+
+}
 
 function updateCCRange(start,width){
     if(!nodeCCScrollUpdate){
@@ -165,6 +198,19 @@ function filterEdge(edge){
     var ccstart = parseFloat(Ext.getCmp('edge_cc_start').getValue());
     var ccend = parseFloat(Ext.getCmp('edge_cc_end').getValue());
 
+    var importancestart=0;
+    var importanceend=0;
+    var correlationstart=0;
+    var correlationend=0;
+    
+    //dependent on dataset and data
+     if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+         var importancestart = parseFloat( Ext.getCmp('edge_importance_start').getValue()) * .01;
+         var importanceend = parseFloat(Ext.getCmp('edge_importance_end').getValue()) * .01;
+         var correlationstart = parseFloat( Ext.getCmp('edge_correlation_start').getValue());
+         var correlationend = parseFloat(Ext.getCmp('edge_correlation_end').getValue());
+     }
+
     if(edge.edgeList != undefined && edge.edgeList.length > 0){
         var keep=false;
         for(var i=0; i< edge.edgeList.length; i++){
@@ -173,6 +219,15 @@ function filterEdge(edge){
                         edge.edgeList[i].pf2_count >= dcstart && edge.edgeList[i].pf2_count <=dcend)){
                 keep=true;
             }
+            if((edge.edgeList[i].connType == 'rface') &&
+                    Math.abs(edge.edgeList[i].importance) >= importancestart && Math.abs(edge.edgeList[i].importance) <= importanceend){
+                keep=true;
+            }
+            if((edge.edgeList[i].connType == 'pairwise') &&
+                    Math.abs(edge.edgeList[i].correlation) >= correlationstart && Math.abs(edge.edgeList[i].correlation) <= correlationend){
+                keep=true;
+            }
+
         }
         if(edge.ngd != null){
             if((edge.ngd >= ngdstart && edge.ngd <= ngdend) &&
@@ -208,9 +263,11 @@ function filterEdgeViaConfig(edge){
     var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
     var ngdOnlyChecked = Ext.getCmp('ngdOnly-cb').getValue();
     var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
+
     if(!domainOnlyChecked && edge.connType == 'domine'){
          return false;
     }
+
 
     if(!ngdOnlyChecked && edge.connType == 'ngd'){
         return false;
@@ -218,6 +275,19 @@ function filterEdgeViaConfig(edge){
 
     if(!drugChecked && edge.connType == 'drugNGD'){
          return false;
+    }
+
+    if(pubcrawl.dataSet != null && pubcrawl.dataSet == ''){
+        var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
+        var pwOnlyChecked = Ext.getCmp('pairwiseOnly-cb').getValue();
+
+        if(!rfaceOnlyChecked && edge.connType == 'rface'){
+            return false;
+        }
+
+        if(!pwOnlyChecked && edge.connType == 'pairwise'){
+            return false;
+        }
     }
 
     return true;
@@ -272,9 +342,19 @@ function renderDCHistogramData(dcPlotData,istart,iend){
 
   var dcValueArray = dcPlotData.map(function(node){return node.ngd;});
   var maxPosValueX = pv.max(dcValueArray);
-  var minValueX=pv.min(dcValueArray);
+  var minValueX= pv.min(dcValueArray);
   if(iend > maxPosValueX)
     iend=-1;
+
+     var start = istart == -1 ? 0 : istart;
+  var end = iend == -1 ? maxPosValueX-start : iend-start;
+
+    if(dcValueArray.length == 0){
+        maxPosValueX=0;
+        minValueX=0;
+        start=0;
+        end=0;
+    }
 
     var data_obj = function(){ return {
         PLOT: {
@@ -311,6 +391,9 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
   var start = istart == -1 ? 0 : istart;
   var end = iend == -1 ? maxPosValueX-start : iend-start;
 
+  var ccScroll = new vq.FlexScrollBar();
+
+
     if(ngdValueArray.length == 0){
         maxPosValueX=0;
         minValueX=0;
@@ -318,7 +401,7 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
         end=0;
     }
 
-    var data_obj = function(){ return {
+     var data_obj = function(){ return {
         PLOT: {
             height: 100,
             width: 400,
@@ -336,7 +419,6 @@ function renderCCLinearBrowserData(ccData,elementId,notifyCall,istart,iend){
         callback_always: false
     }};
 
-  var ccScroll = new vq.FlexScrollBar();
   var flexscroll_data = {DATATYPE: 'vq.models.FlexScrollBarData',CONTENTS: data_obj()};
   ccScroll.draw(flexscroll_data);
     ccScroll.set_position(start, end);
@@ -408,15 +490,15 @@ function getVisLayout(layout){
 function getSolrCombinedTerm(node){
     var fullTerm=node.data.id;
     if(model_def["alias"]){
-    if(node.data.aliases != undefined && node.data.aliases != ""){
-        fullTerm=node.data.aliases;
-
-    }
+        if(node.data.aliases != undefined && node.data.aliases != ""){
+            fullTerm=node.data.aliases;
+        }
     }
 
     return fullTerm;
 
 }
+
 function visReady(){
     vis.addListener("layout", function(evt){
                filterVis();
@@ -471,7 +553,7 @@ function getVisualStyle(){
      return tooltip;
  };
 
-       vis["customNodeTooltip"] = function (data) {
+    vis["customNodeTooltip"] = function (data) {
         var tooltip = 'NGD: ' + data.ngd;
            if(data.aliases != ""){
                 tooltip=tooltip + '<br>Aliases: ' + data.aliases;
@@ -480,21 +562,41 @@ function getVisualStyle(){
      return tooltip;
  };
 
+    setMutCount(model_def['nodes']);
 
+    var colorMap = d3.scale.linear()
+            .domain([pv.min(model_def['mutCounts']),pv.max(model_def['mutCounts'])])
+            .range(["#F97BA2","#790663"]);
+    
     vis["customNodeColor"] = function(data){
-        if(data.drug){
+         if(data.mutCount > 0){
+
+            return colorMap(data.mutCount);
+        }
+        if(data.nodeType.toLowerCase() == "drug"){
             return "#58C0D2";
         }
+        else if(data.nodeType.toLowerCase() == "denovo")
+            return "#F0EA3C";
         else
             return "#10B622";
     };
 
-        vis["customEdgeColor"] = function(data){
+    vis["customEdgeColor"] = function(data){
         if(data.connType == "drugNGD" || data.connType == "ngd"){
-            return "#58C0D2";//"#7ED8D2";
+            return "#58C0D2";
         }
         else if(data.connType == "domine"){
                 return "#F9AF46";
+        }
+        else if(data.connType == "rface"){
+            return "#D90F77";
+        }
+        else if(data.connType == "pairwise"){
+            return "#543C87";
+        }
+        else if(data.connType == "comboDataSet"){
+              return "#CC00CC";
         }
         else if(data.connType == "combo"){
             return "#10B622";
@@ -502,20 +604,17 @@ function getVisualStyle(){
 
     };
 
-      vis["customEdgeStyle"] = function(data){
-        if(data.connType == "drugNGD" || data.connType == "ngd"){
+    vis["customEdgeStyle"] = function(data){
+        if(data.connType == "combo" || data.connType == "comboDataSet"){
+                return "SOLID";
+        }
+        else {
             return "EQUAL_DASH";
-        }
-        else if(data.connType == "domine"){
-                return "EQUAL_DASH";
-        }
-        else if(data.connType == "combo"){
-            return "SOLID";
         }
 
     };
 
-        vis["customNodeShape"] = function(data){
+    vis["customNodeShape"] = function(data){
         if(data.tf){
             return "diamond";
         }
@@ -578,8 +677,10 @@ function getModelDef(){
                 {name: "germline", type: "boolean"},
                 {name: "aliases", type: "string"},
                 {name: "termcount", type: "double"},
+                {name: "mutCount", type: "number"},
                 {name: "searchtermcount", type: "double"},
-                {name: "length", type: "number"}
+                {name: "length", type: "number"},
+                {name: "nodeType", type: "string"}
             ],
             edges: [
                 { name: "label", type: "string"},
@@ -643,100 +744,47 @@ function renderModel() {
         nodeTooltipsEnabled: true, edgeTooltipsEnabled: true});
 }
 
-function createModelDef(){
-    tempModelDef={nodes:[],edges:[]};
-    nodeMap={};
-    edgeMap={};
-
-    if(firstload){     //only filter based on config, not histograms
-        for(var i=0; i< completeData['nodes'].length; i++){
-            if(completeData['nodes'][i].label.toUpperCase() == model_def['term'].toUpperCase()){
-                if(completeData['nodes'][i].aliases != undefined)
-                    model_def['termAlias']=completeData['nodes'][i].aliases;
-            }
-
-            if(filterNodeViaConfig(completeData['nodes'][i])){
-                tempModelDef['nodes'].push(completeData['nodes'][i]);
-                nodeMap[completeData['nodes'][i].label]="";
-            }
-        }
-
-        for(var i=0; i< completeData['edges'].length; i++){
-            if(filterEdgeViaConfig(completeData['edges'][i])){
-                //include this edge if it's source and target are in the tempModelDef
-                if(nodeMap[completeData['edges'][i].source] != null && nodeMap[completeData['edges'][i].target] != null){
-                    tempModelDef['edges'].push(completeData['edges'][i]);
-                    edgeMap[completeData['edges'][i].source] = "";
-                    edgeMap[completeData['edges'][i].target] = "";
-                }
-            }
-        }
-    }
-    else{
-        for(var i=0; i< completeData['nodes'].length; i++){
-            if(filterNode(completeData['nodes'][i])){
-                tempModelDef['nodes'].push(completeData['nodes'][i]);
-                nodeMap[completeData['nodes'][i].label]="";
-            }
-        }
-
-        for(var i=0; i< completeData['edges'].length; i++){
-            if(filterEdge(completeData['edges'][i])){
-                   //include this edge if it's source and target are in the tempModelDef
-                if(nodeMap[completeData['edges'][i].source] != null && nodeMap[completeData['edges'][i].target] != null){
-                    tempModelDef['edges'].push(completeData['edges'][i]);
-                    edgeMap[completeData['edges'][i].source] = "";
-                    edgeMap[completeData['edges'][i].target] = "";
-                }
-            }
-        }
-    }
-
-    //now filter orphans if we are supposed to
-    var standaloneChecked = Ext.getCmp('standalone-cb').getValue();
-    if(!standaloneChecked){
-        tempNodes=tempModelDef['nodes'];
-        tempModelDef['nodes']=[];
-        //go thru nodes and only keep the ones that are in the edgeMap
-        for(var i=0; i< tempNodes.length; i++){
-            if(edgeMap[tempNodes[i].label] != null){
-                tempModelDef['nodes'].push(tempNodes[i]);
-            }
-        }
-    }
-
-    //done, now put into model_def
-    model_def['nodes']=tempModelDef['nodes'];
-    model_def['edges']=tempModelDef['edges'];
-
-
-}
 
 function retrieveEdgeDetails(node1,node2,type,graphData){
     var selectedDomineEdgeData=[];
+    var selectedRFACEEdgeData=[];
+    var selectedPairwiseEdgeData=[];
 
     if(graphData){
     var neighborsObject = vis.firstNeighbors([node2],true);
         for(var i=0; i< neighborsObject.edges.length; i++){
             var edgeData = neighborsObject.edges[i].data;
-            if((edgeData.connType == "combo" || edgeData.connType == "domine")){
                 if(((edgeData.source == node1 || edgeData.target == node1) && type=="edge") || type=="node"){
-                    for(var j=0; j< edgeData.edgeList.length; j++){
-                        edgeListData=edgeData.edgeList[j];
-                        selectedDomineEdgeData.push( {term1: edgeData.source, term2: edgeData.target,pf1: edgeListData.pf1, pf2: edgeListData.pf2,
-                          uni1:edgeListData.uni1,uni2:edgeListData.uni2,type:edgeListData.type,pf1_count:edgeListData.pf1_count,pf2_count:edgeListData.pf2_count});
+                    if(edgeData.edgeList != null && edgeData.edgeList.length > 0){
+                        for(var j=0; j< edgeData.edgeList.length; j++){
+                            edgeListData=edgeData.edgeList[j];
+
+                            if(edgeListData.connType == "domine")
+                                selectedDomineEdgeData.push( {term1: edgeData.source, term2: edgeData.target,pf1: edgeListData.pf1, pf2: edgeListData.pf2,
+                                 uni1:edgeListData.uni1,uni2:edgeListData.uni2,type:edgeListData.type,pf1_count:edgeListData.pf1_count,pf2_count:edgeListData.pf2_count});
+                            if(edgeListData.connType == "pairwise")
+                                selectedPairwiseEdgeData.push({term1: edgeData.source, term2: edgeData.target,featureid1:edgeListData.featureid1,featureid2:edgeListData.featureid2,pvalue: edgeListData.pvalue,correlation: edgeListData.correlation});
+                            if(edgeListData.connType == "rface")
+                                selectedRFACEEdgeData.push({term1: edgeData.source, term2: edgeData.target,featureid1:edgeListData.featureid1,featureid2:edgeListData.featureid2,pvalue: edgeListData.pvalue,correlation: edgeListData.correlation, importance: edgeListData.importance});
+                        }
                     }
                 }
-            }
+
         }
 
 
      Ext.StoreMgr.get('dataEdge_grid_store').loadData(selectedDomineEdgeData);
 
+     if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+         Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
+         Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+     }
+
+
     }
     else{
         Ext.Ajax.timeout = 1200000;
-        urlString="/hukilau-svc/graphs/pubcrawl/nodes/query";
+        urlString=pubcrawl_basedb_query + "nodes/query";
          Ext.Ajax.request({
                  method:"GET",
                  url: urlString,
@@ -776,9 +824,58 @@ function retrieveEdgeDetails(node1,node2,type,graphData){
                  }
              });
 
+        if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+            Ext.Ajax.timeout = 1200000;
+            urlString=dataset_basedb_query + dataSet + "/nodes/query";
+
+            Ext.Ajax.request({
+                 method:"GET",
+                 url: urlString,
+                 params: {
+                     nodeSet: "[{name:" + node2+ "}]",
+                     relationshipSet: "[{name:'rface'},{name:'pairwise'}]"
+                 },
+                 success: function(o) {
+                     var json = Ext.util.JSON.decode(o.responseText);
+                     var jsonStore = Ext.StoreMgr.get('dataNode_grid_store');
+                     if(json.data.edges != undefined && json.data.nodes != undefined){
+                         var nodeIdMappings={};
+                        //first go thru nodes and get their id/name mappings for this edge database
+                         for(var index=0; index < json.data.nodes.length; index++){
+                            nodeIdMappings[json.data.nodes[index].id] = json.data.nodes[index].name;
+                         }
+
+                         for(var i=0; i< json.data.edges.length; i++){
+                             var edge = json.data.edges[i];
+                             var sourceName=nodeIdMappings[edge.source];
+                             var targetName=nodeIdMappings[edge.target];
+
+                             if(jsonStore.findExact("term1",sourceName) > -1 && jsonStore.findExact("term1",targetName) > -1){
+                                 if(edge.relType == "pairwise")
+                                    selectedPairwiseEdgeData.push({term1: sourceName, term2: targetName,featureid1:edge.featureid1,featureid2:edge.featureid2,pvalue: edge.pvalue,correlation: edge.correlation});
+                                 if(edge.relType == "rface")
+                                     selectedRFACEEdgeData.push({term1: sourceName, term2: targetName,featureid1:edge.featureid1,featureid2:edge.featureid2,pvalue: edge.pvalue,correlation: edge.correlation, importance: edge.importance});
+                             }
+                         }
+                     }
+
+                     Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
+                     Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+                 },
+                 failure: function(o) {
+                     Ext.MessageBox.alert('Error Retrieving Edges', o.statusText);
+                     Ext.StoreMgr.get('dataPairwiseEdge_grid_store').loadData(selectedPairwiseEdgeData);
+                     Ext.StoreMgr.get('dataRFACEEdge_grid_store').loadData(selectedRFACEEdgeData);
+                 }
+            });
+        }
+
+        vis_mask.hide();
+
     }
 
 }
+
 function legendImageRenderer(val){
     return '<img src='+val+' />';
 }
@@ -794,7 +891,12 @@ function launchNodeSelectionWindow(nodeTableArray,nodePlotData){
     nodePlotData['data'].sort(function(a,b){ return a.ngd-b.ngd});
     var endIndex = nodePlotData['data'][nodePlotData['data'].length-1].ngd;
     if(nodePlotData['data'].length > 150){
-         endIndex = nodePlotData['data'][149].ngd;
+        var i=149;
+        endIndex=nodePlotData['data'][149].ngd;
+         while(nodePlotData['data'][i].ngd == endIndex){
+             i--;
+         }
+         endIndex = nodePlotData['data'][i].ngd;
     }
     nodeNGDSelectionScroll=renderNGDHistogramData(nodePlotData,'nodeSelection-ngd',updateNodeSelectionNGDRange,125,750,-1,endIndex,false);
 }
@@ -824,22 +926,33 @@ function generateNetworkRequest(term,alias,deNovo, bypassSelection){
         Ext.getCmp('domainOnly-cb').setValue(false);
         Ext.getCmp('ngdOnly-cb').setValue(false);
         Ext.getCmp('showDrugs-cb').setValue(false);
+
+        if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+            Ext.getCmp('pairwiseOnly-cb').setValue(true);
+            Ext.getCmp('rfaceOnly-cb').setValue(true)
+        }
         model_def= {nodes: null,edges: null};
-        loadModel(term,alias,deNovo, bypassSelection,renderModel);
+        loadModel(term,alias,deNovo, bypassSelection,mergeModel);
 }
 
 function generateAssociationRequest(termSet,alias){
-     vis_ready=false;
-        Ext.getCmp('domainOnly-cb').enable();
-        Ext.getCmp('ngdOnly-cb').enable();
-        Ext.getCmp('showDrugs-cb').disable();
-        Ext.getCmp('standalone-cb').enable();
-        Ext.getCmp('standalone-cb').setValue(true);
-        Ext.getCmp('domainOnly-cb').setValue(false);
-        Ext.getCmp('ngdOnly-cb').setValue(false);
-        Ext.getCmp('showDrugs-cb').setValue(false);
+    vis_ready=false;
+    Ext.getCmp('domainOnly-cb').enable();
+    Ext.getCmp('ngdOnly-cb').enable();
+    Ext.getCmp('showDrugs-cb').disable();
+    Ext.getCmp('standalone-cb').enable();
+    Ext.getCmp('standalone-cb').setValue(true);
+    Ext.getCmp('domainOnly-cb').setValue(false);
+    Ext.getCmp('ngdOnly-cb').setValue(false);
+    Ext.getCmp('showDrugs-cb').setValue(false);
+
+     if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+        Ext.getCmp('pairwiseOnly-cb').setValue(true);
+        Ext.getCmp('rfaceOnly-cb').setValue(true);
+     }
+
         model_def= {nodes: null,edges: null};
-        loadGroupAssociations(termSet,alias, renderModel);
+        loadGroupAssociations(termSet,alias, mergeModel);
 
 }
 
@@ -855,6 +968,7 @@ function redraw(){
     var domainOnlyChecked = Ext.getCmp('domainOnly-cb').getValue();
     var ngdOnlyChecked = Ext.getCmp('ngdOnly-cb').getValue();
     var drugChecked = Ext.getCmp('showDrugs-cb').getValue();
+
     if(!ngdOnlyChecked){
         Ext.getCmp('ngdOnly-cb').disable();
     }
@@ -863,6 +977,17 @@ function redraw(){
     }
     if(!drugChecked){
         Ext.getCmp('showDrugs-cb').disable();
+    }
+
+    if(pubcrawl.dataSet != null && pubcrawl.dataSet != ''){
+        var pairwiseOnlyChecked = Ext.getCmp('pairwiseOnly-cb').getValue();
+        var rfaceOnlyChecked = Ext.getCmp('rfaceOnly-cb').getValue();
+        if(!pairwiseOnlyChecked){
+            Ext.getCmp('pairwiseOnly-cb').disable();
+        }
+        if(!rfaceOnlyChecked){
+            Ext.getCmp('rfaceOnly-cb').disable();
+        }
     }
        //go thru and only get items that are visible.....and populate into completeData;
     var nodes = vis.nodes();
@@ -889,12 +1014,32 @@ function extractURL() {
     return json;
 }
 
-function checkURL(){
+function checkDatasetURL(){
     var json = extractURL();
     if(json != null){
         if(json.dataset != undefined){
-
+            if(json.dataset.toLowerCase().indexOf("gbm") > -1)
+                dataSet="gbm_0523E";
+            else if(json.dataset.toLowerCase().indexOf("ucec") > -1)
+                dataSet='coad_read_1111';
+            else
+                dataSet=json.dataset;
+             Ext.getCmp('dataset-dfield').setValue(dataSet);
+            loadPatients();
         }
+        else{
+             Ext.getCmp('dataset-dfield').setValue(pubcrawl.dataSet);
+            checkFormURL();
+        }
+    }
+     
+}
+
+
+
+function checkFormURL() {
+   var json = extractURL();
+    if(json != null){
         if(json.term != undefined){
             if(json.alias == undefined){
                 json.alias = false;
@@ -907,27 +1052,15 @@ function checkURL(){
             }
             if(json.type != undefined && json.type == "group"){
 
-                generateAssociationRequest(json.term,json.alias,false);
+                generateAssociationRequest(json.term.toLowerCase(),json.alias,false);
 
             }
             else{
-                generateNetworkRequest(json.term,json.alias,false,true);
+                generateNetworkRequest(json.term.toLowerCase(),json.alias,false,true);
             }
         }
 
     }
-}
-
-function checkDatasetURL() {
-    var json = extractURL();
-    if (json != null && json.dataset !== undefined) {
-        selectDatasetByLabel(json.dataset);
-    }
-}
-
-function checkFormURL() {
-    var json = extractURL();
-    if (json != null) setFormState(json);
 }
 
 function preserveState() {
@@ -940,7 +1073,7 @@ function generateStateJSON() {
     obj.term = model_def['term'];
     obj.type = model_def['type'];
     obj.alias = model_def['alias'];
-    obj.dataset = model_def['dataset'];
+    obj.dataset = dataSet;
     return obj;
 }
 function setFormState(json) {

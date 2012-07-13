@@ -20,7 +20,7 @@ public class DbUtils {
 
     public static JdbcTemplate getJdbcTemplate() {
         try {
-            Resource r = new FileSystemResource("/titan/cancerregulome9/workspaces/pubcrawl/pubcrawl.properties");
+            Resource r = new FileSystemResource("pubcrawl.properties");
             Properties prop = new Properties();
             prop.load(r.getInputStream());
 
