@@ -109,26 +109,102 @@
                         </ul>
                     </li>
                 </ul>
-                <form action="" class="navbar-search pull-left">
-                    <input type="text" placeholder="Enter Search Term..." class="search-query span3">
+                 <a class="pull-right btn btn-primary" href="http://www.cancerregulome.org" target="_blank">Cancer Regulome</a>
+                <form action="" class="navbar-search pull-left inline-form">
+                    <input type="text" id="querySearchTerm" placeholder="Enter Search Term..." class="search-query span3">
+                    <button class="btn btn-primary" id="queryBtn"><i class="icon-search icon-white"></i></button>
                 </form>
-                <a class="pull-right btn" href="http://www.cancerregulome.org" target="_blank">Cancer Regulome</a>
             </div>
             <!--/.nav-collapse --> </div>
     </div>
 </div>
-<div class="container" >
-    <div id="mainContainer">
-        <!-- where main content of page will go --> </div>
-    <footer class="navbar-fixed-bottom">
+<div class="container-fluid dataHeader">
+    <div class="row-fluid dataHeader">
+        <div class="span12">
+<div class="row-fluid">
+        <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Search Term:</label>
+                    <input type="text" class="input-small" value="fbxw7" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Use Alias:</label>
+                    <input type="text" class="input-small" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Mode:</label>
+                    <input type="text" class="input-small" value="search" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Datasets:</label>
+                    <input type="text" class="input-medium" readonly="true">
+                </form>
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+<div class="container-fluid mainContainer" id="mainContainer">
+        <div class="row-fluid">
+            <div class="span2">
+                <ul class="nav nav-tabs" id="filterTabs">
+                    <li class="active"><a href="#nodes" data-toggle="tab">Nodes</a></li>
+                    <li><a href="#edges"  data-toggle="tab">Edges</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="nodes">This is the nodes tab</div>
+                    <div class="tab-pane" id="edges">This is the edges tab</div>
+                </div>
+                <div class="legend">
+                    this is the legend here...
+                </div>
+            </div>
+            <div class="span10"> <!-- where main content of page will go --> </div>
+        </div>
+    </div>
+<footer class="navbar-fixed-bottom">
         <p>
             &copy; 2012, Institute for Systems Biology, All Rights Reserved
         </p>
-    </footer>
+</footer>
+
+<script id="filterTemplate" type="text/template">
+    <h1>Put Histogram and filter here</h1>
+</script>
+
+<script id="graphTemplate" type="text/template">
+    <h1>Graph Template</h1>
+</script>
+
+<script id="NodeQueryFilterTemplate" type="text/template">
+<div class="modal hide" id="graphQueryFilterModal">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Node Selection</h3>
+        </div>
+    <div class="modal-body" id="networkGraphView"></div>
+    <div class="modal-footer">
+        <button class="btn btn-primary close" data-dismiss="modal">Close</button>
+        <button class="btn btn-primary">Draw Network</button>
+    </div>
 </div>
+</script>
+
 
 <script src="js/jquery.js"></script>
+<script src="js/underscore-min.js"></script>
+<script src="js/backbone-min.js"></script>
 <script src="js/bootstrap.js"></script>
+  <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/protovis-r3.3.1.js"></script>
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/visquick-utils.js"></script>
+    <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
+<script src="js/flexscrollBar.js"></script>
 <script src="js/pubcrawl.js"></script>
 
 </body>
