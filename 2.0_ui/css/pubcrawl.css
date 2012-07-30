@@ -1,3 +1,8 @@
+ body {
+        padding-top: 43px;
+        padding-bottom: 40px;
+}
+
 .dropdown-menu .sub-menu {
     left: 100%;
     position: absolute;
@@ -33,4 +38,93 @@
     left: 10px;
     top: 11px;
     left: -6px;
+}
+
+.dataHeader {
+    background-color:#D5DF3E;
+}
+
+.dataHeader .form-inline > label {
+    color: #A8A9AB;
+}
+
+.dataHeader .form-inline {
+    margin:  5px;
+    horizontal-align: middle;
+    vertical-align: middle;
+}
+
+.mainContainer {
+    padding-top: 5px;
+}
+
+.mainContainer .nav .active > a {
+  background-color: #0061af;
+  background-image: -moz-linear-gradient(top, #0077d8, #003f72);
+  background-image: -ms-linear-gradient(top, #0077d8, #003f72);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#0077d8), to(#003f72));
+  background-image: -webkit-linear-gradient(top, #0077d8, #003f72);
+  background-image: -o-linear-gradient(top, #0077d8, #003f72);
+  background-image: linear-gradient(top, #0077d8, #003f72);
+  background-repeat: repeat-x;
+    color: #FFFFFF;
+}
+
+ .mainContainer .nav > li > a {
+          border-right: 1px solid #DDD;
+      border-left: 1px solid #DDD;
+      border-top: 1px solid #DDD;
+
+ }
+
+ .mainContainer .nav {
+     margin-bottom: 0px;
+
+ }
+ .tab-content {
+     border-right: 1px solid #DDD;
+     border-left: 1px solid #DDD;
+     border-bottom: 1px solid #DDD;
+
+     background-color: #0061af;
+     height: 600px;
+     color: #FFFFFF;
+ }
+
+ .legend {
+        border-right: 1px solid #DDD;
+     border-left: 1px solid #DDD;
+     border-bottom: 1px solid #DDD;
+     background-color: #FFFFFF;
+     color: #000000;
+ }
+
+ .navbar .btn {
+     margin-top: 7px;
+ }
+ .nav-collapse .navbar-search > button {
+     margin-top: 0px;
+ }
+
+ .nav-collapse > form {
+    padding-left: 20px;
+ }
+
+#networkGraphView {
+  font: 10px sans-serif;
+}
+
+.bar rect {
+  fill: steelblue;
+  shape-rendering: crispEdges;
+}
+
+.bar text {
+  fill: #fff;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }

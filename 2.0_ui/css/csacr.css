@@ -2399,7 +2399,7 @@ button.close {
 }
 .btn-info:active,
 .btn-info.active {
-  background-color: #24748c \9;
+  background-color: #24748c;
 }
 .btn-inverse {
   background-color: #414141;
@@ -2428,7 +2428,7 @@ button.close {
 }
 .btn-inverse:active,
 .btn-inverse.active {
-  background-color: #080808 \9;
+  background-color: #080808;
 }
 button.btn,
 input[type="submit"].btn {
