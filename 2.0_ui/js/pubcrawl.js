@@ -103,7 +103,7 @@
 
             var margin = {top: 10, right: 30, bottom: 30, left: 30},
                 width = 700 - margin.left - margin.right,
-                height = 300 - margin.top - margin.bottom;
+                height = 400 - margin.top - margin.bottom;
 
 
             var x = d3.scale.linear()
@@ -128,8 +128,8 @@
 
 
             var chart = d3.select(this.$el.find("#queryFilterHistogramView")[0]).append('svg')
-            .attr("width", width )
-            .attr("height", height)
+            .attr("width", width + margin.left + margin.right )
+            .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -150,21 +150,31 @@
                 .attr("height", function(d) { return height - y(d.y); });
 
 
-            chart.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + height + ")")
-                .call(xAxis);
 
             chart.append("g")
                 .attr("class", "y axis")
                 .attr("transform", "translate(0,0)")
-                .call(yAxis);
+                .call(yAxis)
+                .append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate(" +  (-margin.left+10) + "," + height/2 + "),rotate(-90)")
+                .text("# of Genes");
+
+             chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                 .append("text")
+                 .attr("text-anchor","middle")
+                 .attr("transform","translate("+width/2 + "," + margin.bottom +")")
+                 .text("Normalized Medline Distance (NMD)");
+
 
             //now make data table for modal window
             var table = '<table class="table table-striped table-bordered" id="queryFilterTable">'+
-                '<thead><tr><th style="width: 10%"><input type="checkbox"/></th><th style="width: 20%">Name</th><th style="width: 30%">Aliases</th>'+
+                '<thead><tr><th class="select-column" style="width: 5%"><input id="check_all" type="checkbox"/></th><th style="width: 20%">Name</th><th style="width: 40%">Aliases</th>'+
                 '<th style="width: 10%">Term Single Count</th>' +
-                '<th style="width: 10%">Term Combo Count</th><th style="width: 20%">NMD</th></tr></thead><tbody>';
+                '<th style="width: 10%">Term Combo Count</th><th style="width: 15%">NMD</th></tr></thead><tbody>';
             $.each(this.model.tableData, function(index,item){
                 table+='<tr><td><input type="checkbox" /></td><td>'+item.name+'</td><td>' + item.alias +
                     '</td><td>' + item.termcount + '</td>'+
@@ -174,7 +184,21 @@
 
 
             this.$el.find("#queryFilterTableView").html(table);
-       //     this.$el.find("#queryFilterTable").dataTable();
+            var thisView=this;
+           var oTable=this.$el.find("#queryFilterTable").dataTable({
+               "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
+               "sPaginationType": "bootstrap",
+               "oLanguage": {
+			"sLengthMenu": "_MENU_ records per page"
+		},
+               "fnInitComplete"  : function () {
+                   var that=this;
+                         thisView.$el.find('#check_all').click( function() {
+                            $('input', that.fnGetNodes()).attr('checked',this.checked);
+                    } );
+               }
+           });
+
 
             $(this.el).modal('show');
             return this;
@@ -249,8 +273,11 @@
 
     })
 
-    function queryNodes() {
+    function queryNodes(e) {
 
+        if(e != null){
+            e.preventDefault();
+        }
         var graph = new PC.Graph({queryValue: $("#querySearchTerm").val()});
         app.allNodeFilterView = new PC.GraphView({model: graph});
 
@@ -265,6 +292,10 @@
 
     $("#queryBtn").click(queryNodes);
 
+
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+    "sWrapper": "dataTables_wrapper form-inline"
+} );
     var app = new PC.AppRouter();
     Backbone.history.start();
 
