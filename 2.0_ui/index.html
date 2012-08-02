@@ -183,14 +183,22 @@
 </script>
 
 <script id="NodeQueryFilterTemplate" type="text/template">
-<div class="modal hide" id="graphQueryFilterModal">
+<div class="modal show" id="graphQueryFilterModal">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Node Selection</h3>
         </div>
-    <div class="modal-body" id="networkGraphView"></div>
+    <div class="modal-body queryFilterModal">
+        <ul class="nav nav-tabs" id="modalQueryFilterTabs">
+            <li class="active"><a href="#queryFilterHistogramView" data-toggle="tab">Histogram</a></li>
+            <li><a href="#queryFilterTableView" data-toggle="tab">Data Table</a></li>
+            </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="queryFilterHistogramView"></div>
+            <div class="tab-pane queryfiltertable" id="queryFilterTableView"></div>
+        </div>
     <div class="modal-footer">
-        <button class="btn btn-primary close" data-dismiss="modal">Close</button>
+        <button class="btn btn-primary" id="closeQueryFilter" data-dismiss="modal">Close</button>
         <button class="btn btn-primary">Draw Network</button>
     </div>
 </div>
@@ -204,6 +212,7 @@
   <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/protovis-r3.3.1.js"></script>
     <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/visquick-utils.js"></script>
     <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
+<script type="text/javascript" src="js/jquery.dataTables.js"></script>
 <script src="js/flexscrollBar.js"></script>
 <script src="js/pubcrawl.js"></script>
 

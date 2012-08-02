@@ -11,20 +11,69 @@
 
         defaults:{
             queryValue: "",
-            plotData: []
+            plotData: [],
+            tableData: []
         },
 
         parse: function(response){
             //need to retrieve the nodes from the query
             if(response.data != null && response.data.edges != null){
-                var pd=response.data.edges.map(
-                    function(edge){
-                        return (Math.round(edge.ngd * 100)/100);
+                var pd=[];
+                var td={};
+                var tdFinal=[];
+                var nodeMap={};
+                var qv = this.get("queryValue").toLowerCase();
+                for(var i in response.data.nodes){
+                    var node= response.data.nodes[i];
+                    nodeMap[node.id]=node.name;
+                    if(node.name.toLowerCase() != qv){ //don't want to include query nodes
+                        td[node.id]={"name":node.name,"alias":node.aliases,"termcount":node.termcount,"termcount_alias":node.termcount_alias};
                     }
-                );
-                 return {plotData: pd};
+                }
+                for(var e in response.data.edges){
+                    var edge = response.data.edges[e];
+                    if(nodeMap[edge.source].toLowerCase() == qv){
+                        //then do target (source should always be query value, but being cautious and not assuming that
+                        //to be the case
+                        if(nodeMap[edge.target].toLowerCase() == qv){
+                            //this is the ngd value of the node to itself, just continue
+                            continue;
+                        }
+                        else{
+                            var nodeInfo = td[edge.target];
+                            var ngd = Math.round(edge.ngd * 100)/100;
+                            nodeInfo.ngd = ngd;
+                            nodeInfo.combocount = edge.combocount;
+                            td[edge.target]=nodeInfo;
+
+                        }
+                    }
+                    else{ //didn't equal query value, make sure the target does
+                        if(nodeMap[edge.target].toLowerCase() == qv){
+                             var nodeInfo = td[edge.source];
+                            var ngd = Math.round(edge.ngd * 100)/100;
+                            nodeInfo.ngd = ngd;
+                            nodeInfo.combocount = edge.combocount;
+                            td[edge.source]=nodeInfo;
+
+                        }
+                        else{        //this edge does not include our queryValue, so don't put into data table
+                            continue;
+                        }
+
+                    }
+                }
+
+                for(item in td){
+                    tdFinal.push(td[item]);
+                    pd.push(td[item].ngd);
+                }
+
+                this.plotData=pd;
+                this.tableData = tdFinal;
+                return;
             }
-            return {plotData: []};
+            return;
         }
 
 
@@ -35,7 +84,7 @@
         template: _.template($("#NodeQueryFilterTemplate").html()),
 
         initialize: function() {
-            this.model.bind('change',this.render, this);
+
             this.$el.html(this.template());
 
         },
@@ -44,7 +93,7 @@
         render: function() {
 
             var gv = this;
-            var data = this.model.get("plotData");
+            var data = this.model.plotData;
             if(data == null || data.length < 1){
                 gv.$el.append("<h4>No datapoints found for the search term. Please try a new search.</h4>");
                 return;
@@ -53,8 +102,8 @@
             var formatCount = d3.format(",.0f");
 
             var margin = {top: 10, right: 30, bottom: 30, left: 30},
-                width = 600 - margin.left - margin.right,
-                height = 400 - margin.top - margin.bottom;
+                width = 700 - margin.left - margin.right,
+                height = 300 - margin.top - margin.bottom;
 
 
             var x = d3.scale.linear()
@@ -78,10 +127,9 @@
                 .orient("left");
 
 
-
-            var chart = d3.select(this.$el.find("#networkGraphView")[0]).append('svg')
-            .attr("width", width + margin.left + margin.right )
-            .attr("height", height + margin.top + margin.bottom)
+            var chart = d3.select(this.$el.find("#queryFilterHistogramView")[0]).append('svg')
+            .attr("width", width )
+            .attr("height", height)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -112,20 +160,40 @@
                 .attr("transform", "translate(0,0)")
                 .call(yAxis);
 
+            //now make data table for modal window
+            var table = '<table class="table table-striped table-bordered" id="queryFilterTable">'+
+                '<thead><tr><th style="width: 10%"><input type="checkbox"/></th><th style="width: 20%">Name</th><th style="width: 30%">Aliases</th>'+
+                '<th style="width: 10%">Term Single Count</th>' +
+                '<th style="width: 10%">Term Combo Count</th><th style="width: 20%">NMD</th></tr></thead><tbody>';
+            $.each(this.model.tableData, function(index,item){
+                table+='<tr><td><input type="checkbox" /></td><td>'+item.name+'</td><td>' + item.alias +
+                    '</td><td>' + item.termcount + '</td>'+
+                    '<td>'+item.combocount + '</td><td>'+item.ngd+'</td></tr>';
+            });
+            table +='</tbody></table>';
 
-            this.$el.modal('show');
+
+            this.$el.find("#queryFilterTableView").html(table);
+       //     this.$el.find("#queryFilterTable").dataTable();
+
+            $(this.el).modal('show');
             return this;
 
         },
 
         events: {
-            "click button.close": "close"
+            "click button.close": "close",
+            "click button.#closeQueryFilter": "close"
 
         },
 
         close: function(){
             this.model.destroy();
             this.remove();
+        },
+
+        showModal: function(){
+            $("#graphQueryFilterModal").modal('show');
         }
 
 
@@ -189,8 +257,8 @@
         app.allNodeFilterView.model.fetch({
             success:
                 function(){
-                    $("#graphQueryFilterModal").modal('show');
-                    // graphView.render();
+                    app.allNodeFilterView.render().showModal();
+
                 }
             });
      }
