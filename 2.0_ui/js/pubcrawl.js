@@ -169,6 +169,95 @@
                  .attr("transform","translate("+width/2 + "," + margin.bottom +")")
                  .text("Normalized Medline Distance (NMD)");
 
+            //now need to add the selection bars - essentially a rectangle with movable ends
+            var selwidth = 60,
+                selheight = height,
+                selectbarw = 10;
+
+        /*    var dragright = d3.behavior.drag()
+            .origin(Object)
+            .on("dra", rdragresize);
+*/
+            var drag = d3.behavior.drag()
+            .origin(Object)
+            .on("drag", dragmove);
+
+            var dragleft = d3.behavior.drag()
+            .origin(Object)
+            .on("drag",ldragresize);
+
+            var dragright = d3.behavior.drag()
+            .origin(Object)
+            .on("drag",rdragresize);
+
+            var selectg = chart.append("g")
+                .data([{x:0, Y:0}]);
+
+            var dragrect = selectg.append("rect")
+            .attr("id", "active")
+            .attr("x", function(d) { return d.x; })
+            .attr("y", function(d) { return d.y;})
+            .attr("height", selheight)
+            .attr("width", selwidth)
+            .attr("fill", "#999999")
+            .attr("fill-opacity", .25)
+            .attr("cursor", "move")
+            .call(drag);
+
+            var dragbarleft = selectg.append("rect")
+            .attr("x", function(d) { return d.x;})
+            .attr("y", function(d) { return d.y;})
+            .attr("id", "dragleft")
+            .attr("height", selheight)
+            .attr("width", selectbarw)
+            .attr("fill", "#f8991c")
+            .attr("fill-opacity", .5)
+            .attr("cursor", "ew-resize")
+            .call(dragleft);
+
+            var dragbarright = selectg.append("rect")
+            .attr("x", function(d) { return d.x + selwidth - selectbarw;})
+            .attr("y", function(d) { return d.y;})
+            .attr("id", "dragright")
+            .attr("height", selheight)
+            .attr("width", selectbarw)
+            .attr("fill", "#f8991c")
+            .attr("fill-opacity", .5)
+            .attr("cursor", "ew-resize")
+            .call(dragright);
+
+            function ldragresize(d){
+                var oldx = d.x;
+                d.x = Math.max(0, Math.min(d.x + selwidth, d3.event.x));
+                selwidth = selwidth + (oldx - d.x);
+                dragbarleft
+                .attr("x", function(d) { return d.x;});
+
+                dragrect
+                .attr("x", function(d) { return d.x; })
+                .attr("width", selwidth);
+            }
+
+            function rdragresize(d){
+
+                var dragx = Math.max(d.x +selectbarw, Math.min(width, d.x + selwidth + d3.event.dx));
+                selwidth = dragx - d.x;
+
+                dragbarright
+                    .attr("x", dragx);
+                dragrect
+                    .attr("width", selwidth);
+
+            }
+
+            function dragmove(d){
+                dragrect
+                    .attr("x", d.x = Math.max(0, Math.min(width-selwidth, d3.event.x)));
+                dragbarleft
+                    .attr("x", function(d) { return d.x; });
+                dragbarright
+                    .attr("x", function(d) { return d.x + selwidth;});
+            }
 
             //now make data table for modal window
             var table = '<table class="table table-striped table-bordered" id="queryFilterTable">'+

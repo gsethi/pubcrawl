@@ -115,7 +115,7 @@
 }
 
 .bar rect {
-  fill: steelblue;
+  fill: #0061af;
   shape-rendering: crispEdges;
 }
 
