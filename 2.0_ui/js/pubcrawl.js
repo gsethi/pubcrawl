@@ -219,6 +219,11 @@
 
         events:{
             'nmdChange': "updateNMD"
+          //  'blur #startNMD': "updateHistogramSelection"
+        },
+
+        updateHistogramSelection: function(event){
+           var test= event.currentTarget;
         },
 
         updateNMD: function(item,data){
@@ -359,6 +364,8 @@
             .attr("cursor", "ew-resize")
             .call(dragright);
 
+
+
         function ldragresize(d){
                var oldx = d.x;
                 d.x = Math.max(0, Math.min(d.x + selwidth, d3.event.x));
@@ -370,7 +377,7 @@
                 .attr("x", function(d) { return d.x; })
                 .attr("width", selwidth);
 
-            $(gv.el).trigger('nmdChange',{startNMD:x.invert(dragbarleft.attr("x")), endNMD: x.invert(dragbarleft.attr("x") + selwidth)} );
+            $(gv.el).trigger('nmdChange',{startNMD:x.invert(dragbarleft.attr("x")), endNMD: x.invert(parseFloat(dragbarleft.attr("x")) + selwidth)} );
 
         };
 
@@ -390,18 +397,43 @@
 
              d.x = Math.max(0, Math.min(width-selwidth, d3.event.x))
              dragrect
-                    .attr("x", d.x = Math.max(0, Math.min(width-selwidth, d3.event.x)));
+                    .attr("x", d.x);
              dragbarleft
                     .attr("x", function(d) { return d.x; });
              dragbarright
                     .attr("x", function(d) { return d.x + selwidth;});
 
-                var startNMD = x.invert(dragbarleft.attr("x"));
-                var endNMD = x.invert(parseFloat(dragbarright.attr("x")) + parseFloat(selectbarw));
 
              $(gv.el).trigger('nmdChange',{startNMD:x.invert(dragbarleft.attr("x")), endNMD: x.invert(parseFloat(dragbarright.attr("x")) + parseFloat(selectbarw))} );
 
         };
+
+            this.$("#startNMD").blur(function(event){
+
+                selwidth = parseFloat(dragbarright.attr("x")) + parseFloat(selectbarw) - parseFloat(x(this.value));
+                dragbarleft
+                .attr("x", x(this.value));
+
+                dragrect
+                .attr("x", x(this.value))
+                .attr("width",selwidth);
+
+                $(gv.el).trigger('nmdChange',{startNMD:this.value, endNMD: gv.$("#endNMD").val()} );
+
+            });
+
+            this.$("#endNMD").blur(function(event){
+
+                selwidth = parseFloat(x(this.value)) - parseFloat(dragbarleft.attr("x"));
+                dragbarright
+                .attr("x", parseFloat(x(this.value)) - parseFloat(selectbarw));
+
+                dragrect
+                .attr("width",selwidth);
+
+                $(gv.el).trigger('nmdChange',{startNMD:gv.$("#startNMD").val(), endNMD: this.value} );
+
+            });
 
             return this;
         }
