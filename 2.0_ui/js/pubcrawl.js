@@ -23,6 +23,7 @@
                 var tdFinal=[];
                 var nodeMap={};
                 var qv = this.get("queryValue").toLowerCase();
+
                 for(var i in response.data.nodes){
                     var node= response.data.nodes[i];
                     nodeMap[node.id]=node.name;
@@ -84,11 +85,148 @@
         template: _.template($("#NodeQueryFilterTemplate").html()),
 
         initialize: function() {
-
             this.$el.html(this.template());
+        },
+
+
+        render: function() {
+
+            var gv = this;
+            var data = this.model.plotData;
+            if(data == null || data.length < 1){
+                gv.$el.append("<h4>No datapoints found for the search term. Please try a new search.</h4>");
+                return this;
+            }
+
+
+
+            //now make data table for modal window
+            var table = '<table class="table table-striped table-bordered" id="queryFilterTable">'+
+                '<thead><tr><th style="width: 5%"><input id="check_all" type="checkbox"/></th><th style="width: 20%">Name</th><th style="width: 40%">Aliases</th>'+
+                '<th style="width: 10%">Term Single Count</th>' +
+                '<th style="width: 10%">Term Combo Count</th><th style="width: 15%">NMD</th></tr></thead><tbody>';
+            $.each(this.model.tableData, function(index,item){
+                table+='<tr><td><input class="tableCheckbox" type="checkbox" /></td><td>'+item.name+'</td><td>' + item.alias +
+                    '</td><td>' + item.termcount + '</td>'+
+                    '<td>'+item.combocount + '</td><td>'+item.ngd+'</td></tr>';
+            });
+            table +='</tbody></table>';
+
+
+            this.$el.find("#queryFilterTableView").html(table);
+            var thisView=this;
+           this.oTable=this.$el.find("#queryFilterTable").dataTable({
+               "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
+               "sPaginationType": "bootstrap",
+               "oLanguage": {
+			"sLengthMenu": "_MENU_ records per page"
+		},
+               "aoColumns":[
+                   { "sSortDataType": "dom-checkbox"},
+                   null,
+                   null,
+                   null,
+                   null,
+                   null
+               ],
+
+               "fnInitComplete"  : function () {
+                   var that=this;
+                         thisView.$el.find('#check_all').click( function() {
+                            $('input', that.fnGetNodes()).attr('checked',this.checked);
+                             thisView.$el.trigger("tableSelectionChange");
+                    } );
+                   this.$('.tableCheckbox').click(function(){
+                       thisView.$el.trigger("tableSelectionChange");
+                   })
+               }
+           });
+
+            this.histogramView = new PC.HistogramFilterView({ model: this.model});
+            this.$el.find("#queryFilterHistogramView").html(this.histogramView.render().el);
+
+            $(this.el).modal('show');
+            return this;
 
         },
 
+        events: {
+            "click button.close": "close",
+            "click button.#closeQueryFilter": "close",
+            "nmdChange": "updateNMD",
+            "click [data-toggle='tab']": "updateItemsSelected",
+            "tableSelectionChange": "updateItemsSelected"
+
+        },
+
+        updateItemsSelected: function(event){
+            if(event.currentTarget.id == "qfTableTab" || event.type=="tableSelectionChange"){
+               $("#totalItems").text(this.getDataTableTotalSelected());
+            }
+            else{
+               $("#totalItems").text(this.getHistogramTotalSelected());
+            }
+        },
+
+        updateNMD: function(item,data){
+            var formatCount = d3.format(",.2f");
+             $("#startNMD").val(formatCount(data.startNMD));
+             $("#endNMD").val(formatCount(data.endNMD));
+             $("#totalItems").text(this.getHistogramTotalSelected());
+        },
+
+        getHistogramTotalSelected: function(){
+                var start=$("#startNMD").val();
+                var end=$("#endNMD").val();
+                var itemsSelected = $.grep(this.model.tableData, function (item,index){
+                    if(item.ngd >=start && item.ngd <= end)
+                        return true;
+                    else
+                        return false;
+                });
+
+                return itemsSelected.length;
+            },
+
+        getDataTableTotalSelected: function(){
+             var selected = this.oTable.$('input').filter(
+                 function(index){
+                     if(this.checked) return true;
+                     else return false;
+                 });
+            return selected.length;
+        },
+
+        close: function(){
+            this.model.destroy();
+            this.remove();
+        },
+
+        showModal: function(){
+            $("#graphQueryFilterModal").modal('show');
+        }
+
+
+    });
+
+    //View
+    PC.HistogramFilterView = Backbone.View.extend({
+        template: _.template($("#queryFilterHistogramTemplate").html()),
+
+        initialize: function(){
+            this.$el.html(this.template());
+        },
+
+        events:{
+            'nmdChange': "updateNMD"
+        },
+
+        updateNMD: function(item,data){
+            var formatCount = d3.format(",.0f");
+             $("#startNMD").val(formatCount(data.startNMD));
+             $("#endNMD").val(formatCount(data.endNMD));
+
+        },
 
         render: function() {
 
@@ -99,11 +237,13 @@
                 return;
             }
             var maxPosValueX = d3.max(data);
-            var formatCount = d3.format(",.0f");
 
             var margin = {top: 10, right: 30, bottom: 30, left: 30},
                 width = 700 - margin.left - margin.right,
-                height = 400 - margin.top - margin.bottom;
+                height = 300 - margin.top - margin.bottom;
+            var selwidth = 60,
+                selheight = height,
+                selectbarw = 10;
 
 
             var x = d3.scale.linear()
@@ -127,7 +267,7 @@
                 .orient("left");
 
 
-            var chart = d3.select(this.$el.find("#queryFilterHistogramView")[0]).append('svg')
+            var chart = d3.select(this.el).append('svg')
             .attr("width", width + margin.left + margin.right )
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -169,15 +309,8 @@
                  .attr("transform","translate("+width/2 + "," + margin.bottom +")")
                  .text("Normalized Medline Distance (NMD)");
 
-            //now need to add the selection bars - essentially a rectangle with movable ends
-            var selwidth = 60,
-                selheight = height,
-                selectbarw = 10;
 
-        /*    var dragright = d3.behavior.drag()
-            .origin(Object)
-            .on("dra", rdragresize);
-*/
+            //now need to add the selection bars - essentially a rectangle with movable ends
             var drag = d3.behavior.drag()
             .origin(Object)
             .on("drag", dragmove);
@@ -191,7 +324,7 @@
             .on("drag",rdragresize);
 
             var selectg = chart.append("g")
-                .data([{x:0, Y:0}]);
+                .data([{x:0, y:0}]);
 
             var dragrect = selectg.append("rect")
             .attr("id", "active")
@@ -226,8 +359,8 @@
             .attr("cursor", "ew-resize")
             .call(dragright);
 
-            function ldragresize(d){
-                var oldx = d.x;
+        function ldragresize(d){
+               var oldx = d.x;
                 d.x = Math.max(0, Math.min(d.x + selwidth, d3.event.x));
                 selwidth = selwidth + (oldx - d.x);
                 dragbarleft
@@ -236,82 +369,44 @@
                 dragrect
                 .attr("x", function(d) { return d.x; })
                 .attr("width", selwidth);
-            }
 
-            function rdragresize(d){
+            $(gv.el).trigger('nmdChange',{startNMD:x.invert(dragbarleft.attr("x")), endNMD: x.invert(dragbarleft.attr("x") + selwidth)} );
 
+        };
+
+        function rdragresize(d){
                 var dragx = Math.max(d.x +selectbarw, Math.min(width, d.x + selwidth + d3.event.dx));
                 selwidth = dragx - d.x;
-
                 dragbarright
                     .attr("x", dragx);
                 dragrect
                     .attr("width", selwidth);
 
-            }
+             $(gv.el).trigger('nmdChange',{startNMD:x.invert(d.x), endNMD: x.invert(dragx + selectbarw)} );
 
-            function dragmove(d){
-                dragrect
+        };
+
+        function dragmove(d){
+
+             d.x = Math.max(0, Math.min(width-selwidth, d3.event.x))
+             dragrect
                     .attr("x", d.x = Math.max(0, Math.min(width-selwidth, d3.event.x)));
-                dragbarleft
+             dragbarleft
                     .attr("x", function(d) { return d.x; });
-                dragbarright
+             dragbarright
                     .attr("x", function(d) { return d.x + selwidth;});
-            }
 
-            //now make data table for modal window
-            var table = '<table class="table table-striped table-bordered" id="queryFilterTable">'+
-                '<thead><tr><th class="select-column" style="width: 5%"><input id="check_all" type="checkbox"/></th><th style="width: 20%">Name</th><th style="width: 40%">Aliases</th>'+
-                '<th style="width: 10%">Term Single Count</th>' +
-                '<th style="width: 10%">Term Combo Count</th><th style="width: 15%">NMD</th></tr></thead><tbody>';
-            $.each(this.model.tableData, function(index,item){
-                table+='<tr><td><input type="checkbox" /></td><td>'+item.name+'</td><td>' + item.alias +
-                    '</td><td>' + item.termcount + '</td>'+
-                    '<td>'+item.combocount + '</td><td>'+item.ngd+'</td></tr>';
-            });
-            table +='</tbody></table>';
+                var startNMD = x.invert(dragbarleft.attr("x"));
+                var endNMD = x.invert(parseFloat(dragbarright.attr("x")) + parseFloat(selectbarw));
 
+             $(gv.el).trigger('nmdChange',{startNMD:x.invert(dragbarleft.attr("x")), endNMD: x.invert(parseFloat(dragbarright.attr("x")) + parseFloat(selectbarw))} );
 
-            this.$el.find("#queryFilterTableView").html(table);
-            var thisView=this;
-           var oTable=this.$el.find("#queryFilterTable").dataTable({
-               "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
-               "sPaginationType": "bootstrap",
-               "oLanguage": {
-			"sLengthMenu": "_MENU_ records per page"
-		},
-               "fnInitComplete"  : function () {
-                   var that=this;
-                         thisView.$el.find('#check_all').click( function() {
-                            $('input', that.fnGetNodes()).attr('checked',this.checked);
-                    } );
-               }
-           });
+        };
 
-
-            $(this.el).modal('show');
             return this;
-
-        },
-
-        events: {
-            "click button.close": "close",
-            "click button.#closeQueryFilter": "close"
-
-        },
-
-        close: function(){
-            this.model.destroy();
-            this.remove();
-        },
-
-        showModal: function(){
-            $("#graphQueryFilterModal").modal('show');
         }
 
-
     });
-
     PC.Node = Backbone.Model.extend({
 
     });
@@ -385,7 +480,18 @@
     $.extend( $.fn.dataTableExt.oStdClasses, {
     "sWrapper": "dataTables_wrapper form-inline"
 } );
+
     var app = new PC.AppRouter();
     Backbone.history.start();
 
 } (jQuery));
+
+
+$.fn.dataTableExt.afnSortData['dom-checkbox'] = function  ( oSettings, iColumn )
+{
+	var aData = [];
+	$( 'td:eq('+iColumn+') input', oSettings.oApi._fnGetTrNodes(oSettings) ).each( function () {
+		aData.push( this.checked==true ? "1" : "0" );
+	} );
+	return aData;
+}
