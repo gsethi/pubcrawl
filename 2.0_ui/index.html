@@ -187,14 +187,18 @@
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Node Selection</h3>
+        <div class="form-inline">
+        <label>Total Items Selected: </label><label id="totalItems"></label>
+            </div>
         </div>
     <div class="modal-body queryFilterModal">
         <ul class="nav nav-tabs" id="modalQueryFilterTabs">
-            <li class="active"><a href="#queryFilterHistogramView" data-toggle="tab">Histogram</a></li>
-            <li><a href="#queryFilterTableView" data-toggle="tab">Data Table</a></li>
+            <li class="active"><a id="qfHistogramTab" href="#queryFilterHistogramView" data-toggle="tab">Histogram</a></li>
+            <li><a id="qfTableTab" href="#queryFilterTableView" data-toggle="tab">Data Table</a></li>
             </ul>
         <div class="tab-content">
-            <div class="tab-pane active" id="queryFilterHistogramView"></div>
+            <div class="tab-pane active" id="queryFilterHistogramView">
+            </div>
             <div class="tab-pane queryfiltertable" id="queryFilterTableView"></div>
         </div>
     </div>
@@ -203,6 +207,19 @@
         <button class="btn btn-primary">Draw Network</button>
     </div>
 </div>
+</script>
+
+<script id="queryFilterHistogramTemplate" type="text/template">
+    <form class="well form-inline">
+            <div class="pull-left">
+                <label>Start NMD:</label>
+                <input type="text" class="input-small" id="startNMD">
+            </div>
+            <div class="pull-right">
+                <label>End NMD:</label>
+                <input type="text" class="input-small" id="endNMD">
+            </div>
+    </form>
 </script>
 
 
