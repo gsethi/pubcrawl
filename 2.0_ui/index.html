@@ -165,7 +165,7 @@
                     this is the legend here...
                 </div>
             </div>
-            <div class="span10"> <!-- where main content of page will go --> </div>
+            <div class="span10" id="networkContainer"> <!-- where main content of page will go --> </div>
         </div>
     </div>
 <footer class="navbar-fixed-bottom">
@@ -174,9 +174,6 @@
         </p>
 </footer>
 
-<script id="filterTemplate" type="text/template">
-    <h1>Put Histogram and filter here</h1>
-</script>
 
 <script id="graphTemplate" type="text/template">
     <h1>Graph Template</h1>
@@ -204,7 +201,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn btn-primary" id="closeQueryFilter" data-dismiss="modal">Close</button>
-        <button class="btn btn-primary">Draw Network</button>
+        <button class="btn btn-primary" id="drawNetworkBtn" data-dismiss="modal">Draw Network</button>
     </div>
 </div>
 </script>
@@ -232,7 +229,6 @@
     <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
 <script type="text/javascript" src="js/jquery.dataTables.js"></script>
 <script type="text/javascript" src="js/paging.js"></script>
-<script src="js/flexscrollBar.js"></script>
 <script src="js/pubcrawl.js"></script>
 
 </body>

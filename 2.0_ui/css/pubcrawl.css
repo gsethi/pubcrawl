@@ -207,3 +207,16 @@ div.dataTables_paginate {
      fill: #555;
  }
 
+ /*network graph styles*/
+ circle.node {
+  cursor: pointer;
+  stroke: #3182bd;
+  stroke-width: 1.5px;
+}
+
+line.link {
+  fill: none;
+  stroke: #9ecae1;
+  stroke-width: 1.5px;
+}
+
