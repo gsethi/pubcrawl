@@ -3,7 +3,7 @@
 
     };
 
-    PC.Graph = Backbone.Model.extend({
+    PC.Nodes = Backbone.Model.extend({
         urlRoot: 'http://apollo:4080/hukilau-svc/graphs/pubcrawl/nodes/query',
         url: function(){
               return this.urlRoot + "?nodeSet=[{name:'" + this.attributes.queryValue + "'}]&relationshipSet=[{name:'ngd'}]";
@@ -81,11 +81,12 @@
 
     });
 
-    PC.GraphView = Backbone.View.extend({
+    PC.QueryFilterView = Backbone.View.extend({
         template: _.template($("#NodeQueryFilterTemplate").html()),
 
         initialize: function() {
             this.$el.html(this.template());
+            this.selectedNodes=[];
         },
 
 
@@ -155,7 +156,8 @@
             "click button.#closeQueryFilter": "close",
             "nmdChange": "updateNMD",
             "click [data-toggle='tab']": "updateItemsSelected",
-            "tableSelectionChange": "updateItemsSelected"
+            "tableSelectionChange": "updateItemsSelected",
+            "click button.#drawNetworkBtn": "triggerDrawNetwork"
 
         },
 
@@ -166,6 +168,14 @@
             else{
                $("#totalItems").text(this.getHistogramTotalSelected());
             }
+        },
+
+        triggerDrawNetwork: function(event){
+
+              app.selectedNodes = this.selectedNodes;
+            app.navigate("graph/"+this.model.attributes.queryValue,true);
+            this.hideModal();
+            this.close();
         },
 
         updateNMD: function(item,data){
@@ -185,6 +195,7 @@
                         return false;
                 });
 
+                this.selectedNodes = itemsSelected;
                 return itemsSelected.length;
             },
 
@@ -194,6 +205,7 @@
                      if(this.checked) return true;
                      else return false;
                  });
+            this.selectedNodes = selected;
             return selected.length;
         },
 
@@ -204,6 +216,10 @@
 
         showModal: function(){
             $("#graphQueryFilterModal").modal('show');
+        },
+
+        hideModal: function(){
+            $("#graphQueryFilterModal").modal('hide');
         }
 
 
@@ -439,7 +455,147 @@
         }
 
     });
-    PC.Node = Backbone.Model.extend({
+    PC.Graph = Backbone.Model.extend({
+
+    });
+
+    PC.GraphView = Backbone.View.extend({
+         el: $("#networkContainer"),
+
+        render:function(){
+            var w = 960,
+    h = 500,
+    node,
+    link,
+    root;
+
+var force = d3.layout.force()
+    .on("tick", tick)
+    .size([w, h]);
+
+var vis = d3.select(this.el).append("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+d3.json("readme.json", function(json) {
+  root = json;
+  update();
+});
+var first=true;
+function update() {
+    var nodes = flatten(root);
+      var links = d3.layout.tree().links(nodes);
+
+    if(!first){
+    //    root.fixed=true;
+
+    }
+
+  // Restart the force layout.
+  force
+      .nodes(nodes)
+      .links(links)
+      .start();
+
+  // Update the links…
+  link = vis.selectAll("line.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links.
+  link.enter().insert("svg:line", ".node")
+      .attr("class", "link")
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  // Exit any old links.
+  link.exit().remove();
+
+  // Update the nodes…
+  node = vis.selectAll("circle.node")
+      .data(nodes, function(d) { return d.id; });
+
+  // Enter any new nodes.
+  node.enter().append("svg:circle")
+      .attr("class", "node")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+        .attr("r",8) //function(d) { return Math.sqrt(d.size) / 10 || 4.5; })
+        .style("fill", color)
+        .on("click", click)
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout)
+        .call(force.drag);
+
+  // Exit any old nodes.
+  node.exit().remove();
+
+
+     first=false;
+}
+
+function tick() {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
+
+// Color leaf nodes orange, and packages white or blue.
+function color(d) {
+  return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+}
+
+function mouseover() {
+  d3.select(this).transition()
+      .duration(750)
+      .attr("r", 16);
+}
+
+function mouseout() {
+  d3.select(this).transition()
+      .duration(750)
+      .attr("r", 8);
+}
+
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update();
+}
+
+// Returns a list of all nodes under the root.
+function flatten(root) {
+  var nodes = [], i = 0;
+
+  function recurse(node) {
+    if (node.children) node.children.forEach(recurse);
+    if (!node.id) node.id = ++i;
+    if(!first){
+     // node.fixed=true;
+    }
+    nodes.push(node);
+
+  }
+
+  recurse(root);
+
+
+  return nodes;
+}
+        }
+
 
     });
 
@@ -447,25 +603,7 @@
 
     });
 
-    PC.Nodes = Backbone.Collection.extend({
-        model: PC.Node,
-        url: 'http://apollo:7080/hukilau-svc/graphs/pubcrawl/nodes'
-    });
 
-    PC.Edges = Backbone.Collection.extend({
-        model: PC.Edge
-    });
-
-    PC.FilterView = Backbone.View.extend({
-        tagName: "filterview",
-        template: $("#filterTemplate").html(),
-
-        render: function(){
-            var tmpl = _.template(this.template);
-            this.$el.html(tmpl(this.model.toJSON()));
-            return this;
-        }
-    });
 
     PC.AppRouter = Backbone.Router.extend({
 
@@ -474,8 +612,16 @@
             "graph/:name":"loadGraph"
         },
 
-        initialize: function(){
+        events:{
+            "nodesSelected":"drawGraph"
+        },
 
+        initialize: function(){
+            this.graphView = new PC.GraphView();
+        },
+
+        drawGraph: function(data){
+            this.graphView.drawNetwork(data);
         },
 
         defaultView: function(){
@@ -483,19 +629,26 @@
         },
 
         loadGraph: function(name){
-            $("#querySearchTerm").val = name;
-            queryNodes();
+            if(app.selectedNodes){
+                //selectedNodes has a value, so go ahead and make network request
+                this.graphView.render();
+                app.allNodeFilterView.hideModal();
+            }
+            else{ //haven't selected nodes, coming straight from url selection
+                $("#querySearchTerm").val = name;
+                queryNodes();
+            }
         }
 
-    })
+    });
 
     function queryNodes(e) {
 
         if(e != null){
             e.preventDefault();
         }
-        var graph = new PC.Graph({queryValue: $("#querySearchTerm").val()});
-        app.allNodeFilterView = new PC.GraphView({model: graph});
+        var nodes = new PC.Nodes({queryValue: $("#querySearchTerm").val()});
+        app.allNodeFilterView = new PC.QueryFilterView({model: nodes});
 
         app.allNodeFilterView.model.fetch({
             success:
@@ -516,8 +669,8 @@
     var app = new PC.AppRouter();
     Backbone.history.start();
 
-} (jQuery));
 
+} (jQuery));
 
 $.fn.dataTableExt.afnSortData['dom-checkbox'] = function  ( oSettings, iColumn )
 {
@@ -527,3 +680,4 @@ $.fn.dataTableExt.afnSortData['dom-checkbox'] = function  ( oSettings, iColumn )
 	} );
 	return aData;
 }
+
