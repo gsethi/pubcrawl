@@ -208,15 +208,52 @@ div.dataTables_paginate {
  }
 
  /*network graph styles*/
- circle.node {
-  cursor: pointer;
-  stroke: #3182bd;
-  stroke-width: 1.5px;
-}
-
-line.link {
+.link {
   fill: none;
-  stroke: #9ecae1;
+  stroke: #666;
   stroke-width: 1.5px;
 }
 
+.node circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+marker#ngd {
+  fill: #D5DF3E;
+}
+
+
+line.link.ngd {
+  stroke: #D5DF3E;
+}
+
+line.link.domine {
+  stroke-dasharray: 0,2 1;
+}
+
+circle {
+  fill: #F5A723;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+}
+
+text.shadow {
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-opacity: .8;
+}​
