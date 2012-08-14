@@ -36,7 +36,15 @@
 
 </head>
 <body>
-<div class="navbar navbar-fixed-top" id="topNav">
+<div id="mainView"></div>
+<div id="modalDiv" class="modal hide"></div>
+<footer class="navbar-fixed-bottom">
+        <p>
+            &copy; 2012, Institute for Systems Biology, All Rights Reserved
+        </p>
+</footer>
+<script id="PubcrawlAppTemplate" type="text/template">
+    <div class="navbar navbar-fixed-top" id="topNav">
     <div class="navbar-inner">
         <div class="container-fluid">
             <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -45,13 +53,12 @@
                 <span class="icon-bar"></span>
             </a>
             <a class="brand" href="#homePage" onclick="return false;" id="home">
-
                 <img src="images/isblogo.png" class="imgbrand" alt="Pubcrawl"/> <b>Pubcrawl</b>
             </a>
             <div class="nav-collapse">
                 <ul class="nav nav-pills pull-center">
                     <li class="dropdown">
-                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href=""  onclick="return false;">
+                        <a class="dropdown-toggle" data-toggle="dropdown"  href=""  onclick="return false;">
                             Datasets <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
@@ -67,7 +74,7 @@
                         </ul>
                     </li>
                     <li class="dropdown">
-                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href="" onclick="return false;" >
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="" onclick="return false;" >
                             Export
                             <b class="caret"></b>
                         </a>
@@ -92,7 +99,7 @@
                         </ul>
                     </li>
                     <li class="dropdown" >
-                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href="" onclick="return false;" >
+                        <a class="dropdown-toggle" data-toggle="dropdown"  href="" onclick="return false;" >
                             About
                             <b class="caret"></b>
                         </a>
@@ -118,7 +125,7 @@
             <!--/.nav-collapse --> </div>
     </div>
 </div>
-<div class="container-fluid dataHeader">
+    <div class="container-fluid dataHeader">
     <div class="row-fluid dataHeader">
         <div class="span12">
 <div class="row-fluid">
@@ -168,19 +175,13 @@
             <div class="span10" id="networkContainer"> <!-- where main content of page will go --> </div>
         </div>
     </div>
-<footer class="navbar-fixed-bottom">
-        <p>
-            &copy; 2012, Institute for Systems Biology, All Rights Reserved
-        </p>
-</footer>
-
-
-<script id="graphTemplate" type="text/template">
-    <h1>Graph Template</h1>
 </script>
 
+
+
+
 <script id="NodeQueryFilterTemplate" type="text/template">
-<div class="modal show" id="graphQueryFilterModal">
+<div id="graphQueryFilterModal">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Node Selection</h3>
@@ -229,6 +230,13 @@
     <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
 <script type="text/javascript" src="js/jquery.dataTables.js"></script>
 <script type="text/javascript" src="js/paging.js"></script>
+<script src="js/init.js"></script>
+<script src="js/models/networkModel.js"></script>
+<script src="js/models/nodeQueryModel.js"></script>
+<script src="js/views/histogramFilter.js"></script>
+<script src="js/views/network.js"></script>
+<script src="js/views/pubcrawl.js"></script>
+<script src="js/views/queryFilter.js"></script>
 <script src="js/pubcrawl.js"></script>
 
 </body>
