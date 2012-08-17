@@ -203,9 +203,7 @@ div.dataTables_paginate {
      max-height: 700px;
  }
 
- .axis {
-     fill: #555;
- }
+
 
  /*network graph styles*/
 .link {
@@ -233,18 +231,12 @@ marker#ngd {
 }
 
 
-line.link.ngd {
+.link.ngd {
   stroke: #D5DF3E;
 }
 
-line.link.domine {
+.link.domine {
   stroke-dasharray: 0,2 1;
-}
-
-circle {
-  fill: #F5A723;
-  stroke: #333;
-  stroke-width: 1.5px;
 }
 
 text {
@@ -256,4 +248,32 @@ text.shadow {
   stroke: #fff;
   stroke-width: 3px;
   stroke-opacity: .8;
-}​
+}
+
+line.axis {
+     fill: #F5A723;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.node circle {
+  stroke: #D5DF3E;
+}
+
+.link {
+  fill: none;
+  stroke: #999;
+  stroke-width: 1.5px;
+  stroke-opacity: .3;
+}
+
+.link.active {
+  stroke: red;
+  stroke-width: 2px;
+  stroke-opacity: 1;
+}
+
+.node circle.active {
+  stroke: red;
+  stroke-width: 3px;
+}
