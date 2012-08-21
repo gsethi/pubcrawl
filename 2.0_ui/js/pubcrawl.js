@@ -18,6 +18,7 @@ PC.AppRouter = Backbone.Router.extend({
 
         loadNetwork: function(name){
             this.mainView.loadNetwork(name);
+            this.mainView.$("#querySearchTerm").val(name);
 
         },
 
