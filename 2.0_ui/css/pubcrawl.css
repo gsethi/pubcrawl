@@ -212,13 +212,6 @@ div.dataTables_paginate {
   stroke-width: 1.5px;
 }
 
-.node circle {
-  fill: #ccc;
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-
 
 path.link {
   fill: none;
@@ -232,11 +225,12 @@ marker#ngd {
 
 
 .link.ngd {
-  stroke: #D5DF3E;
+  stroke: #1D3FE7;
 }
 
 .link.domine {
   stroke-dasharray: 0,2 1;
+  stroke:#AC0035;
 }
 
 text {
@@ -244,20 +238,14 @@ text {
   pointer-events: none;
 }
 
-text.shadow {
-  stroke: #fff;
-  stroke-width: 3px;
-  stroke-opacity: .8;
+text.hiveplot {
+  font: 14px sans-serif;
+
 }
 
 line.axis {
-     fill: #F5A723;
-  stroke: #000;
+  stroke: #A8A9AB;
   stroke-width: 1.5px;
-}
-
-.node circle {
-  stroke: #D5DF3E;
 }
 
 .link {
