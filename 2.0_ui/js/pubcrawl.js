@@ -23,6 +23,7 @@ PC.AppRouter = Backbone.Router.extend({
         },
 
         queryNode: function(name){
+            this.mainView.$("#querySearchTerm").val(name);
             this.mainView.queryNode(name);
         }
 
