@@ -169,7 +169,7 @@
                     <div class="tab-pane" id="edgeFilter">This is the edges tab</div>
                 </div>
                 <div class="legend">
-                    this is the legend here...
+
                 </div>
             </div>
             <div class="span9" id="networkContainer"> <!-- where main content of page will go --> </div>
@@ -211,11 +211,11 @@
     <form class="well form-inline">
             <div class="pull-left">
                 <label><%= startLabel %></label>
-                <input type="text" class="input-small" id="<%= startId %>">
+                <input type="text" class="<%= textinputclass %>" id="<%= startId %>">
             </div>
             <div class="pull-right">
                 <label><%= endLabel %></label>
-                <input type="text" class="input-small" id="<%= endId %>">
+                <input type="text" class="<%= textinputclass %>" id="<%= endId %>">
             </div>
     </form>
 </script>
