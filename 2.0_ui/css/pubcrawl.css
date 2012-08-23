@@ -265,3 +265,7 @@ line.axis {
   stroke: red;
   stroke-width: 3px;
 }
+
+.node circle.hidden {
+    visibility: hidden;
+}

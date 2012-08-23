@@ -159,20 +159,20 @@
     </div>
 <div class="container-fluid mainContainer" id="mainContainer">
         <div class="row-fluid">
-            <div class="span2">
+            <div class="span3">
                 <ul class="nav nav-tabs" id="filterTabs">
-                    <li class="active"><a href="#nodes" data-toggle="tab">Nodes</a></li>
-                    <li><a href="#edges"  data-toggle="tab">Edges</a></li>
+                    <li class="active"><a href="#nodeFilter" data-toggle="tab">Nodes</a></li>
+                    <li><a href="#edgeFilter"  data-toggle="tab">Edges</a></li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane active" id="nodes">This is the nodes tab</div>
-                    <div class="tab-pane" id="edges">This is the edges tab</div>
+                    <div class="tab-pane active" id="nodeFilter">This is the nodes tab</div>
+                    <div class="tab-pane" id="edgeFilter">This is the edges tab</div>
                 </div>
                 <div class="legend">
                     this is the legend here...
                 </div>
             </div>
-            <div class="span10" id="networkContainer"> <!-- where main content of page will go --> </div>
+            <div class="span9" id="networkContainer"> <!-- where main content of page will go --> </div>
         </div>
     </div>
 </script>
@@ -210,12 +210,12 @@
 <script id="queryFilterHistogramTemplate" type="text/template">
     <form class="well form-inline">
             <div class="pull-left">
-                <label>Start NMD:</label>
-                <input type="text" class="input-small" id="startNMD">
+                <label><%= startLabel %></label>
+                <input type="text" class="input-small" id="<%= startId %>">
             </div>
             <div class="pull-right">
-                <label>End NMD:</label>
-                <input type="text" class="input-small" id="endNMD">
+                <label><%= endLabel %></label>
+                <input type="text" class="input-small" id="<%= endId %>">
             </div>
     </form>
 </script>
@@ -231,10 +231,15 @@
 <script type="text/javascript" src="js/jquery.dataTables.js"></script>
 <script type="text/javascript" src="js/paging.js"></script>
 <script src="js/init.js"></script>
+<script src="js/models/edgeModel.js"></script>
 <script src="js/models/networkModel.js"></script>
+<script src="js/models/nodeModel.js"></script>
 <script src="js/models/nodeQueryModel.js"></script>
+<script src="js/views/edgeFilterList.js"></script>
+<script src="js/views/filterItem.js"></script>
 <script src="js/views/histogramFilter.js"></script>
 <script src="js/views/network.js"></script>
+<script src="js/views/nodeFilterList.js"></script>
 <script src="js/views/pubcrawl.js"></script>
 <script src="js/views/queryFilter.js"></script>
 <script src="js/pubcrawl.js"></script>
