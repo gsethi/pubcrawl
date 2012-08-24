@@ -241,7 +241,7 @@ var svg = d3.select(this.el).append("svg")
           }
 
           link.source = targetNode.source;
-          link.source = sourceNode.target;
+          link.target = sourceNode.target;
           links.push(link);
 
       }
