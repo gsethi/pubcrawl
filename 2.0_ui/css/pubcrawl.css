@@ -268,3 +268,11 @@ line.axis {
 .node circle.hidden {
     visibility: hidden;
 }
+
+.filtertabcontent {
+    border-bottom: 7px solid rgba(0, 0, 0, 0.2);
+    border-left: 7px solid rgba(0, 0, 0, 0.2);
+    border-right: 7px solid rgba(0, 0, 0, 0.2);
+    border-top: 7px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
