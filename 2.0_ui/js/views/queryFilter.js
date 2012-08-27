@@ -16,7 +16,13 @@
                 return this;
             }
 
-            this.tableView = new PC.TableView({model: this.model.tableData});
+            var dataConfig = [{headerName:'Name', headerWidth: '30%', propName:'name'},
+                {headerName: 'Aliases', headerWidth: '40%', propName: 'alias'},
+                {headerName:'Term Single Count', headerWidth: '10%', propName: 'termcount'},
+                {headerName:'Term Combo Count', headerWidth: '10%', propName: 'combocount'},
+                {headerName:'NMD', headerWidth: '10%', propName: 'nmd'}];
+
+            this.tableView = new PC.TableView({dataConfig: dataConfig, checkbox: true, tableId: "queryFilterTable",model: this.model.tableData});
             this.$el.find("#queryFilterTableView").html(this.tableView.render().el);
 
 

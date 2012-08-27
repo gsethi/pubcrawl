@@ -161,7 +161,8 @@ var width = width,
     outerRadius = 600,
     x_off=$(window).width()-width,
     y_off=80,
-    degree = Math.PI / 180;
+    degree = Math.PI / 180,
+    that=this;
 
 var angle = d3.scale.ordinal()
     .domain(["list1", "list1_clone","list2","list2_clone"])
@@ -351,7 +352,8 @@ svg.append("g")
       .attr("cx", function(d) { return radius(d.node.index); })
       .attr("r", 6)
       .on("mouseover", nodeMouseover)
-      .on("mouseout", mouseout);
+      .on("mouseout", mouseout)
+      .on("click", triggerNodeDetailsView);
 
 
 var labels =svg.append("g")
@@ -397,6 +399,10 @@ var labels =svg.append("g")
   function mouseout() {
     svg.selectAll(".active").classed("active", false);
  //   info.text(defaultInfo);
+  }
+
+  function triggerNodeDetailsView(item){
+      $(that.el).trigger('nodeClicked',item.node.name);
   }
 
 
