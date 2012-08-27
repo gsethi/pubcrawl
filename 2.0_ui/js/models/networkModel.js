@@ -25,7 +25,7 @@ PC.NetworkModel = Backbone.Model.extend({
             var nodeIdMappings={};
             if(response.data != null && response.data.edges != null){
                 for(var i=0; i < response.data.nodes.length; i++){
-                    var node={index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf};
+                    var node={index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf, termcount: response.data.nodes[i].termcount};
                     if(node.name == this.searchterm){
                         node.nmd=0;
                         node.cc = response.data.nodes[i].termcount;

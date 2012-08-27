@@ -13,7 +13,8 @@ PC.PubcrawlView =  Backbone.View.extend({
     events: {
 		"click #queryBtn"    : "triggerQuery",
         "networkNodesSelected" : "triggerNetworkLoad",
-        "networkFilterChange" : "filterNetwork"
+        "networkFilterChange" : "filterNetwork",
+        "nodeClicked"  : "showNodeDetails"
     },
 
 	triggerQuery: function(event) {
@@ -68,6 +69,15 @@ PC.PubcrawlView =  Backbone.View.extend({
        		this.nodeQuery.fetch({success: function(model,response) {
                  that.$el.append(that.showModal('#modalDiv', new PC.QueryFilterView({model: model})).el.parentNode);
             }});
+    },
+
+    showNodeDetails: function(event,item){
+        var thisDetails=this;
+        this.nodeDetails = new PC.NodeDetailsModel(this.networkData,item);
+        this.nodeDetails.fetch({success: function(model,response){
+            thisDetails.$el.append(thisDetails.showModal('#modalDiv', new PC.TabTableView({model: model})).el.parentNode);
+        }});
+
     },
 
     queryNodeAndSelect: function(selectionLength){
