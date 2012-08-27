@@ -207,6 +207,17 @@
 </div>
 </script>
 
+<script id="nodeDetailsTemplate" type="text/template">
+    <div id="nodeDetailsModal">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">x</button>
+            <h3>Node Details</h3>
+        </div>
+        <div id="nodeDetailsModalBody" class="modal-body queryFilterModal">
+        </div>
+    </div>
+</script>
+
 <script id="queryFilterHistogramTemplate" type="text/template">
     <form class="well form-inline">
             <div class="pull-left">
@@ -225,9 +236,7 @@
 <script src="js/underscore-min.js"></script>
 <script src="js/backbone-min.js"></script>
 <script src="js/bootstrap.js"></script>
-  <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/protovis-r3.3.1.js"></script>
-    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/visquick-utils.js"></script>
-    <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
+<script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
 <script type="text/javascript" src="js/jquery.dataTables.js"></script>
 <script type="text/javascript" src="js/paging.js"></script>
 <script src="js/init.js"></script>
@@ -238,6 +247,7 @@
 <script src="js/views/edgeFilterList.js"></script>
 <script src="js/views/filterItem.js"></script>
 <script src="js/views/histogramFilter.js"></script>
+<script src="js/views/table.js"></script>
 <script src="js/views/network.js"></script>
 <script src="js/views/nodeFilterList.js"></script>
 <script src="js/views/pubcrawl.js"></script>
