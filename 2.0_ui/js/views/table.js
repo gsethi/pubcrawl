@@ -6,6 +6,7 @@ PC.TableView = Backbone.View.extend({
         this.dataConfig = config.dataConfig; //contains the header data for the table['Name','Aliases','Term Single Count','Term Combo Count','NMD']
         this.checkbox=config.checkbox;   //true if the first column should be a checkbox selection
         this.tableId = config.tableId; //id of the table
+        this.expandedConfig = config.expandedConfig //contains the data config for any data that should show up in row details
 
     },
 
@@ -16,7 +17,7 @@ PC.TableView = Backbone.View.extend({
 
         //now make data table for modal window
         var table='';
-        if(this.checkbox){
+      /*  if(this.checkbox){
             table='<table class="table table-striped table-bordered" id="' + this.tableId + '">'+
             '<thead><tr><th style="width: 5%"><input id="check_all" type="checkbox"/></th>';
         }
@@ -42,23 +43,41 @@ PC.TableView = Backbone.View.extend({
             table+='</tr>';
         });
 
-        table +='</tbody></table>';
+        table +='</tbody></table>';*/
+
+        if(this.checkbox){
+            table='<table class="table table-striped table-bordered" id="' + this.tableId + '">'+
+                '</table>';
+        }
+        else{
+            table ='<table class="table nocheckbox_table table-striped table-bordered" id="' + this.tableId + '">'+
+                '</table>';
+        }
 
         this.$el.html(table);
         var aoColumns = [];
         if(this.checkbox){
-            aoColumns.push( { "sSortDataType": "dom-checkbox"});
+            aoColumns.push( { "sSortDataType": "dom-checkbox", "sTitle": '<input id="check_all" type="checkbox"/>',
+                "sDefaultContent":'<input class="tableCheckbox" type="checkbox" />'});
+        }
+        if(this.expandedConfig != null && this.expandedConfig.length > 0){
+            aoColumns.push( {"mDataProp": null,
+                               "sClass": "control center",
+                                "sDefaultContent": '<img src="../images/details_open.png">'});
         }
         for(var k=0; k < thisView.dataConfig.length; k++){
-            aoColumns.push(null);
+            aoColumns.push({"sTitle": thisView.dataConfig[k].headerName,"mDataProp": thisView.dataConfig[k].propName,
+            "sDefaultContent": ""});
         }
 
         this.oTable=this.$el.find("#" + this.tableId).dataTable({
-            "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
+          //  "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
             "sPaginationType": "bootstrap",
+            "aaData": this.model,
             "oLanguage": {
                 "sLengthMenu": "_MENU_ records per page"
             },
+
             "aoColumns":aoColumns,
 
             "fnInitComplete"  : function () {
@@ -73,14 +92,45 @@ PC.TableView = Backbone.View.extend({
                 });
                 }
                 else{
-                this.$('tbody tr').click(function(item){
+                    this.$('tbody tr').click(function(item){
 
-                });
+                    });
                 }
+
             }
         });
 
+        thisView.anOpen=[];
+        if(thisView.expandedConfig != null && thisView.expandedConfig.length > 0){
+            $("#" + this.tableId + " td.control").live('click', function(){
+                var nTr = this.parentNode;
+                var i = $.inArray(nTr,thisView.anOpen);
+
+                if(i == -1){  //this item was not in the open list, open it
+                    $('img', this).attr('src',"../images/details_close.png" );
+                    thisView.oTable.fnOpen(nTr, thisView.formatDetails(thisView.oTable, nTr), 'details');
+                    thisView.anOpen.push(nTr);
+                }
+                else{
+                    $('img',this).attr('src',"../images/details_open.png" );
+                    thisView.oTable.fnClose(nTr);
+                    thisView.anOpen.splice(i,1);
+                }
+            });
+        }
+
         return this;
+    },
+
+    formatDetails: function(oTable, row){
+         var data = oTable.fnGetData(row);
+        var sOut = '<div class="innerDetails">'+
+            '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+        for(var k=0; k< this.expandedConfig.length; k++){
+            sOut+='<tr><td>' + data[this.expandedConfig[k].propName] + '</td></tr>';
+        }
+        sOut+='</table></div>';
+        return sOut;
     }
 
 });
