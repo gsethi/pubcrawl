@@ -23,10 +23,10 @@ PC.NodeQueryModel = Backbone.Model.extend({
                     var node= response.data.nodes[i];
                     nodeMap[node.id]=node.name;
                     if(node.name.toLowerCase() != qv){ //don't want to include query nodes
-                        td[node.id]={"name":node.name,"alias":node.aliases,"termcount":node.termcount,"termcount_alias":node.termcount_alias};
+                        td[node.id]={"name":node.name,"alias":node.aliases,"termcount":node.termcount,"termcount_alias":node.termcount_alias,"nodeType": node.nodeType};
                     }else{
                         //put query item into this model for retrieval later
-                        this.searchData={"name":node.name,"alias":node.aliases,"termcount":node.termcount,"termcount_alias":node.termcount_alias};
+                        this.searchData={"name":node.name,"alias":node.aliases,"termcount":node.termcount,"termcount_alias":node.termcount_alias,"nodeType": node.nodeType};
                     }
                 }
                 for(var e in response.data.edges){
