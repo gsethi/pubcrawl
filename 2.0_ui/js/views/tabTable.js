@@ -26,10 +26,11 @@ PC.TabTableView = Backbone.View.extend({
 
         var docConfig = [{headerName:'PMID', headerWidth: '10%', propName:'pmid'},
             {headerName:'Title', headerWidth: '50%', propName: 'article_title'},
-            {headerName:'Abstract', headerWidth: '20%', propName: 'abstract_text'},
             {headerName:'Pub. Year', headerWidth: '10%', propName: 'pub_date_year'}];
 
-        this.docView = new PC.TableView({dataConfig: docConfig, checkbox: false, tableId: "docTable",model: this.model.attributes.response.docs});
+        var expConfig = [{propName:'abstract_text'}];
+
+        this.docView = new PC.TableView({dataConfig: docConfig, expandedConfig: expConfig, checkbox: false, tableId: "docTable",model: this.model.attributes.response.docs});
         this.$el.find("#docTableView").html(this.docView.render().el);
 
         var nmdConfig = [{headerName:'Name', headerWidth: '30%', propName:'name'},
