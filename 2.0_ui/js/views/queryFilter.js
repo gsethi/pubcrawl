@@ -82,7 +82,7 @@
             this.tableView.oTable.$('input').each(
                  function(index){
                      if(this.checked){
-                         selected[(that.tableView.oTable.fnGetData(index)[1])]=0;
+                         selected[(that.tableView.oTable.fnGetData(this.parentNode.parentNode)[1])]=0;
                      }
                  });
 

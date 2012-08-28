@@ -227,7 +227,9 @@
                 .attr("x", x(this.value))
                 .attr("width",selwidth);
 
-                $(gv.el).trigger('filterChange',{startValue:this.value, endValue: gv.$("#" + gv.config.endId).val()} );
+
+
+                $(gv.el).trigger('filterChange',{startValue:this.value, endValue: parseFloat(this.value) + x.invert(selwidth)} );
 
             });
 
@@ -240,7 +242,7 @@
                 dragrect
                 .attr("width",selwidth);
 
-                $(gv.el).trigger('filterChange',{startValue:gv.$("#" + gv.config.startId).val(), endValue: this.value} );
+                $(gv.el).trigger('filterChange',{startValue:x.invert(dragbarleft.attr("x")), endValue: this.value} );
 
             });
 
