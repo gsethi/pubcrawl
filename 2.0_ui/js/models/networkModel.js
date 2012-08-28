@@ -25,7 +25,7 @@ PC.NetworkModel = Backbone.Model.extend({
             var nodeIdMappings={};
             if(response.data != null && response.data.edges != null){
                 for(var i=0; i < response.data.nodes.length; i++){
-                    var node={index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf, termcount: response.data.nodes[i].termcount};
+                    var node={index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf, termcount: response.data.nodes[i].termcount, nodeType: response.data.nodes[i].nodeType};
                     if(node.name == this.searchterm){
                         node.nmd=0;
                         node.cc = response.data.nodes[i].termcount;
@@ -36,11 +36,11 @@ PC.NetworkModel = Backbone.Model.extend({
                         var edge = response.data.edges[index];
                         var nmd;
                         //if this edge is from our searchterm to a target, then get the nmd value and put it into the node object
-                        if(edge.relType == "ngd" && nodeIdMappings[edge.source].name == this.searchterm){
+                        if(nodeIdMappings[edge.source].name == this.searchterm){
                             nodeIdMappings[edge.target].nmd = edge.ngd;
                             nodeIdMappings[edge.target].cc = edge.combocount;
                         }
-                        else if(edge.relType == "ngd" && nodeIdMappings[edge.target].name == this.searchterm){
+                        else if( nodeIdMappings[edge.target].name == this.searchterm){
                             nodeIdMappings[edge.source].nmd = edge.ngd;
                             nodeIdMappings[edge.source].cc = edge.combocount;
                         }

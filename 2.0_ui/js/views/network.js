@@ -340,7 +340,10 @@ svg.append("g")
       .enter().append("g")
        .attr("class", "node")
       .style("fill", function(d){
-          if(d.tf==0)
+          if(d.nodeType == "deNovo"){
+              return "#005B00";
+          }
+          else if(d.tf==0)
             return "#D5DF3E";
           else
             return "#F8991D";
