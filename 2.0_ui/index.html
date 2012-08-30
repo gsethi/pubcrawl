@@ -197,7 +197,7 @@
         <div class="tab-content">
             <div class="tab-pane active" id="queryFilterHistogramView">
             </div>
-            <div class="tab-pane queryfiltertable" id="queryFilterTableView"></div>
+            <div class="tab-pane queryfiltertable"  id="queryFilterTableView"></div>
         </div>
     </div>
     <div class="modal-footer">
@@ -221,11 +221,11 @@
 <script id="queryFilterHistogramTemplate" type="text/template">
     <form class="well form-inline">
             <div class="pull-left">
-                <label><%= startLabel %></label>
+                <label class="inline" style="font-size:<%= labelSize %>"><%= startLabel %></label>
                 <input type="text" class="<%= textinputclass %>" id="<%= startId %>">
             </div>
             <div class="pull-right">
-                <label><%= endLabel %></label>
+                <label class="inline" style="font-size:<%= labelSize %>"><%= endLabel %></label>
                 <input type="text" class="<%= textinputclass %>" id="<%= endId %>">
             </div>
     </form>
