@@ -46,11 +46,11 @@ PC.TableView = Backbone.View.extend({
         table +='</tbody></table>';*/
 
         if(this.checkbox){
-            table='<table class="table table-striped table-bordered" id="' + this.tableId + '">'+
+            table='<table class="table table-striped table-bordered" width="700px" id="' + this.tableId + '">'+
                 '</table>';
         }
         else{
-            table ='<table class="table nocheckbox_table table-striped table-bordered" id="' + this.tableId + '">'+
+            table ='<table class="table nocheckbox_table table-striped table-bordered" width="700px" id="' + this.tableId + '">'+
                 '</table>';
         }
 
@@ -58,21 +58,23 @@ PC.TableView = Backbone.View.extend({
         var aoColumns = [];
         if(this.checkbox){
             aoColumns.push( { "sSortDataType": "dom-checkbox", "sTitle": '<input id="check_all" type="checkbox"/>',
-                "sDefaultContent":'<input class="tableCheckbox" type="checkbox" />'});
+                "sWidth": "10px","sDefaultContent":'<input class="tableCheckbox" type="checkbox" />'});
         }
         if(this.expandedConfig != null && this.expandedConfig.length > 0){
             aoColumns.push( {"mDataProp": null,
+                "sWidth":"10px",
                                "sClass": "control center",
                                 "sDefaultContent": '<img src="../images/details_open.png">'});
         }
         for(var k=0; k < thisView.dataConfig.length; k++){
             aoColumns.push({"sTitle": thisView.dataConfig[k].headerName,"mDataProp": thisView.dataConfig[k].propName,
-            "sDefaultContent": ""});
+            "sWidth":thisView.dataConfig[k].headerWidth,"sDefaultContent": ""});
         }
 
         this.oTable=this.$el.find("#" + this.tableId).dataTable({
-          //  "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
+            "sDom": "<'row'<'span3'l><'span4'f>r>t<'row'<'span3'i><'span4'p>>",
             "sPaginationType": "bootstrap",
+            "bAutoWidth":false,
             "aaData": this.model,
             "oLanguage": {
                 "sLengthMenu": "_MENU_ records per page"
@@ -82,6 +84,7 @@ PC.TableView = Backbone.View.extend({
 
             "fnInitComplete"  : function () {
                 var that=this;
+                this.fnAdjustColumnSizing(true);
                 if(thisView.checkbox){
                 thisView.$el.find('#check_all').click( function() {
                     $('input', that.fnGetNodes()).attr('checked',this.checked);
@@ -121,6 +124,8 @@ PC.TableView = Backbone.View.extend({
 
         return this;
     },
+
+
 
     formatDetails: function(oTable, row){
          var data = oTable.fnGetData(row);

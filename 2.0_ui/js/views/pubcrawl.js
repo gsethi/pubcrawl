@@ -22,7 +22,14 @@ PC.PubcrawlView =  Backbone.View.extend({
             event.preventDefault();
         }
 
-        app.navigate("nodes/query/"+ $("#querySearchTerm").val(),true);
+        var navigateUrl="nodes/query/" + $("#querySearchTerm").val();
+
+        if(Backbone.history.fragment == navigateUrl){
+            this.$el.append(this.showModal('#modalDiv', new PC.QueryFilterView({model: this.nodeQuery})).el.parentNode);
+        }
+        else{
+            app.navigate("nodes/query/"+ $("#querySearchTerm").val(),{trigger:true});
+        }
 		return false;
 	},
 
@@ -32,7 +39,14 @@ PC.PubcrawlView =  Backbone.View.extend({
         }
         this.selectedNodes = item.selectedNodes;
         this.selectedNodes.push(item.model.searchData);
-        app.navigate("network/" + this.searchTerm,true);
+        var navigateUrl="network/" + this.searchTerm;
+
+        if(Backbone.history.fragment == navigateUrl){
+            this.loadNetwork(this.searchTerm);
+        }
+        else{
+            app.navigate("network/" + this.searchTerm,{trigger:true});
+        }
         return false;
     },
 
@@ -113,6 +127,7 @@ PC.PubcrawlView =  Backbone.View.extend({
             this.modalView.close();
         $(selector).html(view.render().el);
         this.modalView = view;
+        $(selector).modal({backdrop: 'static'});
         $(selector).modal('show');
         return view;
     },

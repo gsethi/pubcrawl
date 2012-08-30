@@ -4,8 +4,8 @@
         initialize: function() {
             this.$el.html(this.template());
             this.selectedNodes=[];
-        },
 
+        },
 
         render: function() {
 
@@ -16,11 +16,11 @@
                 return this;
             }
 
-            var dataConfig = [{headerName:'Name', headerWidth: '30%', propName:'name'},
-                {headerName: 'Aliases', headerWidth: '40%', propName: 'alias'},
-                {headerName:'Term Single Count', headerWidth: '10%', propName: 'termcount'},
-                {headerName:'Term Combo Count', headerWidth: '10%', propName: 'combocount'},
-                {headerName:'NMD', headerWidth: '10%', propName: 'nmd'}];
+            var dataConfig = [{headerName:'Name', headerWidth: '75px', propName:'name'},
+                {headerName: 'Aliases', headerWidth: '150px', propName: 'alias'},
+                {headerName:'Term Single Count', headerWidth: '50px', propName: 'termcount'},
+                {headerName:'Term Combo Count', headerWidth: '50px', propName: 'combocount'},
+                {headerName:'NMD', headerWidth: '50px', propName: 'nmd'}];
 
             this.tableView = new PC.TableView({dataConfig: dataConfig, checkbox: true, tableId: "queryFilterTable",model: this.model.tableData});
             this.$el.find("#queryFilterTableView").html(this.tableView.render().el);
@@ -28,7 +28,7 @@
 
             var histOptions = {startLabel: "Start NMD:", endLabel: "End NMD:", startId: "startNMD", endId: "endNMD",
                 xAxis_Label: "Normalized Medline Distance(NMD)", yAxis_Label: "# of Genes",
-                width: 700, height: 300};
+                width: 700, height: 200};
             this.histogramView = new PC.HistogramFilterView({config:histOptions, model: this.model.plotData});
             this.$el.find("#queryFilterHistogramView").html(this.histogramView.render().el);
 
@@ -37,18 +37,23 @@
 
         },
 
+
+
         events: {
             "click button.close": "close",
             "click button.#closeQueryFilter": "close",
             "filterChange": "updateItemsSelected",
             "click [data-toggle='tab']": "updateItemsSelected",
             "tableSelectionChange": "updateItemsSelected",
-            "click button.#drawNetworkBtn": "triggerDrawNetwork"
+            "click button.#drawNetworkBtn": "triggerDrawNetwork",
+            "show #qfTableTab": "showTable"
+
 
         },
 
         updateItemsSelected: function(event){
             if(event.currentTarget.id == "qfTableTab" || event.type=="tableSelectionChange"){
+
                $("#totalItems").text(this.getDataTableTotalSelected());
             }
             else{
@@ -61,6 +66,13 @@
 
         },
 
+        showTable: function(){
+            if(this.tableView.oTable != null){
+                this.tableView.oTable.fnAdjustColumnSizing();
+
+            }
+
+        },
 
         getHistogramTotalSelected: function(){
                 var start=$("#startNMD").val();
@@ -79,6 +91,7 @@
         getDataTableTotalSelected: function(){
             var that = this;
              var selected = {};
+
             this.tableView.oTable.$('input').each(
                  function(index){
                      if(this.checked){
