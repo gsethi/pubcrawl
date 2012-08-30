@@ -46,11 +46,11 @@ PC.TableView = Backbone.View.extend({
         table +='</tbody></table>';*/
 
         if(this.checkbox){
-            table='<table class="table table-striped table-bordered" width="700px" id="' + this.tableId + '">'+
+            table='<table class="table table-striped table-bordered" width="700px"  id="' + this.tableId + '">'+
                 '</table>';
         }
         else{
-            table ='<table class="table nocheckbox_table table-striped table-bordered" width="700px" id="' + this.tableId + '">'+
+            table ='<table class="table nocheckbox_table table-striped table-bordered" width="700px"  id="' + this.tableId + '">'+
                 '</table>';
         }
 

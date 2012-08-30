@@ -135,7 +135,7 @@ PC.PubcrawlView =  Backbone.View.extend({
     showNetworkView: function(selector, view) {
         if (this.networkView)
             this.networkView.close();
-        $(selector).html(view.render($(selector).width(),$(window).height()-100).el);
+        $(selector).html(view.render($(selector).parent().width(),$(window).height()-200).el);
         this.networkView = view;
         return view;
     },
@@ -143,7 +143,7 @@ PC.PubcrawlView =  Backbone.View.extend({
     showNodeFilterListView: function(selector, view){
         if(this.nodeFilterListView)
             this.nodeFilterListView.close();
-        $(selector).html(view.render($(selector).width(),$(window).height() - 150).el);
+        $(selector).html(view.render($(selector).parent().width(),$(window).height() - 150).el);
         this.nodeFilterListView = view;
         this.nodeFilterListView.triggerNetworkFilter();
         return view;
@@ -152,7 +152,7 @@ PC.PubcrawlView =  Backbone.View.extend({
     showEdgeFilterListView: function(selector, view){
         if(this.edgeFilterListView)
             this.edgeFilterListView.close();
-        $(selector).html(view.render($(selector).width(),$(window).height() - 100).el);
+        $(selector).html(view.render($(selector).parent().width(),$(window).height() - 100).el);
         this.edgeFilterListView = view;
         this.edgeFilterListView.triggerNetworkFilter();
         return view;

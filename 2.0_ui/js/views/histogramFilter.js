@@ -8,6 +8,7 @@
             if(this.config.selectbarw == null){ this.config.selectbarw = 10;}
             if(this.config.textinputclass == null) { this.config.textinputclass = "input-small";}
             if(this.config.axislabelfontsize == null) { this.config.axislabelfontsize = "12px";}
+            if(this.config.labelSize == null){this.config.labelSize = "14px";}
             if(this.config.axisfontsize == null) { this.config.axisfontsize = "12px";}
             this.$el.html(this.template(histOptions.config));
             this.formatCount = d3.format(" ,.2f");

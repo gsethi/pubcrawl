@@ -18,18 +18,18 @@ PC.EdgeFilterListView = Backbone.View.extend({
             {attr:"pf2_count",start:this.pdFilter.histogramView.filterStart, end:this.pdFilter.histogramView.filterEnd}]});
     },
 
-    render: function(){
+    render: function(width,height){
         var nmdHistOptions = {startLabel: "Start NMD:", endLabel: "End NMD:", startId: "startEdgeNMD", endId: "endEdgeNMD",
             xAxis_Label: "Normalized Medline Distance(NMD)", yAxis_Label: "# of Edges",
-            width: 350, height: 150, selectbarw: 2, textinputclass: "input-mini", axisfontsize: "8px", axislabelfontsize: "10px"};
+            width: width, height: Math.min(height/3,150), selectbarw: 2, textinputclass: "input-mini", labelSize: "10px", axisfontsize: "8px", axislabelfontsize: "10px"};
         var ccHistOptions = {startLabel: "Start CC:", endLabel: "End CC:", startId: "startEdgeCC", endId: "endEdgeCC",
             xAxis_Label: "Term Combo Count", yAxis_Label: "# of Edges",
-            width: 350, height: 150, selectbarw: 2, textinputclass: "input-mini", axisfontsize: "8px", axislabelfontsize: "10px",
+            width: width, height: Math.min(height/3,150), selectbarw: 2, textinputclass: "input-mini", labelSize: "10px",axisfontsize: "8px", axislabelfontsize: "10px",
         initialstart: 2};
 
         var pdHistOptions = {startLabel: "Start:", endLabel: "End:", startId: "startEdgePD", endId: "endEdgePD",
             xAxis_Label: "Protein Domain Interaction Counts", yAxis_Label: "# of Edges",
-            width: 350, height: 150, selectbarw: 2, textinputclass: "input-mini", axisfontsize: "8px", axislabelfontsize: "10px",
+            width: width, height: Math.min(height/3,150), selectbarw: 2, textinputclass: "input-mini", labelSize: "10px",axisfontsize: "8px", axislabelfontsize: "10px",
             initialstart: 2};
         this.nmdFilter = new PC.FilterItemView({model: this.model, filterAtt: {name: ["nmd"], displayName: "NMD"}, histOptions: nmdHistOptions});
         $(this.el).append(this.nmdFilter.render().el);
