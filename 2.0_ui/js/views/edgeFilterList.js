@@ -19,10 +19,10 @@ PC.EdgeFilterListView = Backbone.View.extend({
     },
 
     render: function(width,height){
-        var nmdHistOptions = {startLabel: "Start NMD:", endLabel: "End NMD:", startId: "startEdgeNMD", endId: "endEdgeNMD",
+        var nmdHistOptions = {startLabel: "Start:", endLabel: "End:", startId: "startEdgeNMD", endId: "endEdgeNMD",
             xAxis_Label: "Normalized Medline Distance(NMD)", yAxis_Label: "# of Edges",
             width: width, height: Math.min(height/3,150), selectbarw: 2, textinputclass: "input-mini", labelSize: "10px", axisfontsize: "8px", axislabelfontsize: "10px"};
-        var ccHistOptions = {startLabel: "Start CC:", endLabel: "End CC:", startId: "startEdgeCC", endId: "endEdgeCC",
+        var ccHistOptions = {startLabel: "Start:", endLabel: "End:", startId: "startEdgeCC", endId: "endEdgeCC",
             xAxis_Label: "Term Combo Count", yAxis_Label: "# of Edges",
             width: width, height: Math.min(height/3,150), selectbarw: 2, textinputclass: "input-mini", labelSize: "10px",axisfontsize: "8px", axislabelfontsize: "10px",
         initialstart: 2};

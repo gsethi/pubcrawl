@@ -36,11 +36,11 @@ PC.NetworkModel = Backbone.Model.extend({
                         var edge = response.data.edges[index];
                         var nmd;
                         //if this edge is from our searchterm to a target, then get the nmd value and put it into the node object
-                        if(nodeIdMappings[edge.source].name == this.searchterm){
+                        if(nodeIdMappings[edge.source].name == this.searchterm && edge.ngd != null){
                             nodeIdMappings[edge.target].nmd = edge.ngd;
                             nodeIdMappings[edge.target].cc = edge.combocount;
                         }
-                        else if( nodeIdMappings[edge.target].name == this.searchterm){
+                        else if( nodeIdMappings[edge.target].name == this.searchterm && edge.ngd != null){
                             nodeIdMappings[edge.source].nmd = edge.ngd;
                             nodeIdMappings[edge.source].cc = edge.combocount;
                         }

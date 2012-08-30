@@ -18,10 +18,10 @@ PC.NodeFilterListView = Backbone.View.extend({
     },
 
     render: function(width,height){
-        var nmdHistOptions = {startLabel: "Start NMD:", endLabel: "End NMD:", startId: "startNodeNMD", endId: "endNodeNMD",
+        var nmdHistOptions = {startLabel: "Start:", endLabel: "End:", startId: "startNodeNMD", endId: "endNodeNMD",
             xAxis_Label: "Normalized Medline Distance(NMD)", yAxis_Label: "# of Nodes",
             width: width, height: Math.min(height/2,150), selectbarw: 2, textinputclass: "input-mini",labelSize: "10px", axisfontsize: "8px", axislabelfontsize: "10px"};
-        var ccHistOptions = {startLabel: "Start CC:", endLabel: "End CC:", startId: "startNodeCC", endId: "endNodeCC",
+        var ccHistOptions = {startLabel: "Start:", endLabel: "End:", startId: "startNodeCC", endId: "endNodeCC",
             xAxis_Label: "Term Combo Count", yAxis_Label: "# of Nodes",
             width: width, height: Math.min(height/2,150), selectbarw: 2, textinputclass: "input-mini",labelSize: "10px", axisfontsize: "8px", axislabelfontsize: "10px",
             initialstart: 2};

@@ -158,7 +158,7 @@ function mouseout() {
 var width = width,
     height = height,
     innerRadius = 40,
-    outerRadius = 600,
+    outerRadius = 400,
     x_off=$(window).width()-width,
     y_off=80,
     degree = Math.PI / 180,
@@ -173,11 +173,12 @@ var radius = d3.scale.linear()
 
 var color = d3.scale.category10();
 
+
 var svg = d3.select(this.el).append("svg")
     .attr("width", width)
     .attr("height", height)
     .append("g")
-    .attr("transform", "translate(" + width * .5 + "," + height * .5 + ")");
+    .attr("transform", "translate(" + (width * .5) + "," + (height * .5) + ")");
 
         this.vis = svg;
 // Load the data and display the plot!
