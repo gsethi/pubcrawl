@@ -1,6 +1,6 @@
 PC.NodeDetailsModel = Backbone.Model.extend({
     //url for this model is the solr connection to retrieve documents related to this node
-    urlRoot: 'http://apollo:4080/solr/core0/select/?qt=distributed_select&wt=json&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true',
+    urlRoot: 'http://apollo:4080/solr/core0/select/?qt=distributed_select&sort=pub_date_year desc&wt=json&hl=true&hl.fl=article_title,abstract_text&hl.snippets=100&hl.fragsize=50000&h.mergeContiguous=true',
     url: function(){
         return this.urlRoot + "&q=text:(" + this.nodeName + ")&fq=pub_date_year:[1991 TO 2011]";
     },
