@@ -158,7 +158,7 @@ function mouseout() {
 var width = width,
     height = height,
     innerRadius = 40,
-    outerRadius = 400,
+    outerRadius = 450,
     x_off=$(window).width()-width,
     y_off=80,
     degree = Math.PI / 180,
@@ -330,7 +330,8 @@ var svg = d3.select(this.el).append("svg")
       .radius(function(d) { return radius(d.node.index); }))
       .attr("class", function(d) { return "link " + d.relType; })
       .on("mouseover", linkMouseover)
-      .on("mouseout", mouseout);
+      .on("mouseout", mouseout)
+      .on("click", triggerEdgeDetailsView);
 
   // Draw the nodes. Note that each node can have up to two connectors,
   // representing the source (outgoing) and target (incoming) links.
@@ -407,6 +408,10 @@ var labels =svg.append("g")
 
   function triggerNodeDetailsView(item){
       $(that.el).trigger('nodeClicked',item.node.name);
+  }
+
+  function triggerEdgeDetailsView(item){
+      $(that.el).trigger('edgeClicked',{source: item.source.node.name, target: item.target.node.name});
   }
 
 
