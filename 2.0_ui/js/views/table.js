@@ -67,7 +67,11 @@ PC.TableView = Backbone.View.extend({
                                 "sDefaultContent": '<img src="../images/details_open.png">'});
         }
         for(var k=0; k < thisView.dataConfig.length; k++){
-            aoColumns.push({"sTitle": thisView.dataConfig[k].headerName,"mDataProp": thisView.dataConfig[k].propName,
+            var dataProp=thisView.dataConfig[k].propName;
+            if(thisView.dataConfig[k].urlLink != null){
+                   dataProp="<a href='" + thisView.dataConfig[k].urlLink + dataProp + "' target='_blank'>"+dataProp + "</a>";
+            }
+            aoColumns.push({"sTitle": thisView.dataConfig[k].headerName,"mDataProp": dataProp,
             "sWidth":thisView.dataConfig[k].headerWidth,"sDefaultContent": ""});
         }
 
