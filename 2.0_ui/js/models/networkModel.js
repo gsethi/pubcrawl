@@ -23,9 +23,10 @@ PC.NetworkModel = Backbone.Model.extend({
             this.edges=new PC.EdgeCollection();
             this.nodes=new PC.NodeCollection();
             var nodeIdMappings={};
+            var tempEdges=[];
             if(response.data != null && response.data.edges != null){
                 for(var i=0; i < response.data.nodes.length; i++){
-                    var node={index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf, termcount: response.data.nodes[i].termcount, nodeType: response.data.nodes[i].nodeType};
+                    var node={linknum: 0, id: response.data.nodes[i].id, index: i, name: response.data.nodes[i].name, tf: response.data.nodes[i].tf, termcount: response.data.nodes[i].termcount, nodeType: response.data.nodes[i].nodeType};
                     if(node.name == this.searchterm){
                         node.nmd=0;
                         node.cc = response.data.nodes[i].termcount;
@@ -45,18 +46,32 @@ PC.NetworkModel = Backbone.Model.extend({
                             nodeIdMappings[edge.source].cc = edge.combocount;
                         }
 
-                        edge.source = nodeIdMappings[edge.source];
-                        edge.target = nodeIdMappings[edge.target];
+                        nodeIdMappings[edge.source].linknum++;
+                        nodeIdMappings[edge.target].linknum++;
 
                         //do this for now, but should change underlying service...
                         edge.nmd =edge.ngd;
                         edge.cc=edge.combocount;
-                        this.edges.add(edge);
+                        tempEdges.push(edge);
                     }
 
                 for(var key in nodeIdMappings){
-                    this.nodes.add(nodeIdMappings[key]);
+                     this.nodes.add(nodeIdMappings[key]);
                 }
+
+                //now have edges and nodes collections, but now need to map the node models onto the edge target and source
+                nodeIDMappings={};
+                var nodeMap={};
+                for( var item in this.nodes.models){
+                    nodeMap[this.nodes.models[item].id]=this.nodes.models[item];
+                }
+                for(var i=0; i< tempEdges.length; i++){
+                    var item = tempEdges[i];
+                    item.source = nodeMap[item.source];
+                    item.target = nodeMap[item.target];
+                    this.edges.add(item);
+                }
+
             }
 
             return;

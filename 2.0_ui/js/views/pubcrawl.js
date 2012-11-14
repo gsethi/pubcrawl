@@ -144,7 +144,7 @@ PC.PubcrawlView =  Backbone.View.extend({
     showNetworkView: function(selector, view) {
         if (this.networkView)
             this.networkView.close();
-        $(selector).html(view.render($(selector).parent().width(),$(window).height()-100).el);
+        $(selector).html(view.render($(selector).width(),$(window).height()-100).el);
         this.networkView = view;
         return view;
     },
