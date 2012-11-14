@@ -229,7 +229,8 @@ marker#ngd {
 }
 
 .link.domine {
-  stroke-dasharray: 0,2 1;
+  stroke-dasharray: 0,3 1;
+  stroke-width: 3px;
   stroke:#AC0035;
 }
 
@@ -240,6 +241,15 @@ text {
 text.hiveplot {
   font: 14px sans-serif;
 
+}
+
+text.shadow {
+    stroke: white;
+}
+
+circle.node{
+ stroke: gray;
+     stroke-width: 2px;
 }
 
 line.axis {
@@ -268,6 +278,7 @@ line.axis {
 .node circle.hidden {
     visibility: hidden;
 }
+
 
 .filtertabcontent {
     border-bottom: 7px solid rgba(0, 0, 0, 0.2);
