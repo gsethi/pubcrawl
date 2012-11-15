@@ -16,8 +16,7 @@ PC.PubcrawlView =  Backbone.View.extend({
         "networkFilterChange" : "filterNetwork",
         "nodeClicked"  : "showNodeDetails",
         "edgeClicked" : "showEdgeDetails",
-       "select #networkContainer": "showNetwork",
-        "select #hiveContainer": "showHive"
+       "click #networkTabs": "networkViewChange"
     },
 
 	triggerQuery: function(event) {
@@ -68,11 +67,11 @@ PC.PubcrawlView =  Backbone.View.extend({
             this.$("#dataHeaderAliasText").val("no");
             this.$("#dataHeaderModeText").val("search");
             this.$("#dataHeaderDatasetText").val("NA");
-            that=this;
+            var that=this;
             this.networkData.fetch({success: function(model,response) {
                 that.networkModel = model;
                    that.showNetworkView('#networkContainer', new PC.NetworkView({model: model}));
-                    that.showHiveView('#hiveContainer', new PC.HiveView({model:model}));
+
                     that.showDataTableView('#datatableContainer', new PC.TableView({model:model.nodes}));
                     that.showNodeFilterListView('#nodeFilter', new PC.NodeFilterListView({model: model.nodes}));
                     that.showEdgeFilterListView('#edgeFilter', new PC.EdgeFilterListView({model: model.edges}));
@@ -85,7 +84,7 @@ PC.PubcrawlView =  Backbone.View.extend({
     queryNode: function(name){
             this.searchTerm = name;
             this.nodeQuery = new PC.NodeQueryModel({searchTerm: this.searchTerm});
-            that = this;
+            var that = this;
        		this.nodeQuery.fetch({success: function(model,response) {
                  that.$el.append(that.showModal('#modalDiv', new PC.QueryFilterView({model: model})).el.parentNode);
             }});
@@ -146,15 +145,33 @@ PC.PubcrawlView =  Backbone.View.extend({
         return view;
     },
 
-    showNetwork: function(){
+    networkViewChange: function(event,item){
+        if(event.toElement.hash == '#networkContainer'){
+
         if (this.networkView)
-                    this.networkView.close();
+            return;
+
         if(this.networkModel){
         var view = new PC.NetworkView({model:this.networkModel});
                 $('#networkContainer').html(view.render($('#networkContainer').width(),$(window).height()-100).el);
                 this.networkView = view;
                 return view;
         }
+        }else if(event.toElement.hash == '#hiveContainer'){
+            if(this.hiveView)
+                return;
+
+                    if(this.networkModel){
+                    var view=new PC.HiveView({model:this.networkModel});
+                    $('#hiveContainer').html(view.render($('#hiveContainer').width(),$(window).height()-100).el);
+                    this.hiveView = view;
+                   return view;
+                    }
+        }
+        else{
+            //datatable view
+        }
+
     },
     showNetworkView: function(selector, view) {
         if (this.networkView)
@@ -164,17 +181,7 @@ PC.PubcrawlView =  Backbone.View.extend({
         return view;
     },
 
-    showHive: function(){
-        if(this.hiveView)
-            this.hiveView.close();
 
-        if(this.networkModel){
-        var view=new PC.HiveView({model:this.networkModel});
-        $('#hiveContainer').html(view.render($('#hiveContainer').width(),$(window).height()-100).el);
-        this.hiveView = view;
-       return view;
-        }
-    },
     showHiveView: function(selector, view){
         if(this.hiveView)
             this.hiveView.close();
