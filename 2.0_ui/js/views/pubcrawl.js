@@ -15,7 +15,9 @@ PC.PubcrawlView =  Backbone.View.extend({
         "networkNodesSelected" : "triggerNetworkLoad",
         "networkFilterChange" : "filterNetwork",
         "nodeClicked"  : "showNodeDetails",
-        "edgeClicked" : "showEdgeDetails"
+        "edgeClicked" : "showEdgeDetails",
+       "select #networkContainer": "showNetwork",
+        "select #hiveContainer": "showHive"
     },
 
 	triggerQuery: function(event) {
@@ -68,7 +70,10 @@ PC.PubcrawlView =  Backbone.View.extend({
             this.$("#dataHeaderDatasetText").val("NA");
             that=this;
             this.networkData.fetch({success: function(model,response) {
+                that.networkModel = model;
                    that.showNetworkView('#networkContainer', new PC.NetworkView({model: model}));
+                    that.showHiveView('#hiveContainer', new PC.HiveView({model:model}));
+                    that.showDataTableView('#datatableContainer', new PC.TableView({model:model.nodes}));
                     that.showNodeFilterListView('#nodeFilter', new PC.NodeFilterListView({model: model.nodes}));
                     that.showEdgeFilterListView('#edgeFilter', new PC.EdgeFilterListView({model: model.edges}));
             }});
@@ -141,12 +146,46 @@ PC.PubcrawlView =  Backbone.View.extend({
         return view;
     },
 
+    showNetwork: function(){
+        if (this.networkView)
+                    this.networkView.close();
+        if(this.networkModel){
+        var view = new PC.NetworkView({model:this.networkModel});
+                $('#networkContainer').html(view.render($('#networkContainer').width(),$(window).height()-100).el);
+                this.networkView = view;
+                return view;
+        }
+    },
     showNetworkView: function(selector, view) {
         if (this.networkView)
             this.networkView.close();
         $(selector).html(view.render($(selector).width(),$(window).height()-100).el);
         this.networkView = view;
         return view;
+    },
+
+    showHive: function(){
+        if(this.hiveView)
+            this.hiveView.close();
+
+        if(this.networkModel){
+        var view=new PC.HiveView({model:this.networkModel});
+        $('#hiveContainer').html(view.render($('#hiveContainer').width(),$(window).height()-100).el);
+        this.hiveView = view;
+       return view;
+        }
+    },
+    showHiveView: function(selector, view){
+        if(this.hiveView)
+            this.hiveView.close();
+        $(selector).html(view.render($(selector).width(),$(window).height()-100).el);
+        this.hiveView = view;
+        return view;
+    },
+
+    showDataTableView: function(selector, view){
+
+            return view;
     },
 
     showNodeFilterListView: function(selector, view){
