@@ -1,0 +1,220 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+     <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Pubcrawl</title>
+
+    <!-- Fonts -->
+    <link href='http://fonts.googleapis.com/css?family=Pontano+Sans|Gentium+Basic' rel='stylesheet' type='text/css'>
+    <link href="css/csacr.css" rel="stylesheet">
+    <link href="css/pubcrawl.css" rel="stylesheet">
+    <link href="css/csacr-responsive.css" rel="stylesheet">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+    <script src="js/html5.js"></script>
+    <link href="css/csacr.ie.css" rel="stylesheet">
+    <![endif]-->
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-33365261-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+</head>
+<body>
+<div class="navbar navbar-fixed-top" id="topNav">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="#homePage" onclick="return false;" id="home">
+
+                <img src="images/isblogo.png" class="imgbrand" alt="Pubcrawl"/> <b>Pubcrawl</b>
+            </a>
+            <div class="nav-collapse">
+                <ul class="nav nav-pills pull-center">
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href=""  onclick="return false;">
+                            Datasets <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="" onclick="return false;">gbm</a>
+                            </li>
+                            <li>
+                                <a href="" onclick="return false;">coad</a>
+                            </li>
+                            <li>
+                                <a href="" onclick="return false;">brca</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href="" onclick="return false;" >
+                            Export
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu" >
+                            <li>
+                                <a href="#">Graph</a>
+                                <ul class="dropdown-menu sub-menu">
+                                    <li class="nav-header">Choose a Format</li>
+                                    <li class="divider"></li>
+                                    <li><a href="#">png</a></li>
+                                    <li><a href="#">svg</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#">Data</a>
+                                 <ul class="dropdown-menu sub-menu">
+                                    <li><a href="#">Nodes</a></li>
+                                    <li><a href="#">Edges</a></li>
+                                    <li><a href="#">Both</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown" >
+                        <a class="dropdown-toggle" data-toggle="dropdown" data-target="#" href="" onclick="return false;" >
+                            About
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="" onclick="return false;">User Guide</a>
+                            </li>
+                            <li>
+                                <a href="" onclick="return false;">Code Project</a>
+                            </li>
+                            <li>
+                                <a href="" onclick="return false;">Funding</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                 <a class="pull-right btn btn-primary" href="http://www.cancerregulome.org" target="_blank">Cancer Regulome</a>
+                <form action="" class="navbar-search pull-left inline-form">
+                    <input type="text" id="querySearchTerm" placeholder="Enter Search Term..." class="search-query span3">
+                    <button class="btn btn-primary" id="queryBtn"><i class="icon-search icon-white"></i></button>
+                </form>
+            </div>
+            <!--/.nav-collapse --> </div>
+    </div>
+</div>
+<div class="container-fluid dataHeader">
+    <div class="row-fluid dataHeader">
+        <div class="span12">
+<div class="row-fluid">
+        <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Search Term:</label>
+                    <input type="text" class="input-small" value="fbxw7" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Use Alias:</label>
+                    <input type="text" class="input-small" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Mode:</label>
+                    <input type="text" class="input-small" value="search" readonly="true">
+                </form>
+            </div>
+            <div class="span3 dataHeader">
+                <form class="form-inline">
+                    <label>Datasets:</label>
+                    <input type="text" class="input-medium" readonly="true">
+                </form>
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+<div class="container-fluid mainContainer" id="mainContainer">
+        <div class="row-fluid">
+            <div class="span2">
+                <ul class="nav nav-tabs" id="filterTabs">
+                    <li class="active"><a href="#nodes" data-toggle="tab">Nodes</a></li>
+                    <li><a href="#edges"  data-toggle="tab">Edges</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="nodes">This is the nodes tab</div>
+                    <div class="tab-pane" id="edges">This is the edges tab</div>
+                </div>
+                <div class="legend">
+                    this is the legend here...
+                </div>
+            </div>
+            <div class="span10"> <!-- where main content of page will go --> </div>
+        </div>
+    </div>
+<footer class="navbar-fixed-bottom">
+        <p>
+            &copy; 2012, Institute for Systems Biology, All Rights Reserved
+        </p>
+</footer>
+
+<script id="filterTemplate" type="text/template">
+    <h1>Put Histogram and filter here</h1>
+</script>
+
+<script id="graphTemplate" type="text/template">
+    <h1>Graph Template</h1>
+</script>
+
+<script id="NodeQueryFilterTemplate" type="text/template">
+<div class="modal show" id="graphQueryFilterModal">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Node Selection</h3>
+        </div>
+    <div class="modal-body queryFilterModal">
+        <ul class="nav nav-tabs" id="modalQueryFilterTabs">
+            <li class="active"><a href="#queryFilterHistogramView" data-toggle="tab">Histogram</a></li>
+            <li><a href="#queryFilterTableView" data-toggle="tab">Data Table</a></li>
+            </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="queryFilterHistogramView"></div>
+            <div class="tab-pane queryfiltertable" id="queryFilterTableView"></div>
+        </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" id="closeQueryFilter" data-dismiss="modal">Close</button>
+        <button class="btn btn-primary">Draw Network</button>
+    </div>
+</div>
+</script>
+
+
+<script src="js/jquery.js"></script>
+<script src="js/underscore-min.js"></script>
+<script src="js/backbone-min.js"></script>
+<script src="js/bootstrap.js"></script>
+  <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/protovis-r3.3.1.js"></script>
+    <script type="text/javascript" src="https://informatics-apps.systemsbiology.net/visquick-core-1.0/visquick-utils.js"></script>
+    <script type="text/javascript" src="https://vis.systemsbiology.net/js/d3/d3.js"></script>
+<script type="text/javascript" src="js/jquery.dataTables.js"></script>
+<script src="js/flexscrollBar.js"></script>
+<script src="js/pubcrawl.js"></script>
+
+</body>
+</html>
