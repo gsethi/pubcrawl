@@ -150,7 +150,18 @@
 
                 </div>
             </div>
-            <div class="span9" id="networkContainer"> <!-- where main content of page will go --> </div>
+            <div class="span9">
+                <ul class="nav nav-tabs" id="networkTabs">
+                       <li class="active"><a href="#networkContainer" data-toggle="tab">Graph</a></li>
+                       <li><a href="#hiveContainer"  data-toggle="tab">Hive Plot</a></li>
+                        <li><a href="#datatableContainer"  data-toggle="tab">Data Table</a></li>
+                </ul>
+                <div class="tab-content filtertabcontent">
+                        <div class="tab-pane active" id="networkContainer"></div>
+                        <div class="tab-pane" id="hiveContainer"></div>
+                        <div class="tab-pane" id="datatableContainer"></div>
+                </div>
+            </div>
         </div>
     </div>
 </script>
@@ -248,6 +259,7 @@
 <script src="js/views/edgeTabTable.js"></script>
 <script src="js/views/table.js"></script>
 <script src="js/views/network.js"></script>
+<script src="js/views/hive.js"></script>
 <script src="js/views/nodeFilterList.js"></script>
 <script src="js/views/pubcrawl.js"></script>
 <script src="js/views/queryFilter.js"></script>
