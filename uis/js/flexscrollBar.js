@@ -114,7 +114,7 @@ vq.FlexScrollBar.prototype.render = function() {
 
     }
     this.xScale = x;
-    var histbins = pv.histogram(this.data.data_array.map(function(node){return node.ngd;})).bins(x.ticks(this.bins()));
+    var histbins = pv.histogram(this.data.data_array).bins(x.ticks(this.bins()));
 
     var yScale = pv.Scale.linear(0,pv.max(histbins, function(d){ return d.y})).range(0,h2-this.vertical_padding()-17);
 
@@ -329,7 +329,7 @@ vq.models.FlexScrollBarData.prototype.setDataModel = function () {
         {label :'callback_always', id:'callback_always', cast : Boolean, defaultValue : true},
         {label: 'dblclick_notifier', id: 'dblclick_notifier', defaultValue : function(a){return null;}},
         {label : 'data_array', id: 'PLOT.data_array', defaultValue : [] },
-        {label: 'fillstyle', id:'PLOT.fillstyle', defaultValue: function(a){return "blue";}}
+        {label: 'fillstyle', id:'PLOT.fillstyle', defaultValue: function(a){return "steelblue";}}
 
     ];
 };
