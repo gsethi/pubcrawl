@@ -96,7 +96,7 @@ public class GeneInteractionRetrieval {
             List<Integer> ccList = new ArrayList<Integer>();
             List<Double> ngdList = new ArrayList<Double>();
 
-            graphDB = new EmbeddedGraphDatabase("/local/graphdb/neo4j-community-1.6.M02/data/brady_paper.db");
+            graphDB = new EmbeddedGraphDatabase("/local/graphdb/neo4j1/neo4j-enterprise-1.6/data/pubcrawl.db");
             IndexManager index = graphDB.index();
             Index<Node> geneIdx = index.forNodes("genNodeIdx", MapUtil.stringMap("type", "exact"));
             String ngdrel="ngd";
